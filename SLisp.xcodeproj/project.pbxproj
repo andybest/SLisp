@@ -11,6 +11,13 @@
 		A5803E611CFF83CE00C59003 /* math.sl in CopyFiles */ = {isa = PBXBuildFile; fileRef = C8BB4574A6D0EE2614A68798 /* math.sl */; };
 		A5803E621CFF83CE00C59003 /* core.sl in CopyFiles */ = {isa = PBXBuildFile; fileRef = C8BB41462E7969688AD48987 /* core.sl */; };
 		A5803E631CFF83CE00C59003 /* testInput1.sl in CopyFiles */ = {isa = PBXBuildFile; fileRef = C8BB42081A7DEFC3B4A14583 /* testInput1.sl */; };
+		A5803E6B1CFF85FB00C59003 /* LexerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5803E6A1CFF85FB00C59003 /* LexerTests.swift */; };
+		A5803E701CFF862E00C59003 /* SLisp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57C986E1C80B09A00E30676 /* SLisp.swift */; };
+		A5803E711CFF863100C59003 /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C033FD1C860B3B000853EC /* Helpers.swift */; };
+		A5803E721CFF863500C59003 /* Lexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5989B211C1715A000B91B38 /* Lexer.swift */; };
+		A5803E751CFF863E00C59003 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C034041C860D39000853EC /* Math.swift */; };
+		A5803E761CFF876A00C59003 /* Builtins.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C034001C860D24000853EC /* Builtins.swift */; };
+		A5803E771CFF876C00C59003 /* Core.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C034021C860D33000853EC /* Core.swift */; };
 		A5989AF51C17119B00B91B38 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5989AF41C17119B00B91B38 /* main.swift */; };
 		A5989B221C1715A000B91B38 /* Lexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5989B211C1715A000B91B38 /* Lexer.swift */; };
 		A5C033FE1C860B3B000853EC /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C033FD1C860B3B000853EC /* Helpers.swift */; };
@@ -36,6 +43,9 @@
 
 /* Begin PBXFileReference section */
 		A57C986E1C80B09A00E30676 /* SLisp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SLisp.swift; sourceTree = "<group>"; };
+		A5803E681CFF85FB00C59003 /* SLisp Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SLisp Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A5803E6A1CFF85FB00C59003 /* LexerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LexerTests.swift; sourceTree = "<group>"; };
+		A5803E6C1CFF85FB00C59003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A5989AF11C17119A00B91B38 /* SLisp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SLisp; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5989AF41C17119B00B91B38 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		A5989B211C1715A000B91B38 /* Lexer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Lexer.swift; sourceTree = "<group>"; };
@@ -49,6 +59,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		A5803E651CFF85FB00C59003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A5989AEE1C17119A00B91B38 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -59,10 +76,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A5803E691CFF85FB00C59003 /* SLisp Tests */ = {
+			isa = PBXGroup;
+			children = (
+				A5803E6A1CFF85FB00C59003 /* LexerTests.swift */,
+				A5803E6C1CFF85FB00C59003 /* Info.plist */,
+			);
+			path = "SLisp Tests";
+			sourceTree = "<group>";
+		};
 		A5989AE81C17119A00B91B38 = {
 			isa = PBXGroup;
 			children = (
 				A5989AF31C17119A00B91B38 /* SLisp */,
+				A5803E691CFF85FB00C59003 /* SLisp Tests */,
 				A5989AF21C17119A00B91B38 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -71,6 +98,7 @@
 			isa = PBXGroup;
 			children = (
 				A5989AF11C17119A00B91B38 /* SLisp */,
+				A5803E681CFF85FB00C59003 /* SLisp Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -119,6 +147,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		A5803E671CFF85FB00C59003 /* SLisp Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A5803E6D1CFF85FB00C59003 /* Build configuration list for PBXNativeTarget "SLisp Tests" */;
+			buildPhases = (
+				A5803E641CFF85FB00C59003 /* Sources */,
+				A5803E651CFF85FB00C59003 /* Frameworks */,
+				A5803E661CFF85FB00C59003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "SLisp Tests";
+			productName = "SLisp Tests";
+			productReference = A5803E681CFF85FB00C59003 /* SLisp Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		A5989AF01C17119A00B91B38 /* SLisp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A5989AF81C17119B00B91B38 /* Build configuration list for PBXNativeTarget "SLisp" */;
@@ -142,10 +187,13 @@
 		A5989AE91C17119A00B91B38 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 0710;
+				LastSwiftUpdateCheck = 0730;
 				LastUpgradeCheck = 0710;
 				ORGANIZATIONNAME = "Andy Best";
 				TargetAttributes = {
+					A5803E671CFF85FB00C59003 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
 					A5989AF01C17119A00B91B38 = {
 						CreatedOnToolsVersion = 7.1;
 					};
@@ -164,11 +212,36 @@
 			projectRoot = "";
 			targets = (
 				A5989AF01C17119A00B91B38 /* SLisp */,
+				A5803E671CFF85FB00C59003 /* SLisp Tests */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		A5803E661CFF85FB00C59003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
+		A5803E641CFF85FB00C59003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A5803E6B1CFF85FB00C59003 /* LexerTests.swift in Sources */,
+				A5803E711CFF863100C59003 /* Helpers.swift in Sources */,
+				A5803E751CFF863E00C59003 /* Math.swift in Sources */,
+				A5803E771CFF876C00C59003 /* Core.swift in Sources */,
+				A5803E761CFF876A00C59003 /* Builtins.swift in Sources */,
+				A5803E721CFF863500C59003 /* Lexer.swift in Sources */,
+				A5803E701CFF862E00C59003 /* SLisp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A5989AED1C17119A00B91B38 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -186,6 +259,32 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		A5803E6E1CFF85FB00C59003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "SLisp Tests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = "net.andybest.SLisp-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		A5803E6F1CFF85FB00C59003 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "SLisp Tests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = "net.andybest.SLisp-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		A5989AF61C17119B00B91B38 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -284,6 +383,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		A5803E6D1CFF85FB00C59003 /* Build configuration list for PBXNativeTarget "SLisp Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A5803E6E1CFF85FB00C59003 /* Debug */,
+				A5803E6F1CFF85FB00C59003 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A5989AEC1C17119A00B91B38 /* Build configuration list for PBXProject "SLisp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

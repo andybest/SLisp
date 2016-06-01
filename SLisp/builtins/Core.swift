@@ -169,7 +169,7 @@ class Core: Builtins {
                 switch val {
                     
                 case .Atom(let a):
-                    if let r = environment.getVariable(name: a) {
+                    if let r = self.env.getVariable(name: a) {
                         rv = r
                     } else {
                         rv = condition
@@ -177,7 +177,7 @@ class Core: Builtins {
                     break
                     
                 case .LPair(let p):
-                    rv = environment.evaluate(p: p)
+                    rv = self.env.evaluate(p: p)
                     break
                     
                 default:

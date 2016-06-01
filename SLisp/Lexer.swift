@@ -27,12 +27,23 @@
 import Foundation
 
 
-enum TokenType {
+enum TokenType: Equatable {
     case LParen
     case RParen
     case Atom(String)
     case Number(Float)
     case LString(String)
+}
+
+func ==(a: TokenType, b: TokenType) -> Bool {
+    switch (a, b) {
+    case (.LParen, .LParen): return true
+    case (.RParen, .RParen): return true
+    case (.Atom(let a), .Atom(let b)) where a == b: return true
+    case (.Number(let a), .Number(let b)) where a == b: return true
+    case (.LString(let a), .LString(let b)) where a == b: return true
+    default: return false
+    }
 }
 
 protocol TokenMatcher {
@@ -185,7 +196,8 @@ class NumberMatcher: TokenMatcher {
         if isMatch(stream: stream) {
             var tok = ""
             
-            while characterIsInSet(c: stream.currentCharacter()!, set: characterSet()) {
+            while stream.currentCharacter() != nil &&
+                characterIsInSet(c: stream.currentCharacter()!, set: characterSet()) {
                 tok += String(stream.currentCharacter()!)
                 stream.advanceCharacter()
             }

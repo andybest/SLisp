@@ -281,7 +281,7 @@ class Environment {
     }
     
     func popEnvironment() {
-        envStack.popLast()
+        let _ = envStack.popLast()
     }
     
     func callFunction(function:LFunctionMetadata, arguments:Pair?) -> LispType {
