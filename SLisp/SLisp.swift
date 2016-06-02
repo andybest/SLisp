@@ -308,13 +308,14 @@ class Environment {
         }
 
         pushEnvironment(environment: newEnv)
-        
        
         var result = LispType.Nil
         
         // A function body should be a list.
         if let body = pairFromValue(val: function.body.value) {
-            result = evaluate(p: body)
+            let bodyCopy = copyList(p: body)
+            
+            result = evaluate(p: bodyCopy)
         } else {
             print("Error, function body was not a list.")
         }

@@ -154,3 +154,51 @@ func lispTypeToString(lt:LispType, env:Environment) -> String {
         return "\(b)"
     }
 }
+
+func copyType(type: LispType) -> LispType {
+    switch type {
+    case .Number(let num):
+        return LispType.Number(num)
+        
+    case .Atom(let atom):
+        return LispType.Atom(atom)
+        
+    case .LString(let str):
+        return LispType.LString(str)
+        
+    case .Nil:
+        return LispType.Nil
+        
+    case .LPair(let argPair):
+        return LispType.LPair(copyList(p: argPair))
+        
+    case .LFunction(let metadata):
+        return LispType.LFunction(metadata)
+        
+    case .LBoolean(let b):
+        return LispType.LBoolean(b)
+    }
+
+}
+
+func copyList(p:Pair) -> Pair {
+    var currentPair: Pair? = p;
+    var newPairRoot: Pair?
+    var newPairTail: Pair?
+    
+    while currentPair != nil {
+        if(newPairRoot == nil) {
+            newPairRoot = Pair()
+            newPairRoot!.value = copyType(type: currentPair!.value)
+            newPairTail = newPairRoot
+        } else {
+            let newPair = Pair()
+            newPair.value = copyType(type: currentPair!.value)
+            newPairTail!.next = newPair
+            newPairTail = newPair
+        }
+        currentPair = currentPair?.next
+    }
+    
+    return newPairRoot!
+}
