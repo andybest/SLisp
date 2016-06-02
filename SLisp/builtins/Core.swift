@@ -30,7 +30,7 @@ class Core: Builtins {
     
     override init(env: Environment) {
         super.init(env: env)
-        initBuiltins()
+        let _ = initBuiltins()
     }
     
     func initBuiltins() -> [String: BuiltinBody] {

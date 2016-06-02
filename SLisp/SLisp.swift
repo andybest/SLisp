@@ -128,7 +128,7 @@ class Environment {
         let rootPairs = self.parseTokens(tokens: tokens)
 
         for p in rootPairs {
-            self.evaluate(p: p)
+            let _ = self.evaluate(p: p)
         }
     }
     
