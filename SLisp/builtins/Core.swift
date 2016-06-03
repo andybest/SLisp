@@ -33,6 +33,31 @@ class Core: Builtins {
         let _ = initBuiltins()
     }
     
+    func evaluateOrReturnResult(val: LispType) -> LispType
+    {
+        var rv: LispType
+        
+        switch val {
+            
+        case .Atom(let a):
+            if let r = self.env.getVariable(name: a) {
+                rv = r
+            } else {
+                rv = val
+            }
+            break
+            
+        case .LPair(let p):
+            rv = self.env.evaluate(p: p)
+            break
+            
+        default:
+            rv = val
+        }
+        
+        return rv
+    }
+    
     func initBuiltins() -> [String: BuiltinBody] {
         addBuiltin(name: "def") { args in
             if args != nil && valueIsAtom(val: args!.value) {
@@ -163,32 +188,9 @@ class Core: Builtins {
         addBuiltin(name: "cond") { args in
             let condition: LispType = args!.value
             
-            func evaluateOrReturnResult(val: LispType) -> LispType
-            {
-                var rv: LispType
-                
-                switch val {
-                    
-                case .Atom(let a):
-                    if let r = self.env.getVariable(name: a) {
-                        rv = r
-                    } else {
-                        rv = val
-                    }
-                    break
-                    
-                case .LPair(let p):
-                    rv = self.env.evaluate(p: p)
-                    break
-                    
-                default:
-                    rv = val
-                }
-                
-                return rv
-            }
             
-            let result = evaluateOrReturnResult(val: condition)
+            
+            let result = self.evaluateOrReturnResult(val: condition)
             
             if !valueIsBoolean(val: result) {
                 print("cond requires the first argument to be a boolean.")
@@ -215,9 +217,9 @@ class Core: Builtins {
             }
             
             if booleanFromValue(val: result) {
-                return evaluateOrReturnResult(val: truePath!.value)
+                return self.evaluateOrReturnResult(val: truePath!.value)
             } else {
-                return evaluateOrReturnResult(val: falsePath!.value)
+                return self.evaluateOrReturnResult(val: falsePath!.value)
             }
         }
         
@@ -358,12 +360,12 @@ class Core: Builtins {
             self.env.pushEnvironment(environment: env)
             
             let body: Pair? =  pairFromValue(val: args!.next!.value)!
-            var pair = pairFromValue(val: (body?.value)!)
+            var pair = body
             var rv = LispType.Nil
             
             // Evaluate all of the expressions in the body
             while pair != nil {
-                rv = self.env.evaluate(p: pair!)
+                rv = self.evaluateOrReturnResult(val: pair!.value)
                 pair = pair!.next
             }
             
