@@ -311,6 +311,67 @@ class Core: Builtins {
             return LispType.LBoolean(false)
         }
         
+        addBuiltin(name: "let") { args in
+            
+            if(args == nil) {
+                print("let requires 2 arguments")
+                return LispType.Nil
+            }
+            
+            if(!valueIsPair(val: args!.value)) {
+                print("let requires the first argument to be a list")
+                return LispType.Nil
+            }
+            
+            if(args!.next == nil || !valueIsPair(val: args!.next!.value)) {
+                print("let requires the second argument to be a list")
+                return LispType.Nil
+            }
+            
+            var pairArgs = [LispType]()
+            var p: Pair? = pairFromValue(val: args!.value)
+            
+            while(p != nil) {
+                pairArgs.append(p!.value)
+                p = p!.next
+            }
+            
+            if(pairArgs.count % 2 != 0) {
+                print("let requires an even number of values")
+                return LispType.Nil
+            }
+            
+            // Iterate through the pairs and put them into a dictionary, so they can be added to the environment stack
+            var env = [String: LispType]()
+            
+            for startIdx in stride(from:0, to: pairArgs.count, by: 2) {
+                let key = pairArgs[startIdx]
+                
+                if(!valueIsAtom(val: key)) {
+                    print("let: value \(stringFromValue(val: key)) is not an atom")
+                    return LispType.Nil
+                }
+                
+                env[stringFromValue(val: key)!] = pairArgs[startIdx + 1]
+            }
+            
+            self.env.pushEnvironment(environment: env)
+            
+            let body: Pair? =  pairFromValue(val: args!.next!.value)!
+            var pair = pairFromValue(val: (body?.value)!)
+            var rv = LispType.Nil
+            
+            // Evaluate all of the expressions in the body
+            while pair != nil {
+                rv = self.env.evaluate(p: pair!)
+                pair = pair!.next
+            }
+            
+            self.env.popEnvironment()
+            
+            return rv
+        }
+        
         return builtins
     }
 }
