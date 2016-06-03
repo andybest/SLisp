@@ -31,7 +31,7 @@ enum TokenType: Equatable {
     case LParen
     case RParen
     case Atom(String)
-    case Number(Float)
+    case Number(Double)
     case LString(String)
 }
 
@@ -202,7 +202,7 @@ class NumberMatcher: TokenMatcher {
                 stream.advanceCharacter()
             }
             
-            return TokenType.Number(Float(tok)!)
+            return TokenType.Number(Double(tok)!)
         }
         
         return nil

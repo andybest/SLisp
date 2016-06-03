@@ -26,8 +26,8 @@
 
 import Foundation
 
-typealias ArithmeticOperationBody = (Float, Float) -> Float
-typealias ArithmeticBooleanOperationBody = (Float, Float) -> Bool
+typealias ArithmeticOperationBody = (Double, Double) -> Double
+typealias ArithmeticBooleanOperationBody = (Double, Double) -> Bool
 
 class MathBuiltins : Builtins {
     
@@ -38,7 +38,7 @@ class MathBuiltins : Builtins {
     
     // A generic function for arithmetic operations
     func doArithmeticOperation(args:Pair?, body:ArithmeticOperationBody) -> LispType {
-        var x: Float = 0.0
+        var x: Double = 0.0
         var firstArg = true
         var p: Pair? = checkArgs(args: args, env: env)
         
@@ -66,7 +66,7 @@ class MathBuiltins : Builtins {
     
     func doBooleanArithmeticOperation(args:Pair?, body:ArithmeticBooleanOperationBody) -> LispType {
         var result: Bool = false
-        var lastValue: Float = 0.0
+        var lastValue: Double = 0.0
         var firstArg = true
         var p: Pair? = checkArgs(args: args, env: env)
         
@@ -95,43 +95,43 @@ class MathBuiltins : Builtins {
     
     func initBuiltins() {
         addBuiltin(name: "+") { args in
-            return self.doArithmeticOperation(args: args) { (x: Float, y: Float) -> Float in
+            return self.doArithmeticOperation(args: args) { (x: Double, y: Double) -> Double in
                 return x + y
             }
         }
         
         addBuiltin(name: "-") { args in
-            return self.doArithmeticOperation(args: args) { (x: Float, y: Float) -> Float in
+            return self.doArithmeticOperation(args: args) { (x: Double, y: Double) -> Double in
                 return x - y
             }
         }
         
         addBuiltin(name: "*") { args in
-            return self.doArithmeticOperation(args: args) { (x: Float, y: Float) -> Float in
+            return self.doArithmeticOperation(args: args) { (x: Double, y: Double) -> Double in
                 return x * y
             }
         }
         
         addBuiltin(name: "/") { args in
-            return self.doArithmeticOperation(args: args) { (x: Float, y: Float) -> Float in
+            return self.doArithmeticOperation(args: args) { (x: Double, y: Double) -> Double in
                 return x / y
             }
         }
         
         addBuiltin(name: ">") { args in
-            return self.doBooleanArithmeticOperation(args: args) { (x: Float, y: Float) -> Bool in
+            return self.doBooleanArithmeticOperation(args: args) { (x: Double, y: Double) -> Bool in
                 return x > y
             }
         }
         
         addBuiltin(name: "<") { args in
-            return self.doBooleanArithmeticOperation(args: args) { (x: Float, y: Float) -> Bool in
+            return self.doBooleanArithmeticOperation(args: args) { (x: Double, y: Double) -> Bool in
                 return x < y
             }
         }
         
         addBuiltin(name: "==") { args in
-            return self.doBooleanArithmeticOperation(args: args) { (x: Float, y: Float) -> Bool in
+            return self.doBooleanArithmeticOperation(args: args) { (x: Double, y: Double) -> Bool in
                 return x == y
             }
         }
@@ -152,7 +152,7 @@ class MathBuiltins : Builtins {
             }
             
             let x = numberFromValue(val: argList[0])
-            return LispType.Number(sqrtf(x))
+            return LispType.Number(sqrt(x))
         }
     }
 }

@@ -14,4 +14,4 @@
         (fib b (+ a b) (- n 1))
         a)))
 
-(print (fib 1 1 10))
+(print (fib 1 1 1000))

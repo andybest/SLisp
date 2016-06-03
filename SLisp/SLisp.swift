@@ -83,7 +83,7 @@ enum LispType {
     case Nil
     case LPair(Pair)
     case LString(String)
-    case Number(Float)
+    case Number(Double)
     case Atom(String)
     case LFunction(LFunctionMetadata)
     case LBoolean(Bool)

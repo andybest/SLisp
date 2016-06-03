@@ -97,7 +97,7 @@ func pairFromValue(val: LispType) -> Pair? {
     }
 }
 
-func numberFromValue(val: LispType) -> Float {
+func numberFromValue(val: LispType) -> Double {
     switch val {
     case .Number(let num):
         return num
