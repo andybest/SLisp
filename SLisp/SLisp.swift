@@ -267,7 +267,7 @@ class Environment {
         }
 
         // Check the environment stack first, since these hold function arguments
-        for e in envStack {
+        for e in envStack.reversed() {
             if let v = e[name] {
                 return v
             }
@@ -290,7 +290,11 @@ class Environment {
         var args = [LispType]()
         
         while arg != nil {
-            args.append(arg!.value)
+            if(valueIsPair(val: arg!.value)) {
+                args.append(evaluate(p: pairFromValue(val: arg!.value)!))
+            } else {
+                args.append(arg!.value)
+            }
             arg = arg!.next
         }
         

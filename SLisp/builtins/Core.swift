@@ -166,13 +166,14 @@ class Core: Builtins {
             func evaluateOrReturnResult(val: LispType) -> LispType
             {
                 var rv: LispType
+                
                 switch val {
                     
                 case .Atom(let a):
                     if let r = self.env.getVariable(name: a) {
                         rv = r
                     } else {
-                        rv = condition
+                        rv = val
                     }
                     break
                     
@@ -181,7 +182,7 @@ class Core: Builtins {
                     break
                     
                 default:
-                    rv = condition
+                    rv = val
                 }
                 
                 return rv

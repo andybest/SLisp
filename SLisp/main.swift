@@ -28,9 +28,6 @@ import Foundation
 
 let environment = Environment()
 
-environment.evaluateString(str: "(cond (list? (list 1 2)) (print \"Is a list\") (print \"Is not a list\"))")
-environment.evaluateString(str: "(cond (list? 10) (print \"Is a list\") (print \"Is not a list\"))")
-
 do {
     let path = "./data/testInput1.sl"
     try environment.evaluateFile(path: path)

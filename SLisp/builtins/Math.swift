@@ -102,6 +102,7 @@ class MathBuiltins : Builtins {
         
         addBuiltin(name: "-") { args in
             return self.doArithmeticOperation(args: args) { (x: Float, y: Float) -> Float in
+                print("\(x) - \(y)")
                 return x - y
             }
         }
@@ -132,6 +133,7 @@ class MathBuiltins : Builtins {
         
         addBuiltin(name: "==") { args in
             return self.doBooleanArithmeticOperation(args: args) { (x: Float, y: Float) -> Bool in
+                print("\(x) == \(y)")
                 return x == y
             }
         }
