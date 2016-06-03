@@ -1,6 +1,9 @@
-(def recurse (function (count)
+(def powInt (function (val original count)
     (cond (== 0 count)
-    "Hooray!"
-    (recurse (- count 1)))))
+        val
+        (powInt (* val original) original (- count 1) ))))
 
-(print (recurse 5))
+(def pow (function (x p)
+    (powInt x x (- p 1))))
+
+(print (pow 2 4))

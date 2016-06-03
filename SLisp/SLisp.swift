@@ -293,7 +293,17 @@ class Environment {
             if(valueIsPair(val: arg!.value)) {
                 args.append(evaluate(p: pairFromValue(val: arg!.value)!))
             } else {
-                args.append(arg!.value)
+                if(valueIsAtom(val: arg!.value)){
+                    let a = stringFromValue(val: arg!.value)
+                    let v = getVariable(name: a!)
+                    if(v != nil) {
+                        args.append(v!)
+                    } else {
+                        args.append(arg!.value)
+                    }
+                } else {
+                    args.append(arg!.value)
+                }
             }
             arg = arg!.next
         }
