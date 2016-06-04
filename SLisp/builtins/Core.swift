@@ -325,8 +325,8 @@ class Core: Builtins {
                 return LispType.Nil
             }
             
-            if(args!.next == nil || !valueIsPair(val: args!.next!.value)) {
-                print("let requires the second argument to be a list")
+            if(args!.next == nil) {
+                print("let requires a body")
                 return LispType.Nil
             }
             
@@ -354,12 +354,13 @@ class Core: Builtins {
                     return LispType.Nil
                 }
                 
-                env[stringFromValue(val: key)!] = pairArgs[startIdx + 1]
+                // Add the values to the local environment after evaluating them
+                env[stringFromValue(val: key)!] = self.evaluateOrReturnResult(val: pairArgs[startIdx + 1])
             }
             
             self.env.pushEnvironment(environment: env)
             
-            let body: Pair? =  pairFromValue(val: args!.next!.value)!
+            let body: Pair? =  args!.next!
             var pair = body
             var rv = LispType.Nil
             

@@ -1,10 +1,12 @@
-(def powInt (function (val original count)
-    (cond (== 0 count)
-        val
-        (powInt (* val original) original (- count 1) ))))
 
 (def pow (function (x p)
-    (powInt x x (- p 1))))
+    (let (powInt (function (val original count)
+                    (cond (== 0 count)
+                        val
+                        (powInt (* val original) original (- count 1)))))
+        (powInt x x (- p 1)))))
+
+(print "2^4: " (pow 2 4))
 
 (def fib (function (a b n)
     (cond (> (- n 1) 0)
@@ -12,9 +14,9 @@
         a)))
 
 (def hello (function (x)
-    (let (test "Hello, world!") (
+    (let (test "Hello, world!")
         (print "test")
-        (print test)))))
+        (print test))))
 
 (hello x)
 
