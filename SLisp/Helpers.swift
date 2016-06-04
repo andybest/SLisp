@@ -26,6 +26,17 @@
 
 import Foundation
 
+func valueIsNil(val: LispType) -> Bool {
+    switch val {
+    case .Nil:
+        return true
+        
+    default:
+        return false
+    }
+}
+
+
 func valueIsString(val: LispType) -> Bool {
     switch val {
     case .LString(_):

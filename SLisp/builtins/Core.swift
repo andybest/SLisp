@@ -374,6 +374,21 @@ class Core: Builtins {
             return rv
         }
         
+        addBuiltin(name: "nil?") { args in
+            let argList = getArgList(args: args, env: self.env)
+            
+            if argList.count != 1 {
+                print("nil? requires one argument")
+                return LispType.Nil
+            }
+            
+            if valueIsNil(val: argList[0]) {
+                return LispType.LBoolean(true)
+            }
+            
+            return LispType.LBoolean(false)
+        }
+        
         return builtins
     }
 }
