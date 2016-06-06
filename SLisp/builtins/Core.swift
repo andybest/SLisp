@@ -434,6 +434,26 @@ class Core: Builtins {
             return LispType.LBoolean(false)
         }
         
+        /* Get input from stdin */
+        addBuiltin(name: "input") { args in
+            let argList = getArgList(args: args, env: self.env)
+            
+            if argList.count > 0 {
+                if valueIsString(val: argList[0]) {
+                    let prompt = stringFromValue(val: argList[0])
+                    print(prompt!, terminator: "")
+                } else {
+                    print("Input requires the first argument to be a string")
+                    return LispType.Nil
+                }
+            }
+            
+            let keyboard = NSFileHandle.standardInput()
+            let inputData = keyboard.availableData
+            let input = NSString(data: inputData, encoding: NSUTF8StringEncoding) as! String
+            return LispType.LString(input)
+        }
+        
         return builtins
     }
 }
