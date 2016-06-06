@@ -147,7 +147,7 @@ class Core: Builtins {
                 p = p!.next
             }
             
-            return = p!.value
+            return p!.value
         }
         
         addBuiltin(name: "function") { args in
