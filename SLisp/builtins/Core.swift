@@ -406,6 +406,19 @@ class Core: Builtins {
             return rv
         }
         
+        addBuiltin(name: "do") { args in
+            var pair = args
+            var rv = LispType.Nil
+            
+            // Evaluate all of the expressions in the body
+            while pair != nil {
+                rv = self.evaluateOrReturnResult(val: pair!.value)
+                pair = pair!.next
+            }
+            
+            return rv
+        }
+        
         addBuiltin(name: "nil?") { args in
             let argList = getArgList(args: args, env: self.env)
             
