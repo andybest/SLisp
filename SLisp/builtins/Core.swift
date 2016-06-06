@@ -97,9 +97,7 @@ class Core: Builtins {
                 return LispType.Nil
             }
             
-            let p = Pair()
-            p.value = pairFromValue(val: argList[0])!.value
-            return LispType.LPair(p)
+            return pairFromValue(val: argList[0])!.value
         }
 
         addBuiltin(name: "rest") { args in
@@ -149,9 +147,7 @@ class Core: Builtins {
                 p = p!.next
             }
             
-            let returnVal = Pair()
-            returnVal.value = p!.value
-            return LispType.LPair(returnVal)
+            return = p!.value
         }
         
         addBuiltin(name: "function") { args in

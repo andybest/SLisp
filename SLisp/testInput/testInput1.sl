@@ -1,31 +1,12 @@
-
-(def pow (function (x p)
-    (let (powInt (function (val original count)
-                    (cond (== 0 count)
-                        val
-                        (powInt (* val original) original (- count 1)))))
-        (powInt x x (- p 1)))))
-
-(print "2^4: " (pow 2 4))
-
-(def fib (function (a b n)
-    (cond (> (- n 1) 0)
-        (fib b (+ a b) (- n 1))
-        a)))
-
-(def hello (function (x)
-    (let (test "Hello, world!")
-        (print "test")
-        (print test))))
-
-(hello x)
-
-
 (def reduce (function (l f val)
     (cond (nil? l)
         val
-        (reduce (rest l) f (f val (first l))))))
+        (let (remaining (rest l)
+                head (first l))
+                (print "val: " val " head: " head " remaining: " remaining)
+                (print "f: " (f val head))
+            (reduce remaining f (f val head))))))
 
-(reduce (1 2 3) (function (a b)
-    (print "+" a b)
-        (+ a b)) 0)
+(print "reduce 1 2 3: " 
+    (reduce (list 1 2 3) (function (a b)
+            (+ a b)) 0))
