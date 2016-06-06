@@ -266,6 +266,10 @@ class Environment {
         if name == "false" {
             return LispType.LBoolean(false)
         }
+        
+        if name == "nil" {
+            return LispType.Nil
+        }
 
         // Check the environment stack first, since these hold function arguments
         for e in envStack.reversed() {

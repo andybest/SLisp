@@ -90,8 +90,33 @@ class Core: Builtins {
             if args != nil {
                 return LispType.LPair(args!)
             }
-
+            
+            let p = Pair()
+            p.value = LispType.Nil
             return LispType.Nil
+        }
+        
+        addBuiltin(name: "cons") { args in
+            let argList = getArgList(args: args, env: self.env)
+            
+            if argList.count < 2 {
+                print("cons requires 2 arguments")
+                return LispType.Nil
+            }
+            
+            if !valueIsPair(val: argList[1]) && !valueIsNil(val: argList[1]) {
+                print("cons requires the second argument to be a list or nil")
+                return LispType.Nil
+            }
+            
+            let p = Pair()
+            p.value = argList[0]
+            
+            if !valueIsNil(val: argList[1]) {
+                p.next = pairFromValue(val: argList[1])
+            }
+            
+            return LispType.LPair(p)
         }
         
         addBuiltin(name: "first") { args in
