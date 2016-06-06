@@ -62,6 +62,10 @@ class Pair : CustomStringConvertible {
         case .LBoolean(let b):
             val = "\(b)"
             break
+            
+        default:
+            val = ""
+            break
         }
         
         var nextVal = ")"
@@ -79,6 +83,11 @@ struct LFunctionMetadata {
     var body: Pair
 }
 
+struct LFunctionInvocation {
+    var arguments: Pair?
+    var metadata: LFunctionMetadata
+}
+
 enum LispType {
     case Nil
     case LPair(Pair)
@@ -87,6 +96,7 @@ enum LispType {
     case Atom(String)
     case LFunction(LFunctionMetadata)
     case LBoolean(Bool)
+    case LInvocation(LFunctionInvocation)
 }
 
 enum EnvironmentErrors : ErrorProtocol {
@@ -96,6 +106,7 @@ enum EnvironmentErrors : ErrorProtocol {
 class Environment {
     var env: Dictionary<String, LispType> = [:]
     var envStack: [Dictionary<String, LispType>] = []
+    var evalLevel = 0
     
     var builtins = [String:BuiltinBody]()
     
@@ -228,30 +239,70 @@ class Environment {
         }
     }
     
-    func evaluate(p: Pair) -> LispType {
+    func getFunctionCall(p: Pair) -> LFunctionInvocation? {
         switch p.value {
         case .Atom(let a):
             // Check if atom exists in builtins
             
-            if let builtin = self.builtins[a] {
-                return builtin(p.next)
-            } else if let variable = getVariable(name: a) {
+            if let variable = getVariable(name: a) {
                 switch variable {
                 case .LFunction(let f):
-                    return callFunction(function: f, arguments:p.next)
-                    
+                    let invocation = LFunctionInvocation(arguments: p.next, metadata: f)
+                    return invocation
                 default:
-                    return variable
+                    return nil
                 }
             }
-            
-            return p.value
+            return nil
             
         default:
-            break
+            return nil
+        }
+    }
+    
+    func evaluate(p: Pair) -> LispType {
+        self.evalLevel += 1
+        //print("Eval level: \(self.evalLevel)")
+        
+        var val = p.value
+        var finished = false
+        
+        while !finished {
+            finished = true
+            
+            switch val {
+            case .LInvocation(let i):
+                val = callFunction(function: i.metadata, arguments: i.arguments)
+                break
+                
+            case .Atom(let a):
+                // Check if atom exists in builtins
+                
+                if let builtin = self.builtins[a] {
+                    val = builtin(p.next)
+                } else if let variable = getVariable(name: a) {
+                    switch variable {
+                    case .LFunction(let f):
+                        val = callFunction(function: f, arguments:p.next)
+                        
+                    default:
+                        val = variable
+                    }
+                } else {
+                    val = p.value
+                }
+            default:
+                val = p.value
+                break
+            }
+            
+            if valueIsInvocation(val: val) {
+                finished = false
+            }
         }
         
-        return p.value
+        self.evalLevel -= 1
+        return val
     }
     
     func addVariable(name: String, value: LispType) {
@@ -334,7 +385,12 @@ class Environment {
         if let body = pairFromValue(val: function.body.value) {
             let bodyCopy = copyList(p: body)
             
-            result = evaluate(p: bodyCopy)
+            if let invocation = getFunctionCall(p: bodyCopy) {
+                result = LispType.LInvocation(invocation)
+            } else {
+                result = evaluate(p: bodyCopy)
+            }
+            
         } else {
             print("Error, function body was not a list.")
         }

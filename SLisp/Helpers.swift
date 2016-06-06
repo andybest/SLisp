@@ -36,6 +36,16 @@ func valueIsNil(val: LispType) -> Bool {
     }
 }
 
+func valueIsInvocation(val: LispType) -> Bool {
+    switch val {
+    case .LInvocation(_):
+        return true
+        
+    default:
+        return false
+    }
+}
+
 
 func valueIsString(val: LispType) -> Bool {
     switch val {
@@ -141,6 +151,16 @@ func stringFromValue(val: LispType) -> String? {
     }
 }
 
+func invocationFromValue(val: LispType) -> LFunctionInvocation? {
+    switch val {
+    case .LInvocation(let i):
+        return i
+        
+    default:
+        return nil
+    }
+}
+
 func lispTypeToString(lt:LispType, env:Environment) -> String {
     switch lt {
     case .Number(let num):
@@ -163,6 +183,9 @@ func lispTypeToString(lt:LispType, env:Environment) -> String {
 
     case .LBoolean(let b):
         return "\(b)"
+        
+    default:
+        return ""
     }
 }
 
@@ -188,6 +211,9 @@ func copyType(type: LispType) -> LispType {
         
     case .LBoolean(let b):
         return LispType.LBoolean(b)
+        
+    case .LInvocation(let i):
+        return LispType.LInvocation(i)
     }
 
 }

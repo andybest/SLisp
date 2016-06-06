@@ -68,6 +68,35 @@ class Core: Builtins {
         return rv
     }
     
+    func evaluateOrReturnResultTail(val: LispType) -> LispType
+    {
+        var rv: LispType
+        
+        switch val {
+            
+        case .Atom(let a):
+            if let r = self.env.getVariable(name: a) {
+                rv = r
+            } else {
+                rv = val
+            }
+            break
+            
+        case .LPair(let p):
+            if let inv = self.env.getFunctionCall(p: p) {
+                rv = LispType.LInvocation(inv)
+            } else {
+                rv = self.env.evaluate(p: p)
+            }
+            break
+            
+        default:
+            rv = val
+        }
+        
+        return rv
+    }
+    
     func initBuiltins() -> [String: BuiltinBody] {
         addBuiltin(name: "def") { args in
             if args != nil && valueIsAtom(val: args!.value) {
@@ -248,9 +277,9 @@ class Core: Builtins {
             }
             
             if booleanFromValue(val: result) {
-                return self.evaluateOrReturnResult(val: truePath!.value)
+                return self.evaluateOrReturnResultTail(val: truePath!.value)
             } else {
-                return self.evaluateOrReturnResult(val: falsePath!.value)
+                return self.evaluateOrReturnResultTail(val: falsePath!.value)
             }
         }
         
@@ -397,7 +426,11 @@ class Core: Builtins {
             
             // Evaluate all of the expressions in the body
             while pair != nil {
-                rv = self.evaluateOrReturnResult(val: pair!.value)
+                if pair!.next == nil {
+                    rv = self.evaluateOrReturnResultTail(val: pair!.value)
+                } else {
+                    rv = self.evaluateOrReturnResult(val: pair!.value)
+                }
                 pair = pair!.next
             }
             
@@ -412,7 +445,11 @@ class Core: Builtins {
             
             // Evaluate all of the expressions in the body
             while pair != nil {
-                rv = self.evaluateOrReturnResult(val: pair!.value)
+                if pair!.next == nil {
+                    rv = self.evaluateOrReturnResultTail(val: pair!.value)
+                } else {
+                    rv = self.evaluateOrReturnResult(val: pair!.value)
+                }
                 pair = pair!.next
             }
             
