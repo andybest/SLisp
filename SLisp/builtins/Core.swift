@@ -33,6 +33,16 @@ class Core: Builtins {
         let _ = initBuiltins()
     }
     
+    func loadImplementation() {
+        // Load core library implemented in SLisp
+        do {
+            let path = "./data/core.sl"
+            try env.evaluateFile(path: path)
+        } catch {
+            print("Core library implementation not found!")
+        }
+    }
+    
     func evaluateOrReturnResult(val: LispType) -> LispType
     {
         var rv: LispType

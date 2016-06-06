@@ -41,10 +41,19 @@ extension Dictionary {
 func getBuiltins(env: Environment) -> [String: BuiltinBody] {
     var builtins = [String: BuiltinBody]()
     
-    builtins.merge(dict: Core(env: env).getBuiltins())
-    builtins.merge(dict: MathBuiltins(env: env).getBuiltins())
+    let core = Core(env: env)
+    let math = MathBuiltins(env: env)
+    
+    builtins.merge(dict: core.getBuiltins())
+    builtins.merge(dict: math.getBuiltins())
     
     return builtins
+}
+
+/* Load library implementations that are implemented in SLisp */
+func loadSLispImplemetations(env: Environment) {
+    let core = Core(env: env)
+    core.loadImplementation()
 }
 
 class Builtins {

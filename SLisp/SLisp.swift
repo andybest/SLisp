@@ -101,6 +101,7 @@ class Environment {
     
     init() {
         builtins = getBuiltins(env: self)
+        loadSLispImplemetations(env: self)
     }
 
     func evaluateFile(path:String) throws {
