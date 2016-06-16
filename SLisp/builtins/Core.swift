@@ -193,15 +193,16 @@ class Core: Builtins {
                     var arg:Pair? = pairFromValue(args!.value)
                     
                     var arguments = [String]()
-                    
-                    while arg != nil {
-                        if valueIsAtom(arg!.value) {
-                            arguments.append(stringFromValue(arg!.value)!)
-                        } else {
-                            return LispType.nil
+                    if !valueIsNil(arg!.value) {
+                        while arg != nil {
+                            if valueIsAtom(arg!.value) {
+                                arguments.append(stringFromValue(arg!.value)!)
+                            } else {
+                                return LispType.nil
+                            }
+                            
+                            arg = arg!.next
                         }
-                        
-                        arg = arg!.next
                     }
                     
                     // Extract function body
