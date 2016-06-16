@@ -49,6 +49,7 @@
 		A5989AF11C17119A00B91B38 /* SLisp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SLisp; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5989AF41C17119B00B91B38 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		A5989B211C1715A000B91B38 /* Lexer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Lexer.swift; sourceTree = "<group>"; };
+		A5B6D1FF1D13242F00D59C94 /* rock-paper-scissors.sl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "rock-paper-scissors.sl"; sourceTree = "<group>"; };
 		A5C033FD1C860B3B000853EC /* Helpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
 		A5C034001C860D24000853EC /* Builtins.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Builtins.swift; sourceTree = "<group>"; };
 		A5C034021C860D33000853EC /* Core.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Core.swift; sourceTree = "<group>"; };
@@ -140,6 +141,7 @@
 			isa = PBXGroup;
 			children = (
 				C8BB42081A7DEFC3B4A14583 /* testInput1.sl */,
+				A5B6D1FF1D13242F00D59C94 /* rock-paper-scissors.sl */,
 			);
 			path = testInput;
 			sourceTree = "<group>";
