@@ -58,7 +58,7 @@ class Core: Builtins {
             break
             
         case .lPair(let p):
-            rv = self.env.evaluate(p)
+            rv = self.env.evaluate(copyList(p))
             break
             
         default:
@@ -250,6 +250,34 @@ class Core: Builtins {
             } else {
                 return self.evaluateOrReturnResult(falsePath!.value)
             }
+        }
+        
+        addBuiltin("while") { args in
+            var body:Pair?
+            body = args!.next
+            
+            if body == nil {
+                print("while requires a body.")
+                return LispType.nil
+            }
+            
+            let condition = args!.value
+            
+            let getResult: ()->Bool = {
+                let result = self.evaluateOrReturnResult(condition)
+                if !valueIsBoolean(result) {
+                    print("while requires the first argument to be a boolean.")
+                    return false
+                }
+                return booleanFromValue(result)
+            }
+            
+            var rv = LispType.nil
+            while(getResult()) {
+                rv = self.evaluateOrReturnResult(body!.value)
+            }
+            
+            return rv
         }
         
         addBuiltin("print") { args in

@@ -30,4 +30,11 @@
                             (print "You win")
                             (print "The computer won"))))))))
 
+(def count 10)
+
+(while (> count 0)
+    (do
+        (print "Hello, world! " count)
+        (def count (- count 1))))
+
 (rock-paper-scissors 0)
