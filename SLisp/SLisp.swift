@@ -258,6 +258,14 @@ class Environment {
         env[name] = value
     }
     
+    func addLocalVariable(_ name: String, value: LispType) {
+        if(envStack.count > 0) {
+            self.envStack[self.envStack.count - 1][name] = value
+        } else {
+            self.addVariable(name, value: value)
+        }
+    }
+    
     func getVariable(_ name: String) -> LispType? {
         if name == "true" {
             return LispType.lBoolean(true)

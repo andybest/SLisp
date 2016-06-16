@@ -28,6 +28,8 @@ import Foundation
 
 typealias ArithmeticOperationBody = (Double, Double) -> Double
 typealias ArithmeticBooleanOperationBody = (Double, Double) -> Bool
+typealias BooleanOperationBody = (Bool, Bool) -> Bool
+typealias SingleBooleanOperationBody = (Bool) -> Bool
 
 class MathBuiltins : Builtins {
     
@@ -93,6 +95,56 @@ class MathBuiltins : Builtins {
         return LispType.lBoolean(result)
     }
     
+    func doBooleanOperation(_ args:Pair?, body:BooleanOperationBody) -> LispType {
+        var result: Bool = false
+        var lastValue: Bool = false
+        var firstArg = true
+        var p: Pair? = checkArgs(args, env: env)
+        
+        while p != nil {
+            switch p!.value {
+            case .lBoolean(let b):
+                if firstArg {
+                    lastValue = b
+                    firstArg = false
+                } else {
+                    result = body(lastValue, b)
+                    lastValue = b
+                }
+                break
+                
+            default:
+                print("Invalid argument: \(p!.value)")
+                return LispType.nil
+            }
+            
+            p = p?.next
+        }
+        
+        return LispType.lBoolean(result)
+    }
+    
+    func doSingleBooleanOperation(_ args:Pair?, body:SingleBooleanOperationBody) -> LispType {
+        var result: Bool = false
+        var p: Pair? = checkArgs(args, env: env)
+        
+        if p != nil {
+            switch p!.value {
+            case .lBoolean(let b):
+                result = body(b)
+                break
+                
+            default:
+                print("Invalid argument: \(p!.value)")
+                return LispType.nil
+            }
+            
+            p = p?.next
+        }
+        
+        return LispType.lBoolean(result)
+    }
+    
     func initBuiltins() {
         addBuiltin("+") { args in
             return self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
@@ -133,6 +185,24 @@ class MathBuiltins : Builtins {
         addBuiltin("==") { args in
             return self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
                 return x == y
+            }
+        }
+        
+        addBuiltin("and") { args in
+            return self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
+                return x && y
+            }
+        }
+        
+        addBuiltin("or") { args in
+            return self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
+                return x || y
+            }
+        }
+        
+        addBuiltin("not") { args in
+            return self.doSingleBooleanOperation(args) { (x: Bool) -> Bool in
+                return !x
             }
         }
         

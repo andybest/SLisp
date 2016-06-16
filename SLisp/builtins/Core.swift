@@ -262,7 +262,7 @@ class Core: Builtins {
                 p = p!.next
             }
             
-            print(output.joined(separator: " "))
+            print(output.joined(separator: ""))
             
             return LispType.nil
         }
@@ -373,7 +373,7 @@ class Core: Builtins {
             }
             
             // Iterate through the pairs and put them into a dictionary, so they can be added to the environment stack
-            var env = [String: LispType]()
+            self.env.pushEnvironment([String: LispType]())
             
             for startIdx in stride(from:0, to: pairArgs.count, by: 2) {
                 let key = pairArgs[startIdx]
@@ -384,10 +384,8 @@ class Core: Builtins {
                 }
                 
                 // Add the values to the local environment after evaluating them
-                env[stringFromValue(key)!] = self.evaluateOrReturnResult(pairArgs[startIdx + 1])
+                self.env.addLocalVariable(stringFromValue(key)!, value: self.evaluateOrReturnResult(pairArgs[startIdx + 1]))
             }
-            
-            self.env.pushEnvironment(env)
             
             let body: Pair? =  args!.next!
             var pair = body
@@ -448,8 +446,38 @@ class Core: Builtins {
             
             let keyboard = FileHandle.standardInput()
             let inputData = keyboard.availableData
-            let input = NSString(data: inputData, encoding: String.Encoding.utf8.rawValue) as! String
-            return LispType.lString(input)
+            let input = NSString(data: inputData, encoding: String.Encoding.utf8.rawValue)!
+                .trimmingCharacters(in: CharacterSet.newlines)
+            return LispType.lString(input as String)
+        }
+        
+        addBuiltin("string=") { args in
+            var result: Bool = false
+            var lastValue: String = ""
+            var firstArg = true
+            var p: Pair? = checkArgs(args, env: self.env)
+            
+            while p != nil {
+                switch p!.value {
+                case .lString(let s):
+                    if firstArg {
+                        lastValue = s
+                        firstArg = false
+                    } else {
+                        result = s == lastValue
+                        lastValue = s
+                    }
+                    break
+                    
+                default:
+                    print("Invalid argument: \(p!.value)")
+                    return LispType.nil
+                }
+                
+                p = p?.next
+            }
+            
+            return LispType.lBoolean(result)
         }
         
         return builtins

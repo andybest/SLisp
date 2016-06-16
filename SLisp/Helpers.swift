@@ -189,7 +189,6 @@ func copyType(_ type: LispType) -> LispType {
     case .lBoolean(let b):
         return LispType.lBoolean(b)
     }
-
 }
 
 func copyList(_ p:Pair) -> Pair {
