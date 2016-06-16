@@ -14,7 +14,7 @@
 
 (def rock-paper-scissors (function (q)
     (let (choice (input "(R)ock, (P)aper or (S)cissors?")
-          computer-choice (floor (random 0 3))
+          computer-choice (floor (random 0 2))
           player-choice (cond (or (string= choice "R") (string= choice "r")) 0
                             (cond (or (string= choice "P") (string= choice "p")) 1
                                 (cond (or (string= choice "S") (string= choice "s")) 2
@@ -30,11 +30,5 @@
                             (print "You win")
                             (print "The computer won"))))))))
 
-(def count 10)
-
-(while (> count 0)
-    (do
-        (print "Hello, world! " count)
-        (def count (- count 1))))
-
-(rock-paper-scissors 0)
+(while true
+    (rock-paper-scissors 0))

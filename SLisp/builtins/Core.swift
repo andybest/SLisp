@@ -532,14 +532,14 @@ class Core: Builtins {
             
             var p: Pair? = list
             
-            while count < index {
-                if p == nil {
-                    print("Index '\(index)' is out of range")
-                    return LispType.nil
-                }
-                
+            while count < index && p != nil {
                 count += 1
                 p = p!.next
+            }
+            
+            if p == nil {
+                print("Index '\(index)' is out of range")
+                return LispType.nil
             }
             
             return p!.value
