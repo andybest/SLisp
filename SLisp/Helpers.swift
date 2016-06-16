@@ -26,9 +26,9 @@
 
 import Foundation
 
-func valueIsNil(val: LispType) -> Bool {
+func valueIsNil(_ val: LispType) -> Bool {
     switch val {
-    case .Nil:
+    case .nil:
         return true
         
     default:
@@ -37,9 +37,9 @@ func valueIsNil(val: LispType) -> Bool {
 }
 
 
-func valueIsString(val: LispType) -> Bool {
+func valueIsString(_ val: LispType) -> Bool {
     switch val {
-    case .LString(_):
+    case .lString(_):
         return true
         
     default:
@@ -47,9 +47,9 @@ func valueIsString(val: LispType) -> Bool {
     }
 }
 
-func valueIsAtom(val: LispType) -> Bool {
+func valueIsAtom(_ val: LispType) -> Bool {
     switch val {
-    case .Atom(_):
+    case .atom(_):
         return true
         
     default:
@@ -57,9 +57,9 @@ func valueIsAtom(val: LispType) -> Bool {
     }
 }
 
-func valueIsPair(val: LispType) -> Bool {
+func valueIsPair(_ val: LispType) -> Bool {
     switch val {
-    case .LPair(_):
+    case .lPair(_):
         return true
         
     default:
@@ -67,9 +67,9 @@ func valueIsPair(val: LispType) -> Bool {
     }
 }
 
-func valueIsNumber(val: LispType) -> Bool {
+func valueIsNumber(_ val: LispType) -> Bool {
     switch val {
-    case .Number(_):
+    case .number(_):
         return true
         
     default:
@@ -77,9 +77,9 @@ func valueIsNumber(val: LispType) -> Bool {
     }
 }
 
-func valueIsFunction(val: LispType) -> Bool {
+func valueIsFunction(_ val: LispType) -> Bool {
     switch val {
-    case .LFunction(_):
+    case .lFunction(_):
         return true
 
     default:
@@ -87,9 +87,9 @@ func valueIsFunction(val: LispType) -> Bool {
     }
 }
 
-func valueIsBoolean(val: LispType) -> Bool {
+func valueIsBoolean(_ val: LispType) -> Bool {
     switch val {
-    case .LBoolean(_):
+    case .lBoolean(_):
         return true
         
     default:
@@ -98,9 +98,9 @@ func valueIsBoolean(val: LispType) -> Bool {
 }
 
 
-func pairFromValue(val: LispType) -> Pair? {
+func pairFromValue(_ val: LispType) -> Pair? {
     switch val {
-    case .LPair(let p):
+    case .lPair(let p):
         return p
         
     default:
@@ -108,9 +108,9 @@ func pairFromValue(val: LispType) -> Pair? {
     }
 }
 
-func numberFromValue(val: LispType) -> Double {
+func numberFromValue(_ val: LispType) -> Double {
     switch val {
-    case .Number(let num):
+    case .number(let num):
         return num
         
     default:
@@ -118,9 +118,9 @@ func numberFromValue(val: LispType) -> Double {
     }
 }
 
-func booleanFromValue(val: LispType) -> Bool {
+func booleanFromValue(_ val: LispType) -> Bool {
     switch val {
-    case .LBoolean(let b):
+    case .lBoolean(let b):
         return b
         
     default:
@@ -128,12 +128,12 @@ func booleanFromValue(val: LispType) -> Bool {
     }
 }
 
-func stringFromValue(val: LispType) -> String? {
+func stringFromValue(_ val: LispType) -> String? {
     switch val {
-    case .LString(let str):
+    case .lString(let str):
         return str
         
-    case .Atom(let atom):
+    case .atom(let atom):
         return atom
         
     default:
@@ -141,58 +141,58 @@ func stringFromValue(val: LispType) -> String? {
     }
 }
 
-func lispTypeToString(lt:LispType, env:Environment) -> String {
+func lispTypeToString(_ lt:LispType, env:Environment) -> String {
     switch lt {
-    case .Number(let num):
+    case .number(let num):
         return "\(num)"
 
-    case .Atom(let atom):
+    case .atom(let atom):
         return "\(atom)"
 
-    case .LString(let str):
+    case .lString(let str):
         return str
 
-    case .Nil:
+    case .nil:
         return "Nil"
 
-    case .LPair(let argPair):
+    case .lPair(let argPair):
         return "( \(argPair)"
 
-    case .LFunction(let metadata):
+    case .lFunction(let metadata):
         return "FUNCTION:\(metadata.argNames)"
 
-    case .LBoolean(let b):
+    case .lBoolean(let b):
         return "\(b)"
     }
 }
 
-func copyType(type: LispType) -> LispType {
+func copyType(_ type: LispType) -> LispType {
     switch type {
-    case .Number(let num):
-        return LispType.Number(num)
+    case .number(let num):
+        return LispType.number(num)
         
-    case .Atom(let atom):
-        return LispType.Atom(atom)
+    case .atom(let atom):
+        return LispType.atom(atom)
         
-    case .LString(let str):
-        return LispType.LString(str)
+    case .lString(let str):
+        return LispType.lString(str)
         
-    case .Nil:
-        return LispType.Nil
+    case .nil:
+        return LispType.nil
         
-    case .LPair(let argPair):
-        return LispType.LPair(copyList(p: argPair))
+    case .lPair(let argPair):
+        return LispType.lPair(copyList(argPair))
         
-    case .LFunction(let metadata):
-        return LispType.LFunction(metadata)
+    case .lFunction(let metadata):
+        return LispType.lFunction(metadata)
         
-    case .LBoolean(let b):
-        return LispType.LBoolean(b)
+    case .lBoolean(let b):
+        return LispType.lBoolean(b)
     }
 
 }
 
-func copyList(p:Pair) -> Pair {
+func copyList(_ p:Pair) -> Pair {
     var currentPair: Pair? = p;
     var newPairRoot: Pair?
     var newPairTail: Pair?
@@ -200,11 +200,11 @@ func copyList(p:Pair) -> Pair {
     while currentPair != nil {
         if(newPairRoot == nil) {
             newPairRoot = Pair()
-            newPairRoot!.value = copyType(type: currentPair!.value)
+            newPairRoot!.value = copyType(currentPair!.value)
             newPairTail = newPairRoot
         } else {
             let newPair = Pair()
-            newPair.value = copyType(type: currentPair!.value)
+            newPair.value = copyType(currentPair!.value)
             newPairTail!.next = newPair
             newPairTail = newPair
         }

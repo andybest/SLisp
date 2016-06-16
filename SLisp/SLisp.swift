@@ -28,38 +28,38 @@ import Foundation
 
 
 class Pair : CustomStringConvertible {
-    var value: LispType = LispType.Nil
+    var value: LispType = LispType.nil
     var next: Pair? = nil
     
     var description : String {
         var val = ""
         
         switch value {
-        case .Nil:
+        case .nil:
             val = "NIL"
             break
             
-        case .Atom(let a):
+        case .atom(let a):
             val = "\(a)"
             break
             
-        case .Number(let n):
+        case .number(let n):
             val = "\(n)"
             break
             
-        case .LString(let s):
+        case .lString(let s):
             val = "\"\(s)\""
             break
             
-        case .LPair(let p):
+        case .lPair(let p):
             val = "( \(p)"
             break
         
-        case .LFunction(let metadata):
+        case .lFunction(let metadata):
             val = "Function:\(metadata.argNames)"
             break
 
-        case .LBoolean(let b):
+        case .lBoolean(let b):
             val = "\(b)"
             break
         }
@@ -80,17 +80,17 @@ struct LFunctionMetadata {
 }
 
 enum LispType {
-    case Nil
-    case LPair(Pair)
-    case LString(String)
-    case Number(Double)
-    case Atom(String)
-    case LFunction(LFunctionMetadata)
-    case LBoolean(Bool)
+    case `nil`
+    case lPair(Pair)
+    case lString(String)
+    case number(Double)
+    case atom(String)
+    case lFunction(LFunctionMetadata)
+    case lBoolean(Bool)
 }
 
 enum EnvironmentErrors : ErrorProtocol {
-    case FileNotFoundError(String)
+    case fileNotFoundError(String)
 }
 
 class Environment {
@@ -100,40 +100,40 @@ class Environment {
     var builtins = [String:BuiltinBody]()
     
     init() {
-        builtins = getBuiltins(env: self)
-        loadSLispImplemetations(env: self)
+        builtins = getBuiltins(self)
+        loadSLispImplemetations(self)
     }
 
-    func evaluateFile(path:String) throws {
+    func evaluateFile(_ path:String) throws {
         do {
-            let fileContents = try NSString(contentsOfFile: path, encoding: NSUTF8StringEncoding)
-            let tokens = getTokens(source: fileContents as String)
-            parseTokenList(tokens: tokens)
+            let fileContents = try NSString(contentsOfFile: path, encoding: String.Encoding.utf8.rawValue)
+            let tokens = getTokens(fileContents as String)
+            parseTokenList(tokens)
         } catch {
-            throw EnvironmentErrors.FileNotFoundError(path)
+            throw EnvironmentErrors.fileNotFoundError(path)
         }
     }
 
-    func evaluateString(str:String) {
-        let tokens = getTokens(source: str)
-        parseTokenList(tokens: tokens)
+    func evaluateString(_ str:String) {
+        let tokens = getTokens(str)
+        parseTokenList(tokens)
     }
 
-    func getTokens(source:String) -> [TokenType] {
+    func getTokens(_ source:String) -> [TokenType] {
         let tokenizer = Tokenizer(source: source)
         let tokens = tokenizer.tokenizeInput()
         return tokens
     }
 
-    func parseTokenList(tokens:[TokenType]) {
-        let rootPairs = self.parseTokens(tokens: tokens)
+    func parseTokenList(_ tokens:[TokenType]) {
+        let rootPairs = self.parseTokens(tokens)
 
         for p in rootPairs {
-            let _ = self.evaluate(p: p)
+            let _ = self.evaluate(p)
         }
     }
     
-    func parseTokens(tokens: [TokenType]) -> [Pair] {
+    func parseTokens(_ tokens: [TokenType]) -> [Pair] {
         var output = [Pair]()
         
         var rootPair: Pair? = nil
@@ -144,21 +144,21 @@ class Environment {
         for token in tokens {
             switch token {
                 
-            case .LParen:
+            case .lParen:
                 if rootPair == nil {
                     rootPair = Pair()
                     currentTail = rootPair
                 } else {
-                    currentTail = appendIfNotNil(p: currentTail!)
+                    currentTail = appendIfNotNil(currentTail!)
                     
                     let p = Pair()
-                    currentTail!.value = LispType.LPair(p)
+                    currentTail!.value = LispType.lPair(p)
                     pairStack.append(currentTail!)
                     currentTail = p
                 }
                 break
                 
-            case .RParen:
+            case .rParen:
                 if pairStack.count == 0 {
                     output.append(rootPair!)
                     rootPair = nil
@@ -168,36 +168,36 @@ class Environment {
                 }
                 break
                 
-            case .Atom(let atomString):
-                currentTail = appendIfNotNil(p: currentTail!)
+            case .atom(let atomString):
+                currentTail = appendIfNotNil(currentTail!)
                 
                 if currentTail == nil {
                     print("Fatal parsing error, tried to insert atom outside of list")
                     return []
                 } else {
-                    currentTail!.value = LispType.Atom(atomString)
+                    currentTail!.value = LispType.atom(atomString)
                 }
                 break
                 
-            case .Number(let num):
-                currentTail = appendIfNotNil(p: currentTail!)
+            case .number(let num):
+                currentTail = appendIfNotNil(currentTail!)
                 
                 if currentTail == nil {
                     print("Fatal parsing error, tried to insert number outside of list")
                     return []
                 } else {
-                    currentTail!.value = LispType.Number(num)
+                    currentTail!.value = LispType.number(num)
                 }
                 break
                 
-            case .LString(let str):
-                currentTail = appendIfNotNil(p: currentTail!)
+            case .lString(let str):
+                currentTail = appendIfNotNil(currentTail!)
                 
                 if currentTail == nil {
                     print("Fatal parsing error, tried to insert string outside of list")
                     return []
                 } else {
-                    currentTail!.value = LispType.LString(str)
+                    currentTail!.value = LispType.lString(str)
                 }
                 break
             }
@@ -207,38 +207,38 @@ class Environment {
         return output
     }
     
-    func appendIfNotNil(p: Pair) -> Pair {
-        if pairIsNil(p: p) {
+    func appendIfNotNil(_ p: Pair) -> Pair {
+        if pairIsNil(p) {
             return p
         }
         
-        return appendPair(p: p)
+        return appendPair(p)
     }
     
-    func appendPair(p: Pair) -> Pair {
+    func appendPair(_ p: Pair) -> Pair {
         let newPair = Pair()
         p.next = newPair
         return newPair
     }
     
-    func pairIsNil(p: Pair) -> Bool {
+    func pairIsNil(_ p: Pair) -> Bool {
         switch(p.value) {
-        case .Nil: return true
+        case .nil: return true
         default: return false
         }
     }
     
-    func evaluate(p: Pair) -> LispType {
+    func evaluate(_ p: Pair) -> LispType {
         switch p.value {
-        case .Atom(let a):
+        case .atom(let a):
             // Check if atom exists in builtins
             
             if let builtin = self.builtins[a] {
                 return builtin(p.next)
-            } else if let variable = getVariable(name: a) {
+            } else if let variable = getVariable(a) {
                 switch variable {
-                case .LFunction(let f):
-                    return callFunction(function: f, arguments:p.next)
+                case .lFunction(let f):
+                    return callFunction(f, arguments:p.next)
                     
                 default:
                     return variable
@@ -254,21 +254,21 @@ class Environment {
         return p.value
     }
     
-    func addVariable(name: String, value: LispType) {
+    func addVariable(_ name: String, value: LispType) {
         env[name] = value
     }
     
-    func getVariable(name: String) -> LispType? {
+    func getVariable(_ name: String) -> LispType? {
         if name == "true" {
-            return LispType.LBoolean(true)
+            return LispType.lBoolean(true)
         }
 
         if name == "false" {
-            return LispType.LBoolean(false)
+            return LispType.lBoolean(false)
         }
         
         if name == "nil" {
-            return LispType.Nil
+            return LispType.nil
         }
 
         // Check the environment stack first, since these hold function arguments
@@ -281,7 +281,7 @@ class Environment {
         return env[name]
     }
     
-    func pushEnvironment(environment:Dictionary<String, LispType>){
+    func pushEnvironment(_ environment:Dictionary<String, LispType>){
         envStack.append(environment)
     }
     
@@ -289,18 +289,18 @@ class Environment {
         let _ = envStack.popLast()
     }
     
-    func callFunction(function:LFunctionMetadata, arguments:Pair?) -> LispType {
+    func callFunction(_ function:LFunctionMetadata, arguments:Pair?) -> LispType {
         var arg = arguments
         
         var args = [LispType]()
         
         while arg != nil {
-            if(valueIsPair(val: arg!.value)) {
-                args.append(evaluate(p: pairFromValue(val: arg!.value)!))
+            if(valueIsPair(arg!.value)) {
+                args.append(evaluate(pairFromValue(arg!.value)!))
             } else {
-                if(valueIsAtom(val: arg!.value)){
-                    let a = stringFromValue(val: arg!.value)
-                    let v = getVariable(name: a!)
+                if(valueIsAtom(arg!.value)){
+                    let a = stringFromValue(arg!.value)
+                    let v = getVariable(a!)
                     if(v != nil) {
                         args.append(v!)
                     } else {
@@ -316,7 +316,7 @@ class Environment {
         // Check that the correct number of parameters has been passed
         if args.count != function.argNames.count {
             print("Mismatching number of arguments to function- expected \(function.argNames.count), got \(args.count).")
-            return LispType.Nil
+            return LispType.nil
         }
         
         var newEnv: [String: LispType] = [:]
@@ -326,15 +326,15 @@ class Environment {
             newEnv[argname] = args[index]
         }
 
-        pushEnvironment(environment: newEnv)
+        pushEnvironment(newEnv)
        
-        var result = LispType.Nil
+        var result = LispType.nil
         
         // A function body should be a list.
-        if let body = pairFromValue(val: function.body.value) {
-            let bodyCopy = copyList(p: body)
+        if let body = pairFromValue(function.body.value) {
+            let bodyCopy = copyList(body)
             
-            result = evaluate(p: bodyCopy)
+            result = evaluate(bodyCopy)
         } else {
             print("Error, function body was not a list.")
         }

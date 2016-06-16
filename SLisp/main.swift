@@ -30,7 +30,7 @@ let environment = Environment()
 
 do {
     let path = "./data/testInput1.sl"
-    try environment.evaluateFile(path: path)
+    try environment.evaluateFile(path)
 } catch {
     print("File not found")
 }

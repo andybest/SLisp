@@ -29,7 +29,7 @@ import Foundation
 typealias BuiltinBody = (Pair?) -> LispType
 
 extension Dictionary {
-    mutating func merge(dict: Dictionary<Key,Value>) {
+    mutating func merge(_ dict: Dictionary<Key,Value>) {
         for (key, value) in dict {
             // If both dictionaries have a value for same key, the value of the other dictionary is used.
            self[key] = value
@@ -38,20 +38,20 @@ extension Dictionary {
 }
 
 /* Global function to get all standard built-in functions */
-func getBuiltins(env: Environment) -> [String: BuiltinBody] {
+func getBuiltins(_ env: Environment) -> [String: BuiltinBody] {
     var builtins = [String: BuiltinBody]()
     
     let core = Core(env: env)
     let math = MathBuiltins(env: env)
     
-    builtins.merge(dict: core.getBuiltins())
-    builtins.merge(dict: math.getBuiltins())
+    builtins.merge(core.getBuiltins())
+    builtins.merge(math.getBuiltins())
     
     return builtins
 }
 
 /* Load library implementations that are implemented in SLisp */
-func loadSLispImplemetations(env: Environment) {
+func loadSLispImplemetations(_ env: Environment) {
     let core = Core(env: env)
     core.loadImplementation()
 }
@@ -64,7 +64,7 @@ class Builtins {
         self.env = env
     }
     
-    func addBuiltin(name: String, _ body: BuiltinBody) {
+    func addBuiltin(_ name: String, _ body: BuiltinBody) {
         builtins[name] = body
     }
     
@@ -72,25 +72,25 @@ class Builtins {
         return builtins
     }
 
-    func loadBuiltinsFromFile(path:String) {
+    func loadBuiltinsFromFile(_ path:String) {
 
     }
 }
 
-func checkArgs(args:Pair?, env:Environment) -> Pair {
+func checkArgs(_ args:Pair?, env:Environment) -> Pair {
     var p: Pair? = args
     
     // Recursively evaluate any arguments that are lists.
     while p != nil {
         switch p!.value {
-        case .LPair(let argPair):
-            let output = env.evaluate(p: argPair)
+        case .lPair(let argPair):
+            let output = env.evaluate(argPair)
             p?.value = output
             break
             
-        case .Atom(let atom):
+        case .atom(let atom):
             // Check the environment for variables
-            let value = env.getVariable(name: atom)
+            let value = env.getVariable(atom)
             
             if value != nil {
                 p?.value = value!
@@ -107,8 +107,8 @@ func checkArgs(args:Pair?, env:Environment) -> Pair {
     return args!
 }
 
-func getArgList(args:Pair?, env:Environment) -> [LispType] {
-    var arg = checkArgs(args: args, env:env) as Pair?
+func getArgList(_ args:Pair?, env:Environment) -> [LispType] {
+    var arg = checkArgs(args, env:env) as Pair?
     
     var result = [LispType]()
     

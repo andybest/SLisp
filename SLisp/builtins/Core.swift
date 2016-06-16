@@ -37,28 +37,28 @@ class Core: Builtins {
         // Load core library implemented in SLisp
         do {
             let path = "./data/core.sl"
-            try env.evaluateFile(path: path)
+            try env.evaluateFile(path)
         } catch {
             print("Core library implementation not found!")
         }
     }
     
-    func evaluateOrReturnResult(val: LispType) -> LispType
+    func evaluateOrReturnResult(_ val: LispType) -> LispType
     {
         var rv: LispType
         
         switch val {
             
-        case .Atom(let a):
-            if let r = self.env.getVariable(name: a) {
+        case .atom(let a):
+            if let r = self.env.getVariable(a) {
                 rv = r
             } else {
                 rv = val
             }
             break
             
-        case .LPair(let p):
-            rv = self.env.evaluate(p: p)
+        case .lPair(let p):
+            rv = self.env.evaluate(p)
             break
             
         default:
@@ -69,110 +69,110 @@ class Core: Builtins {
     }
     
     func initBuiltins() -> [String: BuiltinBody] {
-        addBuiltin(name: "def") { args in
-            if args != nil && valueIsAtom(val: args!.value) {
-                let name = stringFromValue(val: args!.value)
+        addBuiltin("def") { args in
+            if args != nil && valueIsAtom(args!.value) {
+                let name = stringFromValue(args!.value)
                 
                 if args?.next != nil {
-                    if valueIsPair(val: args!.next!.value) {
-                        let p = pairFromValue(val: args!.next!.value)
-                        self.env.addVariable(name: name!, value: self.env.evaluate(p: p!))
+                    if valueIsPair(args!.next!.value) {
+                        let p = pairFromValue(args!.next!.value)
+                        self.env.addVariable(name!, value: self.env.evaluate(p!))
                     } else {
-                        self.env.addVariable(name: name!, value: args!.next!.value)
+                        self.env.addVariable(name!, value: args!.next!.value)
                     }
                     
                 }
             }
-            return LispType.Nil
+            return LispType.nil
         }
 
-        addBuiltin(name: "list") { args in
+        addBuiltin("list") { args in
             if args != nil {
-                return LispType.LPair(args!)
+                return LispType.lPair(args!)
             }
             
             let p = Pair()
-            p.value = LispType.Nil
-            return LispType.Nil
+            p.value = LispType.nil
+            return LispType.nil
         }
         
-        addBuiltin(name: "cons") { args in
-            let argList = getArgList(args: args, env: self.env)
+        addBuiltin("cons") { args in
+            let argList = getArgList(args, env: self.env)
             
             if argList.count < 2 {
                 print("cons requires 2 arguments")
-                return LispType.Nil
+                return LispType.nil
             }
             
-            if !valueIsPair(val: argList[1]) && !valueIsNil(val: argList[1]) {
+            if !valueIsPair(argList[1]) && !valueIsNil(argList[1]) {
                 print("cons requires the second argument to be a list or nil")
-                return LispType.Nil
+                return LispType.nil
             }
             
             let p = Pair()
             p.value = argList[0]
             
-            if !valueIsNil(val: argList[1]) {
-                p.next = pairFromValue(val: argList[1])
+            if !valueIsNil(argList[1]) {
+                p.next = pairFromValue(argList[1])
             }
             
-            return LispType.LPair(p)
+            return LispType.lPair(p)
         }
         
-        addBuiltin(name: "first") { args in
-            let argList = getArgList(args: args, env: self.env)
+        addBuiltin("first") { args in
+            let argList = getArgList(args, env: self.env)
             
             if argList.count < 1 {
                 print("first requires an argument")
-                return LispType.Nil
+                return LispType.nil
             }
             
-            if !valueIsPair(val: argList[0]) {
+            if !valueIsPair(argList[0]) {
                 print("first requires an argument that is a list")
-                return LispType.Nil
+                return LispType.nil
             }
             
-            return pairFromValue(val: argList[0])!.value
+            return pairFromValue(argList[0])!.value
         }
 
-        addBuiltin(name: "rest") { args in
-            let argList = getArgList(args: args, env: self.env)
+        addBuiltin("rest") { args in
+            let argList = getArgList(args, env: self.env)
 
             if argList.count < 1 {
                 print("rest requires an argument")
-                return LispType.Nil
+                return LispType.nil
             }
 
-            if !valueIsPair(val: argList[0]) {
+            if !valueIsPair(argList[0]) {
                 print("rest requires an argument that is a list")
-                return LispType.Nil
+                return LispType.nil
             }
 
-            var p = pairFromValue(val: argList[0])
+            var p = pairFromValue(argList[0])
 
             p = p!.next
 
             if p != nil {
-                return LispType.LPair(p!)
+                return LispType.lPair(p!)
             }
 
-            return LispType.Nil
+            return LispType.nil
         }
         
-        addBuiltin(name: "last") { args in
-            let argList = getArgList(args: args, env: self.env)
+        addBuiltin("last") { args in
+            let argList = getArgList(args, env: self.env)
             
             if argList.count < 1 {
                 print("last requires an argument")
-                return LispType.Nil
+                return LispType.nil
             }
             
-            if !valueIsPair(val: argList[0]) {
+            if !valueIsPair(argList[0]) {
                 print("last requires an argument that is a list")
-                return LispType.Nil
+                return LispType.nil
             }
             
-            var p = pairFromValue(val: argList[0])
+            var p = pairFromValue(argList[0])
             
             while true {
                 if p!.next == nil {
@@ -185,20 +185,20 @@ class Core: Builtins {
             return p!.value
         }
         
-        addBuiltin(name: "function") { args in
-            if args != nil && valueIsPair(val: args!.value) {
+        addBuiltin("function") { args in
+            if args != nil && valueIsPair(args!.value) {
                 
                 // Check arguments
-                if valueIsPair(val: args!.value) {
-                    var arg:Pair? = pairFromValue(val: args!.value)
+                if valueIsPair(args!.value) {
+                    var arg:Pair? = pairFromValue(args!.value)
                     
                     var arguments = [String]()
                     
                     while arg != nil {
-                        if valueIsAtom(val: arg!.value) {
-                            arguments.append(stringFromValue(val: arg!.value)!)
+                        if valueIsAtom(arg!.value) {
+                            arguments.append(stringFromValue(arg!.value)!)
                         } else {
-                            return LispType.Nil
+                            return LispType.nil
                         }
                         
                         arg = arg!.next
@@ -207,25 +207,23 @@ class Core: Builtins {
                     // Extract function body
                     if let functionBody = args!.next {
                         let f = LFunctionMetadata(argNames: arguments, body: functionBody)
-                        return LispType.LFunction(f)
+                        return LispType.lFunction(f)
                     }
                     
                 }
             }
             
-            return LispType.Nil
+            return LispType.nil
         }
         
-        addBuiltin(name: "cond") { args in
+        addBuiltin("cond") { args in
             let condition: LispType = args!.value
             
+            let result = self.evaluateOrReturnResult(condition)
             
-            
-            let result = self.evaluateOrReturnResult(val: condition)
-            
-            if !valueIsBoolean(val: result) {
+            if !valueIsBoolean(result) {
                 print("cond requires the first argument to be a boolean.")
-                return LispType.Nil
+                return LispType.nil
             }
             
             // Get execution paths.
@@ -237,132 +235,132 @@ class Core: Builtins {
             
             if truePath == nil {
                 print("cond requires a true path.")
-                return LispType.Nil
+                return LispType.nil
             }
             
             falsePath = truePath!.next
             
             if falsePath == nil {
                 print("cond requires a false path.")
-                return LispType.Nil
+                return LispType.nil
             }
             
-            if booleanFromValue(val: result) {
-                return self.evaluateOrReturnResult(val: truePath!.value)
+            if booleanFromValue(result) {
+                return self.evaluateOrReturnResult(truePath!.value)
             } else {
-                return self.evaluateOrReturnResult(val: falsePath!.value)
+                return self.evaluateOrReturnResult(falsePath!.value)
             }
         }
         
-        addBuiltin(name: "print") { args in
-            var p: Pair? = checkArgs(args: args, env: self.env)
+        addBuiltin("print") { args in
+            var p: Pair? = checkArgs(args, env: self.env)
             var output = [String]()
             
             while p != nil {
-                output.append(lispTypeToString(lt: p!.value, env: self.env))
+                output.append(lispTypeToString(p!.value, env: self.env))
                 
                 p = p!.next
             }
             
             print(output.joined(separator: " "))
             
-            return LispType.Nil
+            return LispType.nil
         }
 
-        addBuiltin(name: "list?") { args in
-            let argList = getArgList(args: args, env: self.env)
+        addBuiltin("list?") { args in
+            let argList = getArgList(args, env: self.env)
 
             if argList.count != 1 {
                 print("list? requires one argument")
-                return LispType.Nil
+                return LispType.nil
             }
 
-            if valueIsPair(val: argList[0]) {
-                return LispType.LBoolean(true)
+            if valueIsPair(argList[0]) {
+                return LispType.lBoolean(true)
             }
 
-            return LispType.LBoolean(false)
+            return LispType.lBoolean(false)
         }
 
-        addBuiltin(name: "atom?") { args in
-            let argList = getArgList(args: args, env: self.env)
+        addBuiltin("atom?") { args in
+            let argList = getArgList(args, env: self.env)
 
             if argList.count != 1 {
                 print("atom? requires one argument")
-                return LispType.Nil
+                return LispType.nil
             }
 
-            if valueIsAtom(val: argList[0]) {
-                return LispType.LBoolean(true)
+            if valueIsAtom(argList[0]) {
+                return LispType.lBoolean(true)
             }
 
-            return LispType.LBoolean(false)
+            return LispType.lBoolean(false)
         }
 
-        addBuiltin(name: "string?") { args in
-            let argList = getArgList(args: args, env: self.env)
+        addBuiltin("string?") { args in
+            let argList = getArgList(args, env: self.env)
 
             if argList.count != 1 {
                 print("string? requires one argument")
-                return LispType.Nil
+                return LispType.nil
             }
 
-            if valueIsString(val: argList[0]) {
-                return LispType.LBoolean(true)
+            if valueIsString(argList[0]) {
+                return LispType.lBoolean(true)
             }
 
-            return LispType.LBoolean(false)
+            return LispType.lBoolean(false)
         }
 
-        addBuiltin(name: "number?") { args in
-            let argList = getArgList(args: args, env: self.env)
+        addBuiltin("number?") { args in
+            let argList = getArgList(args, env: self.env)
 
             if argList.count != 1 {
                 print("number? requires one argument")
-                return LispType.Nil
+                return LispType.nil
             }
 
-            if valueIsNumber(val: argList[0]) {
-                return LispType.LBoolean(true)
+            if valueIsNumber(argList[0]) {
+                return LispType.lBoolean(true)
             }
 
-            return LispType.LBoolean(false)
+            return LispType.lBoolean(false)
         }
 
-        addBuiltin(name: "function?") { args in
-            let argList = getArgList(args: args, env: self.env)
+        addBuiltin("function?") { args in
+            let argList = getArgList(args, env: self.env)
 
             if argList.count != 1 {
                 print("function? requires one argument")
-                return LispType.Nil
+                return LispType.nil
             }
 
-            if valueIsFunction(val: argList[0]) {
-                return LispType.LBoolean(true)
+            if valueIsFunction(argList[0]) {
+                return LispType.lBoolean(true)
             }
 
-            return LispType.LBoolean(false)
+            return LispType.lBoolean(false)
         }
         
-        addBuiltin(name: "let") { args in
+        addBuiltin("let") { args in
             
             if(args == nil) {
                 print("let requires 2 arguments")
-                return LispType.Nil
+                return LispType.nil
             }
             
-            if(!valueIsPair(val: args!.value)) {
+            if(!valueIsPair(args!.value)) {
                 print("let requires the first argument to be a list")
-                return LispType.Nil
+                return LispType.nil
             }
             
             if(args!.next == nil) {
                 print("let requires a body")
-                return LispType.Nil
+                return LispType.nil
             }
             
             var pairArgs = [LispType]()
-            var p: Pair? = pairFromValue(val: args!.value)
+            var p: Pair? = pairFromValue(args!.value)
             
             while(p != nil) {
                 pairArgs.append(p!.value)
@@ -371,7 +369,7 @@ class Core: Builtins {
             
             if(pairArgs.count % 2 != 0) {
                 print("let requires an even number of values")
-                return LispType.Nil
+                return LispType.nil
             }
             
             // Iterate through the pairs and put them into a dictionary, so they can be added to the environment stack
@@ -380,24 +378,24 @@ class Core: Builtins {
             for startIdx in stride(from:0, to: pairArgs.count, by: 2) {
                 let key = pairArgs[startIdx]
                 
-                if(!valueIsAtom(val: key)) {
-                    print("let: value \(stringFromValue(val: key)) is not an atom")
-                    return LispType.Nil
+                if(!valueIsAtom(key)) {
+                    print("let: value \(stringFromValue(key)) is not an atom")
+                    return LispType.nil
                 }
                 
                 // Add the values to the local environment after evaluating them
-                env[stringFromValue(val: key)!] = self.evaluateOrReturnResult(val: pairArgs[startIdx + 1])
+                env[stringFromValue(key)!] = self.evaluateOrReturnResult(pairArgs[startIdx + 1])
             }
             
-            self.env.pushEnvironment(environment: env)
+            self.env.pushEnvironment(env)
             
             let body: Pair? =  args!.next!
             var pair = body
-            var rv = LispType.Nil
+            var rv = LispType.nil
             
             // Evaluate all of the expressions in the body
             while pair != nil {
-                rv = self.evaluateOrReturnResult(val: pair!.value)
+                rv = self.evaluateOrReturnResult(pair!.value)
                 pair = pair!.next
             }
             
@@ -406,52 +404,52 @@ class Core: Builtins {
             return rv
         }
         
-        addBuiltin(name: "do") { args in
+        addBuiltin("do") { args in
             var pair = args
-            var rv = LispType.Nil
+            var rv = LispType.nil
             
             // Evaluate all of the expressions in the body
             while pair != nil {
-                rv = self.evaluateOrReturnResult(val: pair!.value)
+                rv = self.evaluateOrReturnResult(pair!.value)
                 pair = pair!.next
             }
             
             return rv
         }
         
-        addBuiltin(name: "nil?") { args in
-            let argList = getArgList(args: args, env: self.env)
+        addBuiltin("nil?") { args in
+            let argList = getArgList(args, env: self.env)
             
             if argList.count != 1 {
                 print("nil? requires one argument")
-                return LispType.Nil
+                return LispType.nil
             }
             
-            if valueIsNil(val: argList[0]) {
-                return LispType.LBoolean(true)
+            if valueIsNil(argList[0]) {
+                return LispType.lBoolean(true)
             }
             
-            return LispType.LBoolean(false)
+            return LispType.lBoolean(false)
         }
         
         /* Get input from stdin */
-        addBuiltin(name: "input") { args in
-            let argList = getArgList(args: args, env: self.env)
+        addBuiltin("input") { args in
+            let argList = getArgList(args, env: self.env)
             
             if argList.count > 0 {
-                if valueIsString(val: argList[0]) {
-                    let prompt = stringFromValue(val: argList[0])
+                if valueIsString(argList[0]) {
+                    let prompt = stringFromValue(argList[0])
                     print(prompt!, terminator: "")
                 } else {
                     print("Input requires the first argument to be a string")
-                    return LispType.Nil
+                    return LispType.nil
                 }
             }
             
-            let keyboard = NSFileHandle.standardInput()
+            let keyboard = FileHandle.standardInput()
             let inputData = keyboard.availableData
-            let input = NSString(data: inputData, encoding: NSUTF8StringEncoding) as! String
-            return LispType.LString(input)
+            let input = NSString(data: inputData, encoding: String.Encoding.utf8.rawValue) as! String
+            return LispType.lString(input)
         }
         
         return builtins

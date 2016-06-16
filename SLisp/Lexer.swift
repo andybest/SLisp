@@ -28,53 +28,53 @@ import Foundation
 
 
 enum TokenType: Equatable {
-    case LParen
-    case RParen
-    case Atom(String)
-    case Number(Double)
-    case LString(String)
+    case lParen
+    case rParen
+    case atom(String)
+    case number(Double)
+    case lString(String)
 }
 
 func ==(a: TokenType, b: TokenType) -> Bool {
     switch (a, b) {
-    case (.LParen, .LParen): return true
-    case (.RParen, .RParen): return true
-    case (.Atom(let a), .Atom(let b)) where a == b: return true
-    case (.Number(let a), .Number(let b)) where a == b: return true
-    case (.LString(let a), .LString(let b)) where a == b: return true
+    case (.lParen, .lParen): return true
+    case (.rParen, .rParen): return true
+    case (.atom(let a), .atom(let b)) where a == b: return true
+    case (.number(let a), .number(let b)) where a == b: return true
+    case (.lString(let a), .lString(let b)) where a == b: return true
     default: return false
     }
 }
 
 protocol TokenMatcher {
-    static func isMatch(stream:StringStream) -> Bool
-    static func getToken(stream:StringStream) -> TokenType?
+    static func isMatch(_ stream:StringStream) -> Bool
+    static func getToken(_ stream:StringStream) -> TokenType?
 }
 
-func characterIsInSet(c: Character, set: NSCharacterSet) -> Bool {
+func characterIsInSet(_ c: Character, set: CharacterSet) -> Bool {
     var found = true
     for ch in String(c).utf16 {
-        if !set.characterIsMember(ch) {
+        if !set.contains(UnicodeScalar(ch)) {
             found = false
         }
     }
     return found
 }
 
-func isWhitespace(c: Character) -> Bool {
-    return characterIsInSet(c: c, set: NSCharacterSet.whitespacesAndNewlines())
+func isWhitespace(_ c: Character) -> Bool {
+    return characterIsInSet(c, set: CharacterSet.whitespacesAndNewlines)
 }
 
 class LParenTokenMatcher: TokenMatcher {
     
-    static func isMatch(stream: StringStream) -> Bool {
+    static func isMatch(_ stream: StringStream) -> Bool {
         return stream.currentCharacter() == "("
     }
     
-    static func getToken(stream: StringStream) -> TokenType? {
-        if isMatch(stream: stream) {
+    static func getToken(_ stream: StringStream) -> TokenType? {
+        if isMatch(stream) {
             stream.advanceCharacter()
-            return TokenType.LParen
+            return TokenType.lParen
         }
         return nil
     }
@@ -82,14 +82,14 @@ class LParenTokenMatcher: TokenMatcher {
 
 class RParenTokenMatcher: TokenMatcher {
     
-    static func isMatch(stream: StringStream) -> Bool {
+    static func isMatch(_ stream: StringStream) -> Bool {
         return stream.currentCharacter() == ")"
     }
     
-    static func getToken(stream: StringStream) -> TokenType? {
-        if isMatch(stream: stream) {
+    static func getToken(_ stream: StringStream) -> TokenType? {
+        if isMatch(stream) {
             stream.advanceCharacter()
-            return TokenType.RParen
+            return TokenType.rParen
         }
         return nil
     }
@@ -99,15 +99,15 @@ class AtomMatcher: TokenMatcher {
     static var matcherCharacterSet: NSMutableCharacterSet?
     static var matcherStartCharacterSet: NSMutableCharacterSet?
 
-    static func isMatch(stream: StringStream) -> Bool {
-        return characterIsInSet(c: stream.currentCharacter()!, set: startCharacterSet())
+    static func isMatch(_ stream: StringStream) -> Bool {
+        return characterIsInSet(stream.currentCharacter()!, set: startCharacterSet())
     }
     
-    static func getToken(stream: StringStream) -> TokenType? {
-        if isMatch(stream: stream) {
+    static func getToken(_ stream: StringStream) -> TokenType? {
+        if isMatch(stream) {
             var tok = ""
             
-            while characterIsInSet(c: stream.currentCharacter()!, set: characterSet()) {
+            while characterIsInSet(stream.currentCharacter()!, set: characterSet()) {
                 tok += String(stream.currentCharacter()!)
                 stream.advanceCharacter()
                 if stream.currentCharacter() == nil {
@@ -115,105 +115,105 @@ class AtomMatcher: TokenMatcher {
                 }
             }
             
-            return TokenType.Atom(tok)
+            return TokenType.atom(tok)
         }
         
         return nil
     }
     
-    static func characterSet() -> NSCharacterSet {
+    static func characterSet() -> CharacterSet {
         if matcherCharacterSet == nil {
             matcherCharacterSet = NSMutableCharacterSet.letters()
-            matcherCharacterSet!.formUnion(with: NSCharacterSet.decimalDigits())
-            matcherCharacterSet!.formUnion(with: NSCharacterSet.punctuation())
-            matcherCharacterSet!.formUnion(with: NSMutableCharacterSet.symbols())
+            matcherCharacterSet!.formUnion(with: CharacterSet.decimalDigits)
+            matcherCharacterSet!.formUnion(with: CharacterSet.punctuation)
+            matcherCharacterSet!.formUnion(with: NSMutableCharacterSet.symbols() as CharacterSet)
             matcherCharacterSet!.removeCharacters(in: "()")
         }
-        return matcherCharacterSet!
+        return matcherCharacterSet! as CharacterSet
     }
 
-    static func startCharacterSet() -> NSCharacterSet {
+    static func startCharacterSet() -> CharacterSet {
         if matcherStartCharacterSet == nil {
             matcherStartCharacterSet = NSMutableCharacterSet.letters()
-            matcherStartCharacterSet!.formUnion(with: NSCharacterSet.decimalDigits())
-            matcherStartCharacterSet!.formUnion(with: NSCharacterSet.punctuation())
-            matcherStartCharacterSet!.formUnion(with: NSMutableCharacterSet.symbols())
+            matcherStartCharacterSet!.formUnion(with: CharacterSet.decimalDigits)
+            matcherStartCharacterSet!.formUnion(with: CharacterSet.punctuation)
+            matcherStartCharacterSet!.formUnion(with: NSMutableCharacterSet.symbols() as CharacterSet)
             matcherStartCharacterSet!.removeCharacters(in: "()")
         }
-        return matcherStartCharacterSet!
+        return matcherStartCharacterSet! as CharacterSet
     }
 }
 
 class StringMatcher: TokenMatcher {
     static var matcherCharacterSet: NSMutableCharacterSet?
 
-    static func isMatch(stream: StringStream) -> Bool {
+    static func isMatch(_ stream: StringStream) -> Bool {
         return stream.currentCharacter() == "\""
     }
     
-    static func getToken(stream: StringStream) -> TokenType? {
-        if isMatch(stream: stream) {
+    static func getToken(_ stream: StringStream) -> TokenType? {
+        if isMatch(stream) {
             stream.advanceCharacter()
             
             var tok = ""
             
-            while stream.currentCharacter() != nil && !isMatch(stream: stream) {
+            while stream.currentCharacter() != nil && !isMatch(stream) {
                 tok += String(stream.currentCharacter()!)
                 stream.advanceCharacter()
             }
             
             stream.advanceCharacter()
             
-            return TokenType.LString(tok)
+            return TokenType.lString(tok)
         }
         
         return nil
     }
     
-    static func characterSet() -> NSCharacterSet {
+    static func characterSet() -> CharacterSet {
         if matcherCharacterSet == nil {
             matcherCharacterSet = NSMutableCharacterSet.letters()
-            matcherCharacterSet!.formUnion(with: NSCharacterSet.decimalDigits())
+            matcherCharacterSet!.formUnion(with: CharacterSet.decimalDigits)
 
             let allowedSymbols = NSMutableCharacterSet.symbols()
-            allowedSymbols.formIntersection(with:NSCharacterSet(charactersIn: "\""))
+            allowedSymbols.formIntersection(with:CharacterSet(charactersIn: "\""))
 
-            matcherCharacterSet!.formUnion(with: allowedSymbols)
+            matcherCharacterSet!.formUnion(with: allowedSymbols as CharacterSet)
         }
-        return matcherCharacterSet!
+        return matcherCharacterSet! as CharacterSet
     }
 }
 
 class NumberMatcher: TokenMatcher {
     static var matcherCharacterSet: NSMutableCharacterSet?
 
-    static func isMatch(stream: StringStream) -> Bool {
-        let matches = characterIsInSet(c: stream.currentCharacter()!, set: NSCharacterSet(charactersIn: "0123456789"))
+    static func isMatch(_ stream: StringStream) -> Bool {
+        let matches = characterIsInSet(stream.currentCharacter()!, set: CharacterSet(charactersIn: "0123456789"))
         return matches
     }
     
-    static func getToken(stream: StringStream) -> TokenType? {
-        if isMatch(stream: stream) {
+    static func getToken(_ stream: StringStream) -> TokenType? {
+        if isMatch(stream) {
             var tok = ""
             
             while stream.currentCharacter() != nil &&
-                characterIsInSet(c: stream.currentCharacter()!, set: characterSet()) {
+                characterIsInSet(stream.currentCharacter()!, set: characterSet()) {
                 tok += String(stream.currentCharacter()!)
                 stream.advanceCharacter()
             }
             
-            return TokenType.Number(Double(tok)!)
+            return TokenType.number(Double(tok)!)
         }
         
         return nil
     }
 
     
-    static func characterSet() -> NSCharacterSet {
+    static func characterSet() -> CharacterSet {
         if matcherCharacterSet == nil {
             matcherCharacterSet = NSMutableCharacterSet(charactersIn: "0123456789.")
         }
-        return matcherCharacterSet!
+        return matcherCharacterSet! as CharacterSet
     }
 }
 
@@ -257,7 +257,7 @@ class StringStream {
         return nil
     }
 
-    func characterAtPosition(pos: Int) -> Character? {
+    func characterAtPosition(_ pos: Int) -> Character? {
         if pos < str.characters.count {
             let idx = str.index(str.startIndex, offsetBy: pos)
             return str.characters[idx]
@@ -269,7 +269,7 @@ class StringStream {
     func eatWhitespace() {
         var pos = position
         while pos < str.characters.count {
-            if isWhitespace(c: characterAtPosition(pos: pos)!) {
+            if isWhitespace(characterAtPosition(pos)!) {
                 pos += 1
             } else {
                 position = pos
@@ -310,8 +310,8 @@ class Tokenizer {
         }
         
         for matcher in tokenClasses {
-            if matcher.isMatch(stream: stream) {
-                return matcher.getToken(stream: stream)
+            if matcher.isMatch(stream) {
+                return matcher.getToken(stream)
             }
         }
         
