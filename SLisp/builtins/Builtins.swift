@@ -54,6 +54,9 @@ func getBuiltins(_ env: Environment) -> [String: BuiltinBody] {
 func loadSLispImplemetations(_ env: Environment) {
     let core = Core(env: env)
     core.loadImplementation()
+    
+    let math = MathBuiltins(env:env)
+    math.loadImplementation()
 }
 
 class Builtins {

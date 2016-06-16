@@ -1,5 +1,2 @@
-(def square (x)
-    (* x x))
-
-(def cube (x)
-    (* x x x))
+(def floor (function (x)
+    (- x (mod x 1))))

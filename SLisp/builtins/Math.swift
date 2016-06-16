@@ -38,6 +38,16 @@ class MathBuiltins : Builtins {
         self.initBuiltins()
     }
     
+    func loadImplementation() {
+        // Load core library implemented in SLisp
+        do {
+            let path = "./data/math.sl"
+            try env.evaluateFile(path)
+        } catch {
+            print("Math library implementation not found!")
+        }
+    }
+    
     // A generic function for arithmetic operations
     func doArithmeticOperation(_ args:Pair?, body:ArithmeticOperationBody) -> LispType {
         var x: Double = 0.0
@@ -170,6 +180,12 @@ class MathBuiltins : Builtins {
             }
         }
         
+        addBuiltin("mod") { args in
+            return self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
+                return remainder(x, y)
+            }
+        }
+        
         addBuiltin(">") { args in
             return self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
                 return x > y
@@ -223,6 +239,29 @@ class MathBuiltins : Builtins {
             
             let x = numberFromValue(argList[0])
             return LispType.number(sqrt(x))
+        }
+        
+        addBuiltin("random") { args in
+            let argList = getArgList(args, env: self.env)
+            
+            if argList.count != 2 {
+                print("random requires 2 range arguments")
+                return LispType.nil
+            }
+            
+            for (index, arg) in argList.enumerated() {
+                if !valueIsNumber(arg) {
+                    print("Argument to random at \(index) is not a number.")
+                    return LispType.nil
+                }
+            }
+            
+            let min = numberFromValue(argList[0])
+            let max = numberFromValue(argList[1])
+            
+            let r = (Double(arc4random()) / Double(UInt32.max) * (max - min)) + min
+            
+            return LispType.number(r)
         }
     }
 }

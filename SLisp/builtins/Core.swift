@@ -88,7 +88,7 @@ class Core: Builtins {
 
         addBuiltin("list") { args in
             if args != nil {
-                return LispType.lPair(args!)
+                return LispType.lPair(checkArgs(args!, env:self.env))
             }
             
             let p = Pair()
@@ -478,6 +478,43 @@ class Core: Builtins {
             }
             
             return LispType.lBoolean(result)
+        }
+        
+        addBuiltin("at") { args in
+            let argList = getArgList(args, env: self.env)
+            
+            if argList.count != 2 {
+                print("at requires 2 arguments")
+                return LispType.nil
+            }
+            
+            if !valueIsPair(argList[0]) {
+                print("at requires the first argument to be a list")
+                return LispType.nil
+            }
+            
+            if !valueIsNumber(argList[1]) {
+                print("at requires the second argument to be a number")
+                return LispType.nil
+            }
+            
+            let list = pairFromValue(argList[0])
+            let index = Int(numberFromValue(argList[1]))
+            var count = 0
+            
+            var p: Pair? = list
+            
+            while count < index {
+                if p == nil {
+                    print("Index '\(index)' is out of range")
+                    return LispType.nil
+                }
+                
+                count += 1
+                p = p!.next
+            }
+            
+            return p!.value
         }
         
         return builtins
