@@ -217,13 +217,13 @@ class Core: Builtins {
             return LispType.nil
         }
         
-        addBuiltin("cond") { args in
+        addBuiltin("if") { args in
             let condition: LispType = args!.value
             
             let result = self.evaluateOrReturnResult(condition)
             
             if !valueIsBoolean(result) {
-                print("cond requires the first argument to be a boolean.")
+                print("if requires the first argument to be a boolean.")
                 return LispType.nil
             }
             
@@ -235,14 +235,14 @@ class Core: Builtins {
             truePath = args!.next
             
             if truePath == nil {
-                print("cond requires a true path.")
+                print("if requires a true path.")
                 return LispType.nil
             }
             
             falsePath = truePath!.next
             
             if falsePath == nil {
-                print("cond requires a false path.")
+                print("if requires a false path.")
                 return LispType.nil
             }
             
