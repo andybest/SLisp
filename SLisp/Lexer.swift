@@ -68,7 +68,7 @@ func isWhitespace(_ c: Character) -> Bool {
 class LParenTokenMatcher: TokenMatcher {
     
     static func isMatch(_ stream: StringStream) -> Bool {
-        return stream.currentCharacter() == "("
+        return stream.currentCharacter == "("
     }
     
     static func getToken(_ stream: StringStream) -> TokenType? {
@@ -83,7 +83,7 @@ class LParenTokenMatcher: TokenMatcher {
 class RParenTokenMatcher: TokenMatcher {
     
     static func isMatch(_ stream: StringStream) -> Bool {
-        return stream.currentCharacter() == ")"
+        return stream.currentCharacter == ")"
     }
     
     static func getToken(_ stream: StringStream) -> TokenType? {
@@ -100,17 +100,17 @@ class AtomMatcher: TokenMatcher {
     static var matcherStartCharacterSet: NSMutableCharacterSet?
 
     static func isMatch(_ stream: StringStream) -> Bool {
-        return characterIsInSet(stream.currentCharacter()!, set: startCharacterSet())
+        return characterIsInSet(stream.currentCharacter!, set: startCharacterSet())
     }
     
     static func getToken(_ stream: StringStream) -> TokenType? {
         if isMatch(stream) {
             var tok = ""
             
-            while characterIsInSet(stream.currentCharacter()!, set: characterSet()) {
-                tok += String(stream.currentCharacter()!)
+            while characterIsInSet(stream.currentCharacter!, set: characterSet()) {
+                tok += String(stream.currentCharacter!)
                 stream.advanceCharacter()
-                if stream.currentCharacter() == nil {
+                if stream.currentCharacter == nil {
                     break
                 }
             }
@@ -148,7 +148,7 @@ class StringMatcher: TokenMatcher {
     static var matcherCharacterSet: NSMutableCharacterSet?
 
     static func isMatch(_ stream: StringStream) -> Bool {
-        return stream.currentCharacter() == "\""
+        return stream.currentCharacter == "\""
     }
     
     static func getToken(_ stream: StringStream) -> TokenType? {
@@ -157,8 +157,8 @@ class StringMatcher: TokenMatcher {
             
             var tok = ""
             
-            while stream.currentCharacter() != nil && !isMatch(stream) {
-                tok += String(stream.currentCharacter()!)
+            while stream.currentCharacter != nil && !isMatch(stream) {
+                tok += String(stream.currentCharacter!)
                 stream.advanceCharacter()
             }
             
@@ -188,7 +188,7 @@ class NumberMatcher: TokenMatcher {
     static var matcherCharacterSet: NSMutableCharacterSet?
 
     static func isMatch(_ stream: StringStream) -> Bool {
-        let matches = characterIsInSet(stream.currentCharacter()!, set: CharacterSet(charactersIn: "0123456789"))
+        let matches = characterIsInSet(stream.currentCharacter!, set: CharacterSet(charactersIn: "0123456789"))
         return matches
     }
     
@@ -196,9 +196,9 @@ class NumberMatcher: TokenMatcher {
         if isMatch(stream) {
             var tok = ""
             
-            while stream.currentCharacter() != nil &&
-                characterIsInSet(stream.currentCharacter()!, set: characterSet()) {
-                tok += String(stream.currentCharacter()!)
+            while stream.currentCharacter != nil &&
+                characterIsInSet(stream.currentCharacter!, set: characterSet()) {
+                tok += String(stream.currentCharacter!)
                 stream.advanceCharacter()
             }
             
@@ -229,58 +229,59 @@ let tokenClasses: [TokenMatcher.Type] = [
 class StringStream {
     var str: String
     var position = 0
+    var currentCharacter: Character?
+    var nextCharacter: Character?
+    var currentCharacterIdx: String.Index
+    var nextCharacterIdx: String.Index
+    var characterCount: Int
 
     init(source: String) {
         str = source
+        characterCount = str.characters.count
         position = 0
+        currentCharacterIdx = str.startIndex
+        nextCharacterIdx = str.index(after: currentCharacterIdx)
+        currentCharacter = str.characters[currentCharacterIdx]
+        nextCharacter = str.characters[nextCharacterIdx]
     }
 
     func advanceCharacter() {
         position += 1
-    }
-
-    func currentCharacter() -> Character? {
-        if position < str.characters.count {
-            let idx = str.index(str.startIndex, offsetBy: position)
-            return str.characters[idx]
+        
+        if position >= characterCount
+        {
+            currentCharacter = nil
+            nextCharacter = nil
         }
-
-        return nil
-    }
-
-    func nextCharacter() -> Character? {
-        if position + 1 < str.characters.count {
-            let idx = str.index(str.startIndex, offsetBy: position + 1)
-            return str.characters[idx]
+        
+        currentCharacterIdx = nextCharacterIdx
+        currentCharacter = str.characters[currentCharacterIdx]
+        
+        if position >= characterCount - 1 {
+            nextCharacter = nil
+        } else {
+            nextCharacterIdx = str.index(after: currentCharacterIdx)
+            nextCharacter = str.characters[nextCharacterIdx]
         }
-
-        return nil
-    }
-
-    func characterAtPosition(_ pos: Int) -> Character? {
-        if pos < str.characters.count {
-            let idx = str.index(str.startIndex, offsetBy: pos)
-            return str.characters[idx]
-        }
-
-        return nil
     }
 
     func eatWhitespace() {
-        var pos = position
-        while pos < str.characters.count {
-            if isWhitespace(characterAtPosition(pos)!) {
-                pos += 1
+        while position < characterCount {
+            if isWhitespace(currentCharacter!) {
+                advanceCharacter()
             } else {
-                position = pos
                 return
             }
         }
-        position = pos
     }
 
     func rewind() {
         position = 0
+        
+        currentCharacterIdx = str.startIndex
+        nextCharacterIdx = str.index(after: currentCharacterIdx)
+        currentCharacter = str.characters[currentCharacterIdx]
+        nextCharacter = str.characters[nextCharacterIdx]
     }
 }
 

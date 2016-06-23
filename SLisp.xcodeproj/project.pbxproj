@@ -20,6 +20,7 @@
 		A5803E771CFF876C00C59003 /* Core.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C034021C860D33000853EC /* Core.swift */; };
 		A5989AF51C17119B00B91B38 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5989AF41C17119B00B91B38 /* main.swift */; };
 		A5989B221C1715A000B91B38 /* Lexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5989B211C1715A000B91B38 /* Lexer.swift */; };
+		A5B6D2001D13290D00D59C94 /* rock-paper-scissors.sl in CopyFiles */ = {isa = PBXBuildFile; fileRef = A5B6D1FF1D13242F00D59C94 /* rock-paper-scissors.sl */; };
 		A5C033FE1C860B3B000853EC /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C033FD1C860B3B000853EC /* Helpers.swift */; };
 		A5C034011C860D24000853EC /* Builtins.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C034001C860D24000853EC /* Builtins.swift */; };
 		A5C034031C860D33000853EC /* Core.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C034021C860D33000853EC /* Core.swift */; };
@@ -33,6 +34,7 @@
 			dstPath = data;
 			dstSubfolderSpec = 16;
 			files = (
+				A5B6D2001D13290D00D59C94 /* rock-paper-scissors.sl in CopyFiles */,
 				A5803E611CFF83CE00C59003 /* math.sl in CopyFiles */,
 				A5803E621CFF83CE00C59003 /* core.sl in CopyFiles */,
 				A5803E631CFF83CE00C59003 /* testInput1.sl in CopyFiles */,

@@ -100,7 +100,9 @@ class Environment {
     var builtins = [String:BuiltinBody]()
     
     init() {
+        print("Loading builtins")
         builtins = getBuiltins(self)
+        print("Loading implementations")
         loadSLispImplemetations(self)
     }
 
@@ -108,6 +110,7 @@ class Environment {
         do {
             let fileContents = try NSString(contentsOfFile: path, encoding: String.Encoding.utf8.rawValue)
             let tokens = getTokens(fileContents as String)
+            print("Parsing file: \(path)")
             parseTokenList(tokens)
         } catch {
             throw EnvironmentErrors.fileNotFoundError(path)
