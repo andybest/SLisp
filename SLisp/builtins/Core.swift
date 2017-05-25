@@ -68,6 +68,29 @@ class Core: Builtins {
         return rv
     }
     
+    func tcoResult(_ val: LispType) -> LispType
+    {
+        var rv: LispType
+        
+        switch val {
+            
+        case .atom(let a):
+            if let r = self.env.getVariable(a) {
+                rv = r
+            } else {
+                rv = val
+            }
+            
+        case .lPair(let p):
+            rv = LispType.lTCOResult(LispType.lPair(copyList(p)))
+            
+        default:
+            rv = val
+        }
+        
+        return rv
+    }
+    
     func initBuiltins() -> [String: BuiltinBody] {
         addBuiltin("def") { args in
             if args != nil && valueIsAtom(args!.value) {
@@ -247,9 +270,9 @@ class Core: Builtins {
             }
             
             if booleanFromValue(result) {
-                return self.evaluateOrReturnResult(truePath!.value)
+                return self.tcoResult(truePath!.value)
             } else {
-                return self.evaluateOrReturnResult(falsePath!.value)
+                return self.tcoResult(falsePath!.value)
             }
         }
         
@@ -473,7 +496,7 @@ class Core: Builtins {
                 }
             }
             
-            let keyboard = FileHandle.standardInput()
+            let keyboard = FileHandle.standardInput
             let inputData = keyboard.availableData
             let input = NSString(data: inputData, encoding: String.Encoding.utf8.rawValue)!
                 .trimmingCharacters(in: CharacterSet.newlines)

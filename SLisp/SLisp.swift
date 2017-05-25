@@ -37,31 +37,27 @@ class Pair : CustomStringConvertible {
         switch value {
         case .nil:
             val = "NIL"
-            break
             
         case .atom(let a):
             val = "\(a)"
-            break
             
         case .number(let n):
             val = "\(n)"
-            break
             
         case .lString(let s):
             val = "\"\(s)\""
-            break
             
         case .lPair(let p):
             val = "( \(p)"
-            break
         
         case .lFunction(let metadata):
             val = "Function:\(metadata.argNames)"
-            break
 
         case .lBoolean(let b):
             val = "\(b)"
-            break
+            
+        case .lTCOResult(let tcoResult):
+            val = "TCO(\(tcoResult))"
         }
         
         var nextVal = ")"
@@ -79,7 +75,7 @@ struct LFunctionMetadata {
     var body: Pair
 }
 
-enum LispType {
+indirect enum LispType {
     case `nil`
     case lPair(Pair)
     case lString(String)
@@ -87,9 +83,10 @@ enum LispType {
     case atom(String)
     case lFunction(LFunctionMetadata)
     case lBoolean(Bool)
+    case lTCOResult(LispType)
 }
 
-enum EnvironmentErrors : ErrorProtocol {
+enum EnvironmentErrors : Error {
     case fileNotFoundError(String)
 }
 
@@ -232,29 +229,47 @@ class Environment {
     }
     
     func evaluate(_ p: Pair) -> LispType {
-        switch p.value {
-        case .atom(let a):
-            // Check if atom exists in builtins
-            
-            if let builtin = self.builtins[a] {
-                return builtin(p.next)
-            } else if let variable = getVariable(a) {
-                switch variable {
-                case .lFunction(let f):
-                    return callFunction(f, arguments:p.next)
-                    
-                default:
-                    return variable
-                }
+        var rVal:LispType? = nil
+        var currentPair = p
+        
+        while rVal == nil || valueIsTCOResult(rVal!)
+        {
+            if rVal == nil {
+                rVal = currentPair.value
             }
             
-            return p.value
+            switch rVal! {
+            case .atom(let a):
+                // Check if atom exists in builtins
+                
+                if let builtin = self.builtins[a] {
+                    rVal = builtin(currentPair.next)
+                } else if let variable = getVariable(a) {
+                    switch variable {
+                    case .lFunction(let f):
+                        rVal = callFunction(f, arguments:currentPair.next)
+                        
+                    default:
+                        rVal = variable
+                    }
+                }
+                
+            case .lTCOResult(let tcoResult):
+                if valueIsPair(tcoResult) {
+                    rVal = nil
+                    currentPair = pairFromValue(tcoResult)!
+                } else {
+                    rVal = tcoResult
+                }
             
-        default:
-            break
+            case .lFunction(let f):
+                rVal = callFunction(f, arguments: currentPair.next)
+                
+            default:
+                rVal = p.value
+            }
         }
-        
-        return p.value
+        return rVal!
     }
     
     func addVariable(_ name: String, value: LispType) {

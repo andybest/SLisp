@@ -54,7 +54,7 @@ protocol TokenMatcher {
 func characterIsInSet(_ c: Character, set: CharacterSet) -> Bool {
     var found = true
     for ch in String(c).utf16 {
-        if !set.contains(UnicodeScalar(ch)) {
+        if !set.contains(UnicodeScalar(ch)!) {
             found = false
         }
     }
@@ -123,10 +123,10 @@ class AtomMatcher: TokenMatcher {
     
     static func characterSet() -> CharacterSet {
         if matcherCharacterSet == nil {
-            matcherCharacterSet = NSMutableCharacterSet.letters()
+            matcherCharacterSet = NSMutableCharacterSet.letter()
             matcherCharacterSet!.formUnion(with: CharacterSet.decimalDigits)
-            matcherCharacterSet!.formUnion(with: CharacterSet.punctuation)
-            matcherCharacterSet!.formUnion(with: NSMutableCharacterSet.symbols() as CharacterSet)
+            matcherCharacterSet!.formUnion(with: CharacterSet.punctuationCharacters)
+            matcherCharacterSet!.formUnion(with: NSMutableCharacterSet.symbol() as CharacterSet)
             matcherCharacterSet!.removeCharacters(in: "()")
         }
         return matcherCharacterSet! as CharacterSet
@@ -134,10 +134,10 @@ class AtomMatcher: TokenMatcher {
 
     static func startCharacterSet() -> CharacterSet {
         if matcherStartCharacterSet == nil {
-            matcherStartCharacterSet = NSMutableCharacterSet.letters()
+            matcherStartCharacterSet = NSMutableCharacterSet.letter()
             matcherStartCharacterSet!.formUnion(with: CharacterSet.decimalDigits)
-            matcherStartCharacterSet!.formUnion(with: CharacterSet.punctuation)
-            matcherStartCharacterSet!.formUnion(with: NSMutableCharacterSet.symbols() as CharacterSet)
+            matcherStartCharacterSet!.formUnion(with: CharacterSet.punctuationCharacters)
+            matcherStartCharacterSet!.formUnion(with: NSMutableCharacterSet.symbol() as CharacterSet)
             matcherStartCharacterSet!.removeCharacters(in: "()")
         }
         return matcherStartCharacterSet! as CharacterSet
@@ -172,10 +172,10 @@ class StringMatcher: TokenMatcher {
     
     static func characterSet() -> CharacterSet {
         if matcherCharacterSet == nil {
-            matcherCharacterSet = NSMutableCharacterSet.letters()
+            matcherCharacterSet = NSMutableCharacterSet.letter()
             matcherCharacterSet!.formUnion(with: CharacterSet.decimalDigits)
 
-            let allowedSymbols = NSMutableCharacterSet.symbols()
+            let allowedSymbols = NSMutableCharacterSet.symbol()
             allowedSymbols.formIntersection(with:CharacterSet(charactersIn: "\""))
 
             matcherCharacterSet!.formUnion(with: allowedSymbols as CharacterSet)

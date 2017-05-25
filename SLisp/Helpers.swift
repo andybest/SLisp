@@ -97,6 +97,16 @@ func valueIsBoolean(_ val: LispType) -> Bool {
     }
 }
 
+func valueIsTCOResult(_ val: LispType) -> Bool {
+    switch val {
+    case .lTCOResult(_):
+        return true
+        
+    default:
+        return false
+    }
+}
+
 
 func pairFromValue(_ val: LispType) -> Pair? {
     switch val {
@@ -163,6 +173,9 @@ func lispTypeToString(_ lt:LispType, env:Environment) -> String {
 
     case .lBoolean(let b):
         return "\(b)"
+        
+    case .lTCOResult(let tcoResult):
+        return "TCO(\(tcoResult))"
     }
 }
 
@@ -188,6 +201,9 @@ func copyType(_ type: LispType) -> LispType {
         
     case .lBoolean(let b):
         return LispType.lBoolean(b)
+        
+    case .lTCOResult(let tcoResult):
+        return LispType.lTCOResult(tcoResult)
     }
 }
 

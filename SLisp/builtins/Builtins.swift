@@ -67,7 +67,7 @@ class Builtins {
         self.env = env
     }
     
-    func addBuiltin(_ name: String, _ body: BuiltinBody) {
+    func addBuiltin(_ name: String, _ body: @escaping BuiltinBody) {
         builtins[name] = body
     }
     
