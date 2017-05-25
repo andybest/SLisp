@@ -103,20 +103,20 @@ class Environment {
         loadSLispImplemetations(self)
     }
 
-    func evaluateFile(_ path:String) throws {
+    func evaluateFile(_ path:String) throws -> LispType?  {
         do {
             let fileContents = try NSString(contentsOfFile: path, encoding: String.Encoding.utf8.rawValue)
             let tokens = getTokens(fileContents as String)
             print("Parsing file: \(path)")
-            parseTokenList(tokens)
+            return parseTokenList(tokens)
         } catch {
             throw EnvironmentErrors.fileNotFoundError(path)
         }
     }
 
-    func evaluateString(_ str:String) {
+    func evaluateString(_ str:String) -> LispType? {
         let tokens = getTokens(str)
-        parseTokenList(tokens)
+        return parseTokenList(tokens)
     }
 
     func getTokens(_ source:String) -> [TokenType] {
@@ -125,12 +125,16 @@ class Environment {
         return tokens
     }
 
-    func parseTokenList(_ tokens:[TokenType]) {
+    func parseTokenList(_ tokens:[TokenType]) -> LispType? {
         let rootPairs = self.parseTokens(tokens)
 
+        var output: LispType?
+        
         for p in rootPairs {
-            let _ = self.evaluate(p)
+            output = self.evaluate(p)
         }
+        
+        return output
     }
     
     func parseTokens(_ tokens: [TokenType]) -> [Pair] {
