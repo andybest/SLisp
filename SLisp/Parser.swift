@@ -139,7 +139,12 @@ class Reader {
     
     func nextToken() -> TokenType? {
         defer { pos += 1 }
-        return tokens[pos]
+        
+        if pos < tokens.count {
+            return tokens[pos]
+        }
+        
+        return nil
     }
 }
 
@@ -151,7 +156,7 @@ class Repl {
         while true {
             Swift.print("user> ", terminator: "")
             
-            if let input = readLine(strippingNewline: true) {
+            if let input: String = readLine(strippingNewline: true), input.characters.count > 0 {
                 Swift.print(rep(input))
             }
         }

@@ -232,7 +232,7 @@ class StringStream {
     var currentCharacter: Character?
     var nextCharacter: Character?
     var currentCharacterIdx: String.Index
-    var nextCharacterIdx: String.Index
+    var nextCharacterIdx: String.Index?
     var characterCount: Int
 
     init(source: String) {
@@ -242,7 +242,10 @@ class StringStream {
         currentCharacterIdx = str.startIndex
         nextCharacterIdx = str.index(after: currentCharacterIdx)
         currentCharacter = str.characters[currentCharacterIdx]
-        nextCharacter = str.characters[nextCharacterIdx]
+        
+        if str.characters.count > 1 {
+            nextCharacter = str.characters[nextCharacterIdx!]
+        }
     }
 
     func advanceCharacter() {
@@ -255,14 +258,14 @@ class StringStream {
             return
         }
         
-        currentCharacterIdx = nextCharacterIdx
+        currentCharacterIdx = nextCharacterIdx!
         currentCharacter = str.characters[currentCharacterIdx]
         
         if position >= characterCount - 1 {
             nextCharacter = nil
         } else {
             nextCharacterIdx = str.index(after: currentCharacterIdx)
-            nextCharacter = str.characters[nextCharacterIdx]
+            nextCharacter = str.characters[nextCharacterIdx!]
         }
     }
 
@@ -282,7 +285,7 @@ class StringStream {
         currentCharacterIdx = str.startIndex
         nextCharacterIdx = str.index(after: currentCharacterIdx)
         currentCharacter = str.characters[currentCharacterIdx]
-        nextCharacter = str.characters[nextCharacterIdx]
+        nextCharacter = str.characters[nextCharacterIdx!]
     }
 }
 
