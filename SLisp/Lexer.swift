@@ -252,6 +252,7 @@ class StringStream {
         {
             currentCharacter = nil
             nextCharacter = nil
+            return
         }
         
         currentCharacterIdx = nextCharacterIdx

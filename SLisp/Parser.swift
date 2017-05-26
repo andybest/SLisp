@@ -59,6 +59,11 @@ class Environment {
     
     init() {
         createDefaultNamespace()
+        
+        let core = Core(env: self)
+        core.initBuiltins().forEach { name, body in
+            _ = currentNamespace.bindGlobal(name: name, value: .function(.native(body: body)))
+        }
     }
     
     func createDefaultNamespace() {
@@ -197,7 +202,17 @@ class Repl {
         case .list(let list):
             guard let f = list.first else { return form }
             
-            if case let .function(body) = f {
+            var item = f
+            
+            // If the first item in the list is an atom, check the environment to see
+            // if it has been bound
+            if case let .atom(name) = item {
+                if let bind = env.currentNamespace.getValue(name: name) {
+                    item = bind
+                }
+            }
+            
+            if case let .function(body) = item {
                 switch body {
                 case .native(body: let nativeBody):
                     return try nativeBody(Array(list.dropFirst()), env)
