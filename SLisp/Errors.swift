@@ -10,4 +10,5 @@ import Foundation
 
 enum LispError: Error {
     case general(msg: String)
+    case runtime(msg: String)
 }

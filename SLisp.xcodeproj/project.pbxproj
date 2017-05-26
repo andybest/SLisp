@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		A557FDE61ED737E700C94EA9 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A557FDE51ED737E700C94EA9 /* Parser.swift */; };
 		A557FDE81ED8332200C94EA9 /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A557FDE71ED8332200C94EA9 /* Errors.swift */; };
+		A557FDE91ED844D300C94EA9 /* Builtins.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C034001C860D24000853EC /* Builtins.swift */; };
+		A557FDEA1ED844D400C94EA9 /* Builtins.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C034001C860D24000853EC /* Builtins.swift */; };
+		A557FDEB1ED8461800C94EA9 /* Core.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C034021C860D33000853EC /* Core.swift */; };
+		A557FDEC1ED8461800C94EA9 /* Core.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C034021C860D33000853EC /* Core.swift */; };
 		A5803E611CFF83CE00C59003 /* math.sl in CopyFiles */ = {isa = PBXBuildFile; fileRef = C8BB4574A6D0EE2614A68798 /* math.sl */; };
 		A5803E621CFF83CE00C59003 /* core.sl in CopyFiles */ = {isa = PBXBuildFile; fileRef = C8BB41462E7969688AD48987 /* core.sl */; };
 		A5803E631CFF83CE00C59003 /* testInput1.sl in CopyFiles */ = {isa = PBXBuildFile; fileRef = C8BB42081A7DEFC3B4A14583 /* testInput1.sl */; };
@@ -233,7 +237,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A557FDEA1ED844D400C94EA9 /* Builtins.swift in Sources */,
 				A5803E6B1CFF85FB00C59003 /* LexerTests.swift in Sources */,
+				A557FDEC1ED8461800C94EA9 /* Core.swift in Sources */,
 				A5803E721CFF863500C59003 /* Lexer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -242,9 +248,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A557FDEB1ED8461800C94EA9 /* Core.swift in Sources */,
 				A557FDE81ED8332200C94EA9 /* Errors.swift in Sources */,
 				A5989B221C1715A000B91B38 /* Lexer.swift in Sources */,
 				A557FDE61ED737E700C94EA9 /* Parser.swift in Sources */,
+				A557FDE91ED844D300C94EA9 /* Builtins.swift in Sources */,
 				A5989AF51C17119B00B91B38 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

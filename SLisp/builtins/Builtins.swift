@@ -26,8 +26,6 @@
 
 import Foundation
 
-typealias BuiltinBody = (Pair?) -> LispType
-
 extension Dictionary {
     mutating func merge(_ dict: Dictionary<Key,Value>) {
         for (key, value) in dict {
@@ -37,34 +35,16 @@ extension Dictionary {
     }
 }
 
-/* Global function to get all standard built-in functions */
-func getBuiltins(_ env: Environment) -> [String: BuiltinBody] {
-    var builtins = [String: BuiltinBody]()
-    
-    let core = Core(env: env)
-    let math = MathBuiltins(env: env)
-    
-    builtins.merge(core.getBuiltins())
-    builtins.merge(math.getBuiltins())
-    
-    return builtins
-}
-
-/* Load library implementations that are implemented in SLisp */
-func loadSLispImplemetations(_ env: Environment) {
-    let core = Core(env: env)
-    core.loadImplementation()
-    
-    let math = MathBuiltins(env:env)
-    math.loadImplementation()
-}
-
 class Builtins {
-    let env:Environment
+    let env: Environment
     var builtins = [String : BuiltinBody]()
     
     init(env:Environment) {
         self.env = env
+    }
+    
+    func bindToNamespace() {
+        
     }
     
     func addBuiltin(_ name: String, _ body: @escaping BuiltinBody) {
@@ -74,51 +54,8 @@ class Builtins {
     func getBuiltins() -> [String: BuiltinBody] {
         return builtins
     }
-
+    
     func loadBuiltinsFromFile(_ path:String) {
-
-    }
-}
-
-func checkArgs(_ args:Pair?, env:Environment) -> Pair {
-    var p: Pair? = args
-    
-    // Recursively evaluate any arguments that are lists.
-    while p != nil {
-        switch p!.value {
-        case .lPair(let argPair):
-            let output = env.evaluate(argPair)
-            p?.value = output
-            break
-            
-        case .atom(let atom):
-            // Check the environment for variables
-            let value = env.getVariable(atom)
-            
-            if value != nil {
-                p?.value = value!
-            }
-            break
-            
-        default:
-            break
-        }
         
-        p = p!.next
     }
-    
-    return args!
-}
-
-func getArgList(_ args:Pair?, env:Environment) -> [LispType] {
-    var arg = checkArgs(args, env:env) as Pair?
-    
-    var result = [LispType]()
-    
-    while arg != nil {
-        result.append(arg!.value)
-        arg = arg!.next
-    }
-    
-    return result
 }

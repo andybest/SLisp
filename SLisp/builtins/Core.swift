@@ -33,83 +33,21 @@ class Core: Builtins {
         let _ = initBuiltins()
     }
     
-    func loadImplementation() {
-        // Load core library implemented in SLisp
-        do {
-            let path = "./data/core.sl"
-            try env.evaluateFile(path)
-        } catch {
-            print("Core library implementation not found!")
-        }
-    }
-    
-    func evaluateOrReturnResult(_ val: LispType) -> LispType
-    {
-        var rv: LispType
-        
-        switch val {
-            
-        case .atom(let a):
-            if let r = self.env.getVariable(a) {
-                rv = r
-            } else {
-                rv = val
-            }
-            break
-            
-        case .lPair(let p):
-            rv = self.env.evaluate(copyList(p))
-            break
-            
-        default:
-            rv = val
-        }
-        
-        return rv
-    }
-    
-    func tcoResult(_ val: LispType) -> LispType
-    {
-        var rv: LispType
-        
-        switch val {
-            
-        case .atom(let a):
-            if let r = self.env.getVariable(a) {
-                rv = r
-            } else {
-                rv = val
-            }
-            
-        case .lPair(let p):
-            rv = LispType.lTCOResult(LispType.lPair(copyList(p)))
-            
-        default:
-            rv = val
-        }
-        
-        return rv
-    }
-    
     func initBuiltins() -> [String: BuiltinBody] {
-        addBuiltin("def") { args in
-            if args != nil && valueIsAtom(args!.value) {
-                let name = stringFromValue(args!.value)
-                
-                if args?.next != nil {
-                    if valueIsPair(args!.next!.value) {
-                        let p = pairFromValue(args!.next!.value)
-                        self.env.addVariable(name!, value: self.env.evaluate(p!))
-                    } else {
-                        self.env.addVariable(name!, value: args!.next!.value)
-                    }
-                    
-                }
+        addBuiltin("def") { args, env throws in
+            if args.count != 2 {
+                throw LispError.runtime(msg: "'def' requires exactly 2 arguments. Got \(args.count).")
             }
-            return LispType.nil
+            
+            guard case let .atom(name) = args[0] else {
+                throw LispError.runtime(msg: "'def' requires the first argument to be an atom. Got \(String(describing: args[0])) instead.")
+            }
+            
+            let binding = env.currentNamespace.bindGlobal(name: name, value: args[1])
+            return LispType.atom(binding)
         }
 
-        addBuiltin("list") { args in
+        /*addBuiltin("list") { args in
             if args != nil {
                 return LispType.lPair(checkArgs(args!, env:self.env))
             }
@@ -567,7 +505,7 @@ class Core: Builtins {
             }
             
             return p!.value
-        }
+        }*/
         
         return builtins
     }

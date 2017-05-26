@@ -11,6 +11,13 @@ import Foundation
 
 typealias lFloat = Double
 
+typealias BuiltinBody = ([LispType], Environment) throws -> LispType
+
+indirect enum FunctionBody {
+    case native(body: BuiltinBody)
+    case lisp(argnames: [String], body: LispType)
+}
+
 enum LispType: CustomStringConvertible {
     case list([LispType])
     case atom(String)
@@ -18,7 +25,7 @@ enum LispType: CustomStringConvertible {
     case `string`(String)
     case boolean(Bool)
     case `nil`
-    case function([String], [LispType])
+    case function(FunctionBody)
     
     var description: String {
         switch self {
@@ -35,8 +42,8 @@ enum LispType: CustomStringConvertible {
         case .list(let list):
             let elements = list.map { String(describing: $0) }.joined(separator: " ")
             return "(\(elements))"
-        case .function(let args, let body):
-            return "(function (\(args.joined(separator: " "))) \(String(describing: body)))"
+        case .function(_):
+            return "#<function>"
         }
     }
     
@@ -100,16 +107,20 @@ class Namespace {
         return nil
     }
     
-    func bindLocal(name: String, value: LispType) {
+    func bindLocal(name: String, value: LispType) -> String {
         if bindingStack.count > 0 {
             bindingStack[bindingStack.count - 1][name] = value
         }
         
         rootBindings[name] = value
+        
+        return "\(self.name)/\(name)"
     }
     
-    func bindGlobal(name: String, value: LispType) {
+    func bindGlobal(name: String, value: LispType) -> String {
         rootBindings[name] = value
+        
+        return "\(self.name)/\(name)"
     }
 }
 
@@ -128,6 +139,8 @@ class Reader {
 }
 
 class Repl {
+    
+    let environment = Environment()
     
     func mainLoop() {
         while true {
@@ -178,15 +191,51 @@ class Repl {
         return read_token(reader.nextToken()!, reader: reader)
     }
 
-    func eval(_ form: LispType, env: Environment) {
-        
+    func eval(_ form: LispType, env: Environment) throws -> LispType {
+        switch form {
+            
+        case .list(let list):
+            guard let f = list.first else { return form }
+            
+            if case let .function(body) = f {
+                switch body {
+                case .native(body: let nativeBody):
+                    return try nativeBody(Array(list.dropFirst()), env)
+                case .lisp(argnames: let argnames, body: let lispBody):
+                    return form
+                }
+            } else {
+                throw LispError.runtime(msg: "'\(String(describing: list.first))' is not a function.")
+            }
+            
+        case .atom(let atom):
+            if let val = env.currentNamespace.getValue(name: atom) {
+                return val
+            }
+            return form
+            
+        default:
+            return form
+        }
     }
 
     func print() {
         
     }
 
-    func rep(_ input: String) -> LispType {
-        return read(input)
+    func rep(_ input: String) -> String {
+        let form = read(input)
+        
+        do {
+            let rv = try eval(form, env: environment)
+            return String(describing: rv)
+            
+        } catch let LispError.runtime(msg: message) {
+            return "Runtime Error: \(message)"
+        } catch let LispError.general(msg: message) {
+            return "Error: \(message)"
+        } catch {
+            return String(describing: error)
+        }
     }
 }
