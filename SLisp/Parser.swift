@@ -18,6 +18,7 @@ enum LispType: CustomStringConvertible {
     case `string`(String)
     case boolean(Bool)
     case `nil`
+    case function([String], [LispType])
     
     var description: String {
         switch self {
@@ -34,9 +35,82 @@ enum LispType: CustomStringConvertible {
         case .list(let list):
             let elements = list.map { String(describing: $0) }.joined(separator: " ")
             return "(\(elements))"
+        case .function(let args, let body):
+            return "(function (\(args.joined(separator: " "))) \(String(describing: body)))"
         }
     }
     
+}
+
+class Environment {
+    var currentNamespaceName: String = ""
+    var namespaces = [String: Namespace]()
+    
+    var currentNamespace: Namespace {
+        return namespaces[currentNamespaceName]!
+    }
+    
+    init() {
+        createDefaultNamespace()
+    }
+    
+    func createDefaultNamespace() {
+        let ns = Namespace(name: "user")
+        addNamespace(ns)
+        do {
+         try changeNamespace(ns.name)
+        } catch {
+            print("Error when creating default namespace")
+        }
+    }
+    
+    func addNamespace(_ ns: Namespace) {
+        namespaces[ns.name] = ns
+    }
+    
+    func changeNamespace(_ name: String) throws {
+        if namespaces[name] != nil {
+            currentNamespaceName = name
+        } else {
+            throw LispError.general(msg: "Invalid namespace: '\(name)'")
+        }
+    }
+}
+
+class Namespace {
+    let name: String
+    var rootBindings = [String: LispType]()
+    var bindingStack = [[String: LispType]]()
+    
+    init(name: String) {
+        self.name = name
+    }
+    
+    func getValue(name: String) -> LispType? {
+        for index in stride(from: bindingStack.count - 1, through: 0, by: -1) {
+            if let val = bindingStack[index][name] {
+                return val
+            }
+        }
+        
+        if let val = rootBindings[name] {
+            return val
+        }
+        
+        return nil
+    }
+    
+    func bindLocal(name: String, value: LispType) {
+        if bindingStack.count > 0 {
+            bindingStack[bindingStack.count - 1][name] = value
+        }
+        
+        rootBindings[name] = value
+    }
+    
+    func bindGlobal(name: String, value: LispType) {
+        rootBindings[name] = value
+    }
 }
 
 class Reader {
@@ -104,7 +178,7 @@ class Repl {
         return read_token(reader.nextToken()!, reader: reader)
     }
 
-    func eval() {
+    func eval(_ form: LispType, env: Environment) {
         
     }
 
