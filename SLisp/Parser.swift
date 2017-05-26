@@ -162,10 +162,10 @@ class Repl {
         }
     }
     
-    func read_token(_ token: TokenType, reader: Reader) -> LispType {
+    func read_token(_ token: TokenType, reader: Reader) throws -> LispType {
         switch token {
         case .lParen:
-            return read_list(reader)
+            return try read_list(reader)
         case .atom(let str):
             return .atom(str)
         case .lString(let str):
@@ -178,27 +178,32 @@ class Repl {
         }
     }
     
-    func read_list(_ reader: Reader) -> LispType {
+    func read_list(_ reader: Reader) throws -> LispType {
         var list: [LispType] = []
+        var endOfList = false
         
         while let token = reader.nextToken() {
             switch token {
             case .rParen:
-                return LispType.list(list)
+                endOfList = true
             default:
-                list.append(read_token(token, reader: reader))
+                list.append(try read_token(token, reader: reader))
             }
+        }
+        
+        if !endOfList {
+            throw LispError.lexer(msg: "Expected ')'.")
         }
         
         return .list(list)
     }
     
-    func read(_ input: String) -> LispType {
+    func read(_ input: String) throws -> LispType {
         let tokenizer = Tokenizer(source: input)
         let tokens = tokenizer.tokenizeInput()
         
         let reader = Reader(tokens: tokens)
-        return read_token(reader.nextToken()!, reader: reader)
+        return try read_token(reader.nextToken()!, reader: reader)
     }
 
     func eval(_ form: LispType, env: Environment) throws -> LispType {
@@ -244,9 +249,9 @@ class Repl {
     }
 
     func rep(_ input: String) -> String {
-        let form = read(input)
         
         do {
+            let form = try read(input)
             let rv = try eval(form, env: environment)
             return String(describing: rv)
             
@@ -254,6 +259,8 @@ class Repl {
             return "Runtime Error: \(message)"
         } catch let LispError.general(msg: message) {
             return "Error: \(message)"
+        } catch let LispError.lexer(msg: message) {
+            return "Syntax Error: \(message)"
         } catch {
             return String(describing: error)
         }
