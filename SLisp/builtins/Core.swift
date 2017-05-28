@@ -171,125 +171,118 @@ class Core: Builtins {
             return try env.eval(args[2], env: env)
         }
         
-        /*
-        addBuiltin("while") { args in
-            var body:Pair?
-            body = args!.next
-            
-            if body == nil {
-                print("while requires a body.")
-                return LispType.nil
+        addBuiltin("while") { args, env throws in
+            if args.count < 2 {
+                throw LispError.general(msg: "'while' requires a body")
             }
             
-            let condition = args!.value
+            guard case var .boolean(condition) = try env.eval(args[0], env: env) else {
+                throw LispError.general(msg: "'while' expects the first argument to be a boolean condition")
+            }
             
-            let getResult: ()->Bool = {
-                let result = self.evaluateOrReturnResult(condition)
-                if !valueIsBoolean(result) {
-                    print("while requires the first argument to be a boolean.")
-                    return false
+            let body = Array(args.dropFirst())
+            
+            var rv: LispType = .nil
+            while condition {
+                for form in body {
+                    rv = try env.eval(form, env: env)
                 }
-                return booleanFromValue(result)
-            }
-            
-            var rv = LispType.nil
-            while(getResult()) {
-                rv = self.evaluateOrReturnResult(body!.value)
+                
+                switch try env.eval(args[0], env: env) {
+                case .boolean(let cond):
+                    condition = cond
+                default:
+                    throw LispError.general(msg: "'while' expects the first argument to be a boolean condition")
+                }
             }
             
             return rv
         }
         
-        addBuiltin("print") { args in
-            var p: Pair? = checkArgs(args, env: self.env)
-            var output = [String]()
+        addBuiltin("list?") { args, env throws in
+            try self.checkArgCount(funcName: "list", args: args, expectedNumArgs: 1)
             
-            while p != nil {
-                output.append(lispTypeToString(p!.value, env: self.env))
-                
-                p = p!.next
+            for arg in args {
+                guard case .list(_) = try env.eval(arg, env: env) else {
+                    return .boolean(false)
+                }
             }
             
-            print(output.joined(separator: ""))
-            
-            return LispType.nil
-        }
-
-        addBuiltin("list?") { args in
-            let argList = getArgList(args, env: self.env)
-
-            if argList.count != 1 {
-                print("list? requires one argument")
-                return LispType.nil
-            }
-
-            if valueIsPair(argList[0]) {
-                return LispType.lBoolean(true)
-            }
-
-            return LispType.lBoolean(false)
-        }
-
-        addBuiltin("atom?") { args in
-            let argList = getArgList(args, env: self.env)
-
-            if argList.count != 1 {
-                print("atom? requires one argument")
-                return LispType.nil
-            }
-
-            if valueIsAtom(argList[0]) {
-                return LispType.lBoolean(true)
-            }
-
-            return LispType.lBoolean(false)
-        }
-
-        addBuiltin("string?") { args in
-            let argList = getArgList(args, env: self.env)
-
-            if argList.count != 1 {
-                print("string? requires one argument")
-                return LispType.nil
-            }
-
-            if valueIsString(argList[0]) {
-                return LispType.lBoolean(true)
-            }
-
-            return LispType.lBoolean(false)
-        }
-
-        addBuiltin("number?") { args in
-            let argList = getArgList(args, env: self.env)
-
-            if argList.count != 1 {
-                print("number? requires one argument")
-                return LispType.nil
-            }
-
-            if valueIsNumber(argList[0]) {
-                return LispType.lBoolean(true)
-            }
-
-            return LispType.lBoolean(false)
-        }
-
-        addBuiltin("function?") { args in
-            let argList = getArgList(args, env: self.env)
-
-            if argList.count != 1 {
-                print("function? requires one argument")
-                return LispType.nil
-            }
-
-            if valueIsFunction(argList[0]) {
-                return LispType.lBoolean(true)
-            }
-
-            return LispType.lBoolean(false)
+            return .boolean(true)
         }
         
+        addBuiltin("atom?") { args, env throws in
+            try self.checkArgCount(funcName: "atom?", args: args, expectedNumArgs: 1)
+            
+            for arg in args {
+                guard case .atom(_) = try env.eval(arg, env: env) else {
+                    return .boolean(false)
+                }
+            }
+            
+            return .boolean(true)
+        }
+        
+        addBuiltin("string?") { args, env throws in
+            try self.checkArgCount(funcName: "string?", args: args, expectedNumArgs: 1)
+            
+            for arg in args {
+                guard case .string(_) = try env.eval(arg, env: env) else {
+                    return .boolean(false)
+                }
+            }
+            
+            return .boolean(true)
+        }
+        
+        addBuiltin("float?") { args, env throws in
+            try self.checkArgCount(funcName: "float?", args: args, expectedNumArgs: 1)
+            
+            for arg in args {
+                guard case .float(_) = try env.eval(arg, env: env) else {
+                    return .boolean(false)
+                }
+            }
+            
+            return .boolean(true)
+        }
+        
+        addBuiltin("function?") { args, env throws in
+            try self.checkArgCount(funcName: "function?", args: args, expectedNumArgs: 1)
+            
+            for arg in args {
+                guard case .function(_) = try env.eval(arg, env: env) else {
+                    return .boolean(false)
+                }
+            }
+            
+            return .boolean(true)
+        }
+        
+        addBuiltin("nil?") { args, env throws in
+            try self.checkArgCount(funcName: "nil?", args: args, expectedNumArgs: 1)
+            
+            for arg in args {
+                guard case .nil = try env.eval(arg, env: env) else {
+                    return .boolean(false)
+                }
+            }
+            
+            return .boolean(true)
+        }
+        
+        addBuiltin("do") { args, env throws in
+            try self.checkArgCount(funcName: "do", args: args, expectedNumArgs: 1)
+            
+            var rv: LispType = .nil
+            for arg in args {
+                rv = try env.eval(arg, env: env)
+            }
+            
+            return rv
+        }
+        
+        /*
         addBuiltin("let") { args in
             
             if(args == nil) {
@@ -348,34 +341,6 @@ class Core: Builtins {
             self.env.popEnvironment()
             
             return rv
-        }
-        
-        addBuiltin("do") { args in
-            var pair = args
-            var rv = LispType.nil
-            
-            // Evaluate all of the expressions in the body
-            while pair != nil {
-                rv = self.evaluateOrReturnResult(pair!.value)
-                pair = pair!.next
-            }
-            
-            return rv
-        }
-        
-        addBuiltin("nil?") { args in
-            let argList = getArgList(args, env: self.env)
-            
-            if argList.count != 1 {
-                print("nil? requires one argument")
-                return LispType.nil
-            }
-            
-            if valueIsNil(argList[0]) {
-                return LispType.lBoolean(true)
-            }
-            
-            return LispType.lBoolean(false)
         }
         
         /* Get input from stdin */
