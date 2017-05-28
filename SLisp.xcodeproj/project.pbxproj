@@ -18,6 +18,8 @@
 		A5803E631CFF83CE00C59003 /* testInput1.sl in CopyFiles */ = {isa = PBXBuildFile; fileRef = C8BB42081A7DEFC3B4A14583 /* testInput1.sl */; };
 		A5803E6B1CFF85FB00C59003 /* LexerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5803E6A1CFF85FB00C59003 /* LexerTests.swift */; };
 		A5803E721CFF863500C59003 /* Lexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5989B211C1715A000B91B38 /* Lexer.swift */; };
+		A5959DB21EDB7BCC0017A99F /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C034041C860D39000853EC /* Math.swift */; };
+		A5959DB31EDB7BCC0017A99F /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C034041C860D39000853EC /* Math.swift */; };
 		A5989AF51C17119B00B91B38 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5989AF41C17119B00B91B38 /* main.swift */; };
 		A5989B221C1715A000B91B38 /* Lexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5989B211C1715A000B91B38 /* Lexer.swift */; };
 		A5B6D2001D13290D00D59C94 /* rock-paper-scissors.sl in CopyFiles */ = {isa = PBXBuildFile; fileRef = A5B6D1FF1D13242F00D59C94 /* rock-paper-scissors.sl */; };
@@ -242,6 +244,7 @@
 				A5803E6B1CFF85FB00C59003 /* LexerTests.swift in Sources */,
 				A557FDEC1ED8461800C94EA9 /* Core.swift in Sources */,
 				A5803E721CFF863500C59003 /* Lexer.swift in Sources */,
+				A5959DB31EDB7BCC0017A99F /* Math.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -252,6 +255,7 @@
 				A557FDEB1ED8461800C94EA9 /* Core.swift in Sources */,
 				A557FDE81ED8332200C94EA9 /* Errors.swift in Sources */,
 				A5989B221C1715A000B91B38 /* Lexer.swift in Sources */,
+				A5959DB21EDB7BCC0017A99F /* Math.swift in Sources */,
 				A557FDE61ED737E700C94EA9 /* Parser.swift in Sources */,
 				A557FDE91ED844D300C94EA9 /* Builtins.swift in Sources */,
 				A5989AF51C17119B00B91B38 /* main.swift in Sources */,

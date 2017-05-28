@@ -64,6 +64,11 @@ class Environment {
         core.initBuiltins().forEach { name, body in
             _ = currentNamespace.bindGlobal(name: name, value: .function(.native(body: body)))
         }
+        
+        let math = MathBuiltins(env: self)
+        math.initBuiltins().forEach { name, body in
+            _ = currentNamespace.bindGlobal(name: name, value: .function(.native(body: body)))
+        }
     }
     
     func createDefaultNamespace() {

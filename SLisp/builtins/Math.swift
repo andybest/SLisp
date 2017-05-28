@@ -26,8 +26,8 @@
 
 import Foundation
 
-typealias ArithmeticOperationBody = (Double, Double) -> Double
-typealias ArithmeticBooleanOperationBody = (Double, Double) -> Bool
+typealias ArithmeticOperationBody = (lFloat, lFloat) -> lFloat
+typealias ArithmeticBooleanOperationBody = (lFloat, lFloat) -> Bool
 typealias BooleanOperationBody = (Bool, Bool) -> Bool
 typealias SingleBooleanOperationBody = (Bool) -> Bool
 
@@ -40,228 +40,186 @@ class MathBuiltins : Builtins {
     
     func loadImplementation() {
         // Load core library implemented in SLisp
-        do {
+        /*do {
             let path = "./data/math.sl"
             try env.evaluateFile(path)
         } catch {
             print("Math library implementation not found!")
-        }
+        }*/
     }
     
     // A generic function for arithmetic operations
-    func doArithmeticOperation(_ args:Pair?, body:ArithmeticOperationBody) -> LispType {
-        var x: Double = 0.0
+    func doArithmeticOperation(_ args: [LispType], body:ArithmeticOperationBody) throws -> LispType {
+        var x: lFloat = 0.0
         var firstArg = true
-        var p: Pair? = checkArgs(args, env: env)
         
-        while p != nil {
-            switch p!.value {
-            case .number(let num):
-                if firstArg {
-                    x = num
-                    firstArg = false
-                } else {
-                    x = body(x, num)
-                }
-                break
-                
-            default:
-                print("Invalid argument: \(p!.value)")
-                return LispType.nil
+        let evaluated = try args.map { try env.eval($0, env: env) }
+        
+        for arg in evaluated {
+            guard case let .float(num) = arg else {
+                throw LispError.general(msg: "Invalid argument type: \(String(describing: arg))")
             }
             
-            p = p?.next
+            if firstArg {
+                x = num
+                firstArg = false
+            } else {
+                x = body(x, num)
+            }
         }
         
-        return LispType.number(x)
+        return .float(x)
     }
     
-    func doBooleanArithmeticOperation(_ args:Pair?, body:ArithmeticBooleanOperationBody) -> LispType {
+    func doBooleanArithmeticOperation(_ args: [LispType], body: ArithmeticBooleanOperationBody) throws -> LispType {
         var result: Bool = false
-        var lastValue: Double = 0.0
+        var lastValue: lFloat = 0.0
         var firstArg = true
-        var p: Pair? = checkArgs(args, env: env)
+        let evaluated = try args.map { try env.eval($0, env: env) }
         
-        while p != nil {
-            switch p!.value {
-            case .number(let num):
-                if firstArg {
-                    lastValue = num
-                    firstArg = false
-                } else {
-                    result = body(lastValue, num)
-                    lastValue = num
-                }
-                break
-                
-            default:
-                print("Invalid argument: \(p!.value)")
-                return LispType.nil
+        for arg in evaluated {
+            guard case let .float(num) = arg else {
+                throw LispError.general(msg: "Invalid argument type: \(String(describing: arg))")
             }
             
-            p = p?.next
+            if firstArg {
+                lastValue = num
+                firstArg = false
+            } else {
+                result = body(lastValue, num)
+            }
         }
         
-        return LispType.lBoolean(result)
+        return .boolean(result)
     }
     
-    func doBooleanOperation(_ args:Pair?, body:BooleanOperationBody) -> LispType {
+    func doBooleanOperation(_ args: [LispType], body:BooleanOperationBody) throws -> LispType {
         var result: Bool = false
         var lastValue: Bool = false
         var firstArg = true
-        var p: Pair? = checkArgs(args, env: env)
+        let evaluated = try args.map { try env.eval($0, env: env) }
         
-        while p != nil {
-            switch p!.value {
-            case .lBoolean(let b):
-                if firstArg {
-                    lastValue = b
-                    firstArg = false
-                } else {
-                    result = body(lastValue, b)
-                    lastValue = b
-                }
-                break
-                
-            default:
-                print("Invalid argument: \(p!.value)")
-                return LispType.nil
+        for arg in evaluated {
+            guard case let .boolean(b) = arg else {
+                throw LispError.general(msg: "Invalid argument type: \(String(describing: arg))")
             }
             
-            p = p?.next
-        }
-        
-        return LispType.lBoolean(result)
-    }
-    
-    func doSingleBooleanOperation(_ args:Pair?, body:SingleBooleanOperationBody) -> LispType {
-        var result: Bool = false
-        var p: Pair? = checkArgs(args, env: env)
-        
-        if p != nil {
-            switch p!.value {
-            case .lBoolean(let b):
-                result = body(b)
-                break
-                
-            default:
-                print("Invalid argument: \(p!.value)")
-                return LispType.nil
+            if firstArg {
+                lastValue = b
+                firstArg = false
+            } else {
+                result = body(lastValue, b)
             }
-            
-            p = p?.next
         }
         
-        return LispType.lBoolean(result)
+        return .boolean(result)
     }
     
-    func initBuiltins() {
-        addBuiltin("+") { args in
-            return self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
+    func doSingleBooleanOperation(_ args: [LispType], body:SingleBooleanOperationBody) throws -> LispType {
+        let evaluated = try args.map { try env.eval($0, env: env) }
+        
+        guard case let .boolean(b) = evaluated[0] else {
+            throw LispError.general(msg: "Invalid argument type: \(String(describing: evaluated[0]))")
+        }
+        
+        return .boolean(body(b))
+    }
+    
+    func initBuiltins() -> [String: BuiltinBody] {
+        addBuiltin("+") { args, env throws in
+            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
                 return x + y
             }
         }
         
-        addBuiltin("-") { args in
-            return self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
+        addBuiltin("-") { args, env throws in
+            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
                 return x - y
             }
         }
         
-        addBuiltin("*") { args in
-            return self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
+        addBuiltin("*") { args, env throws in
+            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
                 return x * y
             }
         }
         
-        addBuiltin("/") { args in
-            return self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
+        addBuiltin("/") { args, env throws in
+            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
                 return x / y
             }
         }
         
-        addBuiltin("mod") { args in
-            return self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
+        addBuiltin("mod") { args, env throws in
+            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
                 return remainder(x, y)
             }
         }
         
-        addBuiltin(">") { args in
-            return self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
+        addBuiltin(">") { args, env throws in
+            return try self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
                 return x > y
             }
         }
         
-        addBuiltin("<") { args in
-            return self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
+        addBuiltin("<") { args, env throws in
+            return try self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
                 return x < y
             }
         }
         
-        addBuiltin("==") { args in
-            return self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
+        addBuiltin("==") { args, env throws in
+            return try self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
                 return x == y
             }
         }
         
-        addBuiltin("and") { args in
-            return self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
+        addBuiltin("and") { args, env throws in
+            return try self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
                 return x && y
             }
         }
         
-        addBuiltin("or") { args in
-            return self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
+        addBuiltin("or") { args, env throws in
+            return try self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
                 return x || y
             }
         }
         
-        addBuiltin("not") { args in
-            return self.doSingleBooleanOperation(args) { (x: Bool) -> Bool in
+        addBuiltin("not") { args, env throws in
+            return try self.doSingleBooleanOperation(args) { (x: Bool) -> Bool in
                 return !x
             }
         }
         
-        addBuiltin("sqrt") { args in
-            let argList = getArgList(args, env: self.env)
-            
-            if argList.count != 1 {
-                print("sqrt requires 1 argument.")
-                return LispType.nil
+        addBuiltin("sqrt") { args, env throws in
+            if args.count != 1 {
+                throw LispError.general(msg: "'sqrt' requires one argument")
             }
             
-            for (index, arg) in argList.enumerated() {
-                if !valueIsNumber(arg) {
-                    print("Argument to sqrt at position \(index) is not a number.")
-                    return LispType.nil
-                }
+            let evaluated = try args.map { try env.eval($0, env: env) }
+            
+            guard case let .float(num) = evaluated[0] else {
+                throw LispError.general(msg: "'sqrt' requires a float argument.")
             }
             
-            let x = numberFromValue(argList[0])
-            return LispType.number(sqrt(x))
+            return .float(sqrt(num))
         }
         
-        addBuiltin("random") { args in
-            let argList = getArgList(args, env: self.env)
+        addBuiltin("random") { args, env throws in
+            try self.checkArgCount(funcName: "random", args: args, expectedNumArgs: 2)
             
-            if argList.count != 2 {
-                print("random requires 2 range arguments")
-                return LispType.nil
+            let evaluated = try args.map { try env.eval($0, env: env) }
+            
+            guard case let .float(lowerBound) = evaluated[0], case let .float(upperBound) = evaluated[1] else {
+                throw LispError.general(msg: "'random' requires two float arguments")
             }
             
-            for (index, arg) in argList.enumerated() {
-                if !valueIsNumber(arg) {
-                    print("Argument to random at \(index) is not a number.")
-                    return LispType.nil
-                }
-            }
+            let r = (Double(arc4random()) / Double(UInt32.max) * (upperBound - lowerBound)) + lowerBound
             
-            let min = numberFromValue(argList[0])
-            let max = numberFromValue(argList[1])
-            
-            let r = (Double(arc4random()) / Double(UInt32.max) * (max - min)) + min
-            
-            return LispType.number(r)
+            return .float(r)
         }
+        
+        return builtins
     }
 }
