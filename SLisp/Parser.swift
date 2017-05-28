@@ -137,6 +137,10 @@ class Environment {
         case .atom(let atom):
             if atom == "nil" {
                 return .nil
+            } else if atom == "true" {
+                return .boolean(true)
+            } else if atom == "false" {
+                return .boolean(false)
             }
             
             if let val = env.currentNamespace.getValue(name: atom) {

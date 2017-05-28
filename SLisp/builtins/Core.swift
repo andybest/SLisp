@@ -149,43 +149,29 @@ class Core: Builtins {
             return .nil
         }
         
-        /*
-        addBuiltin("if") { args in
-            let condition: LispType = args!.value
-            
-            let result = self.evaluateOrReturnResult(condition)
-            
-            if !valueIsBoolean(result) {
-                print("if requires the first argument to be a boolean.")
-                return LispType.nil
+        addBuiltin("quote") { args, env throws in
+            if args.count != 1 {
+                throw LispError.general(msg: "'quote' expects 1 argument, got \(args.count).")
             }
             
-            // Get execution paths.
-            
-            var truePath:Pair?
-            var falsePath:Pair?
-            
-            truePath = args!.next
-            
-            if truePath == nil {
-                print("if requires a true path.")
-                return LispType.nil
-            }
-            
-            falsePath = truePath!.next
-            
-            if falsePath == nil {
-                print("if requires a false path.")
-                return LispType.nil
-            }
-            
-            if booleanFromValue(result) {
-                return self.tcoResult(truePath!.value)
-            } else {
-                return self.tcoResult(falsePath!.value)
-            }
+            return args[0]
         }
         
+        addBuiltin("if") { args, env throws in
+            try self.checkArgCount(funcName: "if", args: args, expectedNumArgs: 3)
+            
+            guard case let .boolean(condition) = try env.eval(args[0], env: env) else {
+                throw LispError.general(msg: "'if' expects the first argument to be a boolean condition")
+            }
+            
+            if condition {
+                return try env.eval(args[1], env: env)
+            }
+            
+            return try env.eval(args[2], env: env)
+        }
+        
+        /*
         addBuiltin("while") { args in
             var body:Pair?
             body = args!.next
