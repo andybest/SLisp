@@ -15,7 +15,7 @@ typealias BuiltinBody = ([LispType], Environment) throws -> LispType
 
 indirect enum FunctionBody {
     case native(body: BuiltinBody)
-    case lisp(argnames: [String], body: LispType)
+    case lisp(argnames: [String], body: [LispType])
 }
 
 enum LispType: CustomStringConvertible {
@@ -87,6 +87,68 @@ class Environment {
             throw LispError.general(msg: "Invalid namespace: '\(name)'")
         }
     }
+    
+    func eval(_ form: LispType, env: Environment) throws -> LispType {
+        switch form {
+            
+        case .list(let list):
+            guard let f = list.first else { return form }
+            
+            var item = try eval(f, env: env)
+            
+            // If the first item in the list is an atom, check the environment to see
+            // if it has been bound
+            if case let .atom(name) = item {
+                if let bind = env.currentNamespace.getValue(name: name) {
+                    item = bind
+                }
+            }
+            
+            if case let .function(body) = item {
+                switch body {
+                case .native(body: let nativeBody):
+                    return try nativeBody(Array(list.dropFirst()), env)
+                case .lisp(argnames: let argnames, body: let lispBody):
+                    let args = Array(list.dropFirst())
+                    
+                    if args.count != argnames.count {
+                        throw LispError.general(msg: "Invalid number of args: \(args.count). Expected \(argnames.count).")
+                    }
+                    
+                    env.currentNamespace.pushLocal()
+                    
+                    for i in 0..<argnames.count {
+                        _ = env.currentNamespace.bindLocal(name: argnames[i], value: args[i])
+                    }
+                    
+                    var rv: LispType = .nil
+                    for val in lispBody {
+                        rv = try eval(val, env: env)
+                    }
+                    
+                    _ = env.currentNamespace.popLocal()
+                    
+                    return rv
+                }
+            } else {
+                throw LispError.runtime(msg: "'\(String(describing: f))' is not a function.")
+            }
+            
+        case .atom(let atom):
+            if atom == "nil" {
+                return .nil
+            }
+            
+            if let val = env.currentNamespace.getValue(name: atom) {
+                return val
+            }
+            
+            throw LispError.general(msg: "Atom '\(atom)' is not currently bound")
+            
+        default:
+            return form
+        }
+    }
 }
 
 class Namespace {
@@ -112,12 +174,20 @@ class Namespace {
         return nil
     }
     
+    func pushLocal() {
+        bindingStack.append([:])
+    }
+    
+    func popLocal() -> [String: LispType] {
+        return bindingStack.popLast() ?? [:]
+    }
+    
     func bindLocal(name: String, value: LispType) -> String {
         if bindingStack.count > 0 {
             bindingStack[bindingStack.count - 1][name] = value
+        } else {
+            rootBindings[name] = value
         }
-        
-        rootBindings[name] = value
         
         return "\(self.name)/\(name)"
     }
@@ -189,6 +259,8 @@ class Repl {
             default:
                 list.append(try read_token(token, reader: reader))
             }
+            
+            if endOfList { break }
         }
         
         if !endOfList {
@@ -200,48 +272,10 @@ class Repl {
     
     func read(_ input: String) throws -> LispType {
         let tokenizer = Tokenizer(source: input)
-        let tokens = tokenizer.tokenizeInput()
+        let tokens = try tokenizer.tokenizeInput()
         
         let reader = Reader(tokens: tokens)
         return try read_token(reader.nextToken()!, reader: reader)
-    }
-
-    func eval(_ form: LispType, env: Environment) throws -> LispType {
-        switch form {
-            
-        case .list(let list):
-            guard let f = list.first else { return form }
-            
-            var item = f
-            
-            // If the first item in the list is an atom, check the environment to see
-            // if it has been bound
-            if case let .atom(name) = item {
-                if let bind = env.currentNamespace.getValue(name: name) {
-                    item = bind
-                }
-            }
-            
-            if case let .function(body) = item {
-                switch body {
-                case .native(body: let nativeBody):
-                    return try nativeBody(Array(list.dropFirst()), env)
-                case .lisp(argnames: let argnames, body: let lispBody):
-                    return form
-                }
-            } else {
-                throw LispError.runtime(msg: "'\(String(describing: list.first))' is not a function.")
-            }
-            
-        case .atom(let atom):
-            if let val = env.currentNamespace.getValue(name: atom) {
-                return val
-            }
-            return form
-            
-        default:
-            return form
-        }
     }
 
     func print() {
@@ -252,7 +286,7 @@ class Repl {
         
         do {
             let form = try read(input)
-            let rv = try eval(form, env: environment)
+            let rv = try environment.eval(form, env: environment)
             return String(describing: rv)
             
         } catch let LispError.runtime(msg: message) {

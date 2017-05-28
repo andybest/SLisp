@@ -269,14 +269,17 @@ class StringStream {
         }
     }
 
-    func eatWhitespace() {
+    func eatWhitespace() -> Int {
+        var count = 0
         while position < characterCount {
             if isWhitespace(currentCharacter!) {
                 advanceCharacter()
+                count += 1
             } else {
-                return
+                return count
             }
         }
+        return count
     }
 
     func rewind() {
@@ -299,17 +302,17 @@ class Tokenizer {
         self.currentTokenString = ""
     }
 
-    func tokenizeInput() -> [TokenType] {
+    func tokenizeInput() throws -> [TokenType] {
         var tokens = [TokenType]()
         
-        while let t = getNextToken() {
+        while let t = try getNextToken() {
             tokens.append(t)
         }
         
         return tokens
     }
     
-    func getNextToken() -> TokenType? {
+    func getNextToken() throws -> TokenType? {
         if stream.position >= stream.str.characters.count {
             return nil
         }
@@ -320,13 +323,17 @@ class Tokenizer {
             }
         }
         
-        stream.eatWhitespace()
+        let count = stream.eatWhitespace()
         
         if stream.position >= stream.str.characters.count {
             return nil
         }
         
-        return getNextToken()
+        if count == 0 {
+            throw LispError.lexer(msg: "Unrecognized character '\(stream.currentCharacter ?? " ".characters.first!)'")
+        }
+        
+        return try getNextToken()
     }
 
 }

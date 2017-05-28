@@ -58,4 +58,10 @@ class Builtins {
     func loadBuiltinsFromFile(_ path:String) {
         
     }
+    
+    func checkArgCount(funcName: String, args: [LispType], expectedNumArgs: Int) throws {
+        if args.count < expectedNumArgs {
+            throw LispError.general(msg: "'\(funcName)' expects \(expectedNumArgs) arguments.")
+        }
+    }
 }
