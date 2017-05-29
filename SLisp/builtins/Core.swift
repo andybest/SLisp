@@ -282,67 +282,37 @@ class Core: Builtins {
             return rv
         }
         
-        /*
-        addBuiltin("let") { args in
+        addBuiltin("let") { args, env throws in
+            try self.checkArgCount(funcName: "let", args: args, expectedNumArgs: 2)
             
-            if(args == nil) {
-                print("let requires 2 arguments")
-                return LispType.nil
+            guard case let .list(bindings) = args[0] else {
+                throw LispError.general(msg: "'let' requires the first argument to be a list of bindings")
             }
             
-            if(!valueIsPair(args!.value)) {
-                print("let requires the first argument to be a list")
-                return LispType.nil
+            if bindings.count % 2 != 0 {
+                throw LispError.general(msg: "'let' requires an even number of items in the binding list")
             }
             
-            if(args!.next == nil) {
-                print("let requires a body")
-                return LispType.nil
-            }
+            env.currentNamespace.pushLocal()
             
-            var pairArgs = [LispType]()
-            var p: Pair? = pairFromValue(args!.value)
-            
-            while(p != nil) {
-                pairArgs.append(p!.value)
-                p = p!.next
-            }
-            
-            if(pairArgs.count % 2 != 0) {
-                print("let requires an even number of values")
-                return LispType.nil
-            }
-            
-            // Iterate through the pairs and put them into a dictionary, so they can be added to the environment stack
-            self.env.pushEnvironment([String: LispType]())
-            
-            for startIdx in stride(from:0, to: pairArgs.count, by: 2) {
-                let key = pairArgs[startIdx]
-                
-                if(!valueIsAtom(key)) {
-                    print("let: value \(stringFromValue(key)) is not an atom")
-                    return LispType.nil
+            try stride(from: 0, to: bindings.count, by: 2).forEach {
+                guard case let .atom(binding) = bindings[$0] else {
+                    throw LispError.general(msg: "let binding must be an atom. Got \(String(describing: bindings[$0])).")
                 }
-                
-                // Add the values to the local environment after evaluating them
-                self.env.addLocalVariable(stringFromValue(key)!, value: self.evaluateOrReturnResult(pairArgs[startIdx + 1]))
+                _ = try env.currentNamespace.bindLocal(name: binding, value: env.eval(bindings[$0 + 1], env: env))
             }
             
-            let body: Pair? =  args!.next!
-            var pair = body
-            var rv = LispType.nil
-            
-            // Evaluate all of the expressions in the body
-            while pair != nil {
-                rv = self.evaluateOrReturnResult(pair!.value)
-                pair = pair!.next
+            var rv: LispType = .nil
+            for form in args.dropFirst() {
+                rv = try env.eval(form, env: env)
             }
             
-            self.env.popEnvironment()
+            _ = env.currentNamespace.popLocal()
             
             return rv
         }
         
+        /*
         /* Get input from stdin */
         addBuiltin("input") { args in
             let argList = getArgList(args, env: self.env)
