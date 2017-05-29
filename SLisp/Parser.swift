@@ -18,6 +18,11 @@ indirect enum FunctionBody {
     case lisp(argnames: [String], body: [LispType])
 }
 
+struct TCOInvocation {
+    let function: FunctionBody
+    let args: [LispType]
+}
+
 enum LispType: CustomStringConvertible {
     case list([LispType])
     case atom(String)
@@ -26,6 +31,7 @@ enum LispType: CustomStringConvertible {
     case boolean(Bool)
     case `nil`
     case function(FunctionBody)
+    case tcoInvocation(TCOInvocation)
     
     var description: String {
         switch self {
@@ -44,6 +50,8 @@ enum LispType: CustomStringConvertible {
             return "(\(elements))"
         case .function(_):
             return "#<function>"
+        case .tcoInvocation(_):
+            return "#<TCOInvocation>"
         }
     }
     
@@ -94,69 +102,124 @@ class Environment {
     }
     
     func eval(_ form: LispType, env: Environment) throws -> LispType {
-        switch form {
-            
-        case .list(let list):
-            guard let f = list.first else { return form }
-            
-            var item = try eval(f, env: env)
-            
-            // If the first item in the list is an atom, check the environment to see
-            // if it has been bound
-            if case let .atom(name) = item {
-                if let bind = env.currentNamespace.getValue(name: name) {
-                    item = bind
+        var tco: Bool = false
+        var mutableForm = form
+        
+        repeat {
+            tco = false
+            switch mutableForm {
+                
+            case .list(let list):
+                guard let f = list.first else { return mutableForm }
+                
+                var item = LispType.nil
+                
+                if case .function(_) = f {
+                    item = f
+                } else {
+                    item = try eval(f, env: env)
                 }
-            }
-            
-            if case let .function(body) = item {
-                switch body {
-                case .native(body: let nativeBody):
-                    return try nativeBody(Array(list.dropFirst()), env)
-                case .lisp(argnames: let argnames, body: let lispBody):
-                    let args = Array(list.dropFirst())
-                    
-                    if args.count != argnames.count {
-                        throw LispError.general(msg: "Invalid number of args: \(args.count). Expected \(argnames.count).")
+                
+                // If the first item in the list is an atom, check the environment to see
+                // if it has been bound
+                if case let .atom(name) = item {
+                    if let bind = env.currentNamespace.getValue(name: name) {
+                        item = bind
                     }
-                    
-                    env.currentNamespace.pushLocal()
-                    
-                    for i in 0..<argnames.count {
-                        _ = env.currentNamespace.bindLocal(name: argnames[i], value: args[i])
-                    }
-                    
-                    var rv: LispType = .nil
-                    for val in lispBody {
-                        rv = try eval(val, env: env)
-                    }
-                    
-                    _ = env.currentNamespace.popLocal()
-                    
-                    return rv
                 }
-            } else {
-                throw LispError.runtime(msg: "'\(String(describing: f))' is not a function.")
+                
+                if case let .function(body) = item {
+                    switch body {
+                    case .native(body: let nativeBody):
+                        return try nativeBody(Array(list.dropFirst()), env)
+                    case .lisp(argnames: let argnames, body: let lispBody):
+                        let args = try Array(list.dropFirst()).map { try self.eval($0, env: self) }
+                        
+                        if args.count != argnames.count {
+                            throw LispError.general(msg: "Invalid number of args: \(args.count). Expected \(argnames.count).")
+                        }
+                        
+                        env.currentNamespace.pushLocal()
+                        
+                        for i in 0..<argnames.count {
+                            _ = env.currentNamespace.bindLocal(name: argnames[i], value: args[i])
+                        }
+                        
+                        var rv: LispType = .nil
+                        for val in lispBody {
+                            rv = try eval(val, env: env)
+                        }
+                        
+                        _ = env.currentNamespace.popLocal()
+                        
+                        if case let .tcoInvocation(invocation) = rv {
+                            // Build a new function call list with the returned tco function
+                            var tcoList = [LispType.function(invocation.function)]
+                            tcoList.append(contentsOf: invocation.args)
+                            mutableForm = .list(tcoList)
+                            tco = true
+                        } else {
+                            return rv
+                        }
+                    }
+                } else {
+                    throw LispError.runtime(msg: "'\(String(describing: f))' is not a function.")
+                }
+                
+            case .atom(let atom):
+                if atom == "nil" {
+                    return .nil
+                } else if atom == "true" {
+                    return .boolean(true)
+                } else if atom == "false" {
+                    return .boolean(false)
+                }
+                
+                if let val = env.currentNamespace.getValue(name: atom) {
+                    return val
+                }
+                
+                throw LispError.general(msg: "Atom '\(atom)' is not currently bound")
+                
+            default:
+                return mutableForm
             }
             
-        case .atom(let atom):
-            if atom == "nil" {
-                return .nil
-            } else if atom == "true" {
-                return .boolean(true)
-            } else if atom == "false" {
-                return .boolean(false)
+        } while(tco)
+    }
+    
+    func doAll(_ forms: [LispType]) throws -> LispType {
+        // Evaluate all forms in a list. If the last form is a function call,
+        // return a TCOFunction
+        
+        for i in 0..<forms.count {
+            if i == forms.count - 1 {
+                guard case let .list(list) = forms[i] else {
+                    return try self.eval(forms[i], env: self)
+                }
+                
+                if list.count > 0 {
+                    let firstItem = try self.eval(list[i], env: self)
+                    guard case let .function(body) = firstItem else {
+                        return try self.eval(forms[i], env: self)
+                    }
+                    
+                    // Need to evaluate the args here, since any local bindings won't exist
+                    // after the caller returns
+                    
+                    let evaluatedArgs = try Array(list.dropFirst()).map { return try self.eval($0, env: self) }
+                    
+                    let invocation = TCOInvocation(function: body, args: evaluatedArgs)
+                    return .tcoInvocation(invocation)
+                }
+                
+                return try self.eval(forms[i], env: self)
             }
             
-            if let val = env.currentNamespace.getValue(name: atom) {
-                return val
-            }
-            
-            throw LispError.general(msg: "Atom '\(atom)' is not currently bound")
-            
-        default:
-            return form
+            _ = try self.eval(forms[i], env: self)
         }
+        
+        return .nil
     }
 }
 

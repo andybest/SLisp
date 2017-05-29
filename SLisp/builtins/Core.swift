@@ -168,7 +168,7 @@ class Core: Builtins {
                 return try env.eval(args[1], env: env)
             }
             
-            return try env.eval(args[2], env: env)
+            return try env.doAll([args[2]])
         }
         
         addBuiltin("while") { args, env throws in
@@ -184,9 +184,7 @@ class Core: Builtins {
             
             var rv: LispType = .nil
             while condition {
-                for form in body {
-                    rv = try env.eval(form, env: env)
-                }
+                rv = try env.doAll(body)
                 
                 switch try env.eval(args[0], env: env) {
                 case .boolean(let cond):
@@ -274,12 +272,7 @@ class Core: Builtins {
         addBuiltin("do") { args, env throws in
             try self.checkArgCount(funcName: "do", args: args, expectedNumArgs: 1)
             
-            var rv: LispType = .nil
-            for arg in args {
-                rv = try env.eval(arg, env: env)
-            }
-            
-            return rv
+            return try env.doAll(args)
         }
         
         addBuiltin("let") { args, env throws in
@@ -302,14 +295,31 @@ class Core: Builtins {
                 _ = try env.currentNamespace.bindLocal(name: binding, value: env.eval(bindings[$0 + 1], env: env))
             }
             
-            var rv: LispType = .nil
-            for form in args.dropFirst() {
-                rv = try env.eval(form, env: env)
-            }
+            let rv = try env.doAll(Array(args.dropFirst()))
             
             _ = env.currentNamespace.popLocal()
             
             return rv
+        }
+        
+        addBuiltin("input") { args, env throws in
+            if args.count > 1 {
+                throw LispError.general(msg: "'input' expects 0 or 1 argument")
+            }
+            
+            if args.count == 1 {
+                guard case let .string(prompt) = try env.eval(args[0], env: env) else {
+                    throw LispError.general(msg: "'input' requires the argument to be a string")
+                }
+                
+                Swift.print(prompt, terminator: "")
+            }
+            
+            if let input: String = readLine(strippingNewline: true), input.characters.count > 0 {
+                return .string(input)
+            }
+            
+            return .nil
         }
         
         /*
