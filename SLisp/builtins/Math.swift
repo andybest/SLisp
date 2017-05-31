@@ -27,7 +27,9 @@
 import Foundation
 
 typealias ArithmeticOperationBody = (lFloat, lFloat) -> lFloat
+typealias SingleValueArithmeticOperationBody = (lFloat) -> lFloat
 typealias ArithmeticBooleanOperationBody = (lFloat, lFloat) -> Bool
+typealias SingleArithmeticBooleanOperationBody = (lFloat) -> Bool
 typealias BooleanOperationBody = (Bool, Bool) -> Bool
 typealias SingleBooleanOperationBody = (Bool) -> Bool
 
@@ -48,21 +50,39 @@ class MathBuiltins : Builtins {
             print("Math library implementation could not be loaded!")
         }
     }
+
+    func doSingleArgArithmeticOperation(_ args: [LispType], name: String, body:SingleValueArithmeticOperationBody) throws -> LispType {
+        if args.count != 1 {
+            throw LispError.general(msg: "'\(name)' requires one argument")
+        }
+
+        let evaluated = try args.map { try env.eval($0) }
+
+        guard case let .float(num) = evaluated[0] else {
+            throw LispError.general(msg: "'\(name)' requires a float argument.")
+        }
+
+        return .float(body(num))
+    }
+
+    func doSingleArgBooleanArithmeticOperation(_ args: [LispType], name: String, body:SingleArithmeticBooleanOperationBody) throws -> LispType {
+        if args.count != 1 {
+            throw LispError.general(msg: "'\(name)' requires one argument")
+        }
+
+        let evaluated = try args.map { try env.eval($0) }
+
+        guard case let .float(num) = evaluated[0] else {
+            throw LispError.general(msg: "'\(name)' requires a float argument.")
+        }
+
+        return .boolean(body(num))
+    }
     
     override func initBuiltins() -> [String: BuiltinBody] {
-        
+
         addBuiltin("sqrt") { args, env throws in
-            if args.count != 1 {
-                throw LispError.general(msg: "'sqrt' requires one argument")
-            }
-            
-            let evaluated = try args.map { try env.eval($0) }
-            
-            guard case let .float(num) = evaluated[0] else {
-                throw LispError.general(msg: "'sqrt' requires a float argument.")
-            }
-            
-            return .float(sqrt(num))
+            return try self.doSingleArgArithmeticOperation(args, name: "sqrt", body: sqrt)
         }
         
         addBuiltin("random") { args, env throws in
@@ -78,6 +98,37 @@ class MathBuiltins : Builtins {
             
             return .float(r)
         }
+
+        addBuiltin("sin") { args, env throws in
+            return try self.doSingleArgArithmeticOperation(args, name: "sin", body: sin)
+        }
+
+        addBuiltin("cos") { args, env throws in
+            return try self.doSingleArgArithmeticOperation(args, name: "sin", body: cos)
+        }
+
+        addBuiltin("tan") { args, env throws in
+            return try self.doSingleArgArithmeticOperation(args, name: "tan", body: tan)
+        }
+
+        addBuiltin("isNaN?") { args, env throws in
+            return try self.doSingleArgBooleanArithmeticOperation(args, name: "isNaN?") {
+                return $0.isNaN
+            }
+        }
+
+        addBuiltin("isInfinite?") { args, env throws in
+            return try self.doSingleArgBooleanArithmeticOperation(args, name: "isInfinite?") {
+                return $0.isInfinite
+            }
+        }
+
+        addBuiltin("negate") { args, env throws in
+            return try self.doSingleArgArithmeticOperation(args, name: "negate") {
+                return $0.negated()
+            }
+        }
+
         
         return builtins
     }
