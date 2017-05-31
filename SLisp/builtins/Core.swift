@@ -321,6 +321,18 @@ class Core: Builtins {
             
             return .nil
         }
+
+        addBuiltin("read-string") { args, env throws in
+            if args.count != 1 {
+                throw LispError.general(msg: "'read-string' requires 1 string argument")
+            }
+
+            guard case let .string(input) = args[0] else {
+                throw LispError.general(msg: "'read-string' requires the argument to be a string")
+            }
+
+            return try env.read(input)
+        }
         
         /*
         /* Get input from stdin */

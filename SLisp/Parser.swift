@@ -241,6 +241,56 @@ class Environment {
     }
 }
 
+
+// Reader
+extension Environment {
+    func read_token(_ token: TokenType, reader: Reader) throws -> LispType {
+        switch token {
+            case .lParen:
+                return try read_list(reader)
+            case .symbol(let str):
+                return .symbol(str)
+            case .lString(let str):
+                return .string(str)
+            case .number(let num):
+                return .float(num)
+            default:
+                Swift.print("Error while reading token \(token) at index \(reader.pos)")
+                return .nil
+        }
+    }
+
+    func read_list(_ reader: Reader) throws -> LispType {
+        var list: [LispType] = []
+        var endOfList = false
+
+        while let token = reader.nextToken() {
+            switch token {
+                case .rParen:
+                    endOfList = true
+                default:
+                    list.append(try read_token(token, reader: reader))
+            }
+
+            if endOfList { break }
+        }
+
+        if !endOfList {
+            throw LispError.lexer(msg: "Expected ')'.")
+        }
+
+        return .list(list)
+    }
+
+    func read(_ input: String) throws -> LispType {
+        let tokenizer = Tokenizer(source: input)
+        let tokens = try tokenizer.tokenizeInput()
+
+        let reader = Reader(tokens: tokens)
+        return try read_token(reader.nextToken()!, reader: reader)
+    }
+}
+
 class Namespace {
     let name: String
     var rootBindings = [String: LispType]()
@@ -321,52 +371,6 @@ class Repl {
             }
         }
     }
-    
-    func read_token(_ token: TokenType, reader: Reader) throws -> LispType {
-        switch token {
-        case .lParen:
-            return try read_list(reader)
-        case .symbol(let str):
-            return .symbol(str)
-        case .lString(let str):
-            return .string(str)
-        case .number(let num):
-            return .float(num)
-        default:
-            Swift.print("Error while reading token \(token) at index \(reader.pos)")
-            return .nil
-        }
-    }
-    
-    func read_list(_ reader: Reader) throws -> LispType {
-        var list: [LispType] = []
-        var endOfList = false
-        
-        while let token = reader.nextToken() {
-            switch token {
-            case .rParen:
-                endOfList = true
-            default:
-                list.append(try read_token(token, reader: reader))
-            }
-            
-            if endOfList { break }
-        }
-        
-        if !endOfList {
-            throw LispError.lexer(msg: "Expected ')'.")
-        }
-        
-        return .list(list)
-    }
-    
-    func read(_ input: String) throws -> LispType {
-        let tokenizer = Tokenizer(source: input)
-        let tokens = try tokenizer.tokenizeInput()
-        
-        let reader = Reader(tokens: tokens)
-        return try read_token(reader.nextToken()!, reader: reader)
-    }
 
     func print() {
         
@@ -375,7 +379,7 @@ class Repl {
     func rep(_ input: String) -> String {
         
         do {
-            let form = try read(input)
+            let form = try environment.read(input)
             let rv = try environment.eval(form, env: environment)
             return String(describing: rv)
             
