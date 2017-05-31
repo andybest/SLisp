@@ -26,14 +26,5 @@
 
 import Foundation
 
-//let environment = Environment()
-
-//do {
-//    let path = "./data/rock-paper-scissors.sl"
-//    try environment.evaluateFile(path)
-//} catch {
-//    print("File not found")
-//}
-
 let repl = Repl()
 repl.mainLoop()

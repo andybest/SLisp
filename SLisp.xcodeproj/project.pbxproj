@@ -44,7 +44,6 @@
 /* Begin PBXFileReference section */
 		A557FDE51ED737E700C94EA9 /* Parser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
 		A557FDE71ED8332200C94EA9 /* Errors.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
-		A57C986E1C80B09A00E30676 /* SLisp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SLisp.swift; sourceTree = "<group>"; };
 		A5803E681CFF85FB00C59003 /* SLisp Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SLisp Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5803E6A1CFF85FB00C59003 /* LexerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LexerTests.swift; sourceTree = "<group>"; };
 		A5803E6C1CFF85FB00C59003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -112,7 +111,6 @@
 				A5C033FF1C860D24000853EC /* builtins */,
 				A5989B201C17157E00B91B38 /* Lexer */,
 				A5989AF41C17119B00B91B38 /* main.swift */,
-				A57C986E1C80B09A00E30676 /* SLisp.swift */,
 				A5C033FD1C860B3B000853EC /* Helpers.swift */,
 				C8BB4DDCD5B249F0B5550A8E /* testInput */,
 				A557FDE71ED8332200C94EA9 /* Errors.swift */,
