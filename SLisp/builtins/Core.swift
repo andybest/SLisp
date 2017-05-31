@@ -476,6 +476,72 @@ class Core: Builtins {
             return p!.value
         }*/
 
+        addBuiltin("+") { args, env throws in
+            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
+                return x + y
+            }
+        }
+
+        addBuiltin("-") { args, env throws in
+            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
+                return x - y
+            }
+        }
+
+        addBuiltin("*") { args, env throws in
+            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
+                return x * y
+            }
+        }
+
+        addBuiltin("/") { args, env throws in
+            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
+                return x / y
+            }
+        }
+
+        addBuiltin("mod") { args, env throws in
+            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
+                return remainder(x, y)
+            }
+        }
+
+        addBuiltin(">") { args, env throws in
+            return try self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
+                return x > y
+            }
+        }
+
+        addBuiltin("<") { args, env throws in
+            return try self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
+                return x < y
+            }
+        }
+
+        addBuiltin("==") { args, env throws in
+            return try self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
+                return x == y
+            }
+        }
+
+        addBuiltin("and") { args, env throws in
+            return try self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
+                return x && y
+            }
+        }
+
+        addBuiltin("or") { args, env throws in
+            return try self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
+                return x || y
+            }
+        }
+
+        addBuiltin("not") { args, env throws in
+            return try self.doSingleBooleanOperation(args) { (x: Bool) -> Bool in
+                return !x
+            }
+        }
+
         return builtins
     }
 }

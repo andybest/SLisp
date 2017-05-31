@@ -75,4 +75,81 @@ class Builtins {
     func initBuiltins() -> [String: BuiltinBody] {
         return [:]
     }
+
+    // A generic function for arithmetic operations
+    func doArithmeticOperation(_ args: [LispType], body:ArithmeticOperationBody) throws -> LispType {
+        var x: lFloat = 0.0
+        var firstArg = true
+
+        let evaluated = try args.map { try env.eval($0, env: env) }
+
+        for arg in evaluated {
+            guard case let .float(num) = arg else {
+                throw LispError.general(msg: "Invalid argument type: \(String(describing: arg))")
+            }
+
+            if firstArg {
+                x = num
+                firstArg = false
+            } else {
+                x = body(x, num)
+            }
+        }
+
+        return .float(x)
+    }
+
+    func doBooleanArithmeticOperation(_ args: [LispType], body: ArithmeticBooleanOperationBody) throws -> LispType {
+        var result: Bool = false
+        var lastValue: lFloat = 0.0
+        var firstArg = true
+        let evaluated = try args.map { try env.eval($0, env: env) }
+
+        for arg in evaluated {
+            guard case let .float(num) = arg else {
+                throw LispError.general(msg: "Invalid argument type: \(String(describing: arg))")
+            }
+
+            if firstArg {
+                lastValue = num
+                firstArg = false
+            } else {
+                result = body(lastValue, num)
+            }
+        }
+
+        return .boolean(result)
+    }
+
+    func doBooleanOperation(_ args: [LispType], body:BooleanOperationBody) throws -> LispType {
+        var result: Bool = false
+        var lastValue: Bool = false
+        var firstArg = true
+        let evaluated = try args.map { try env.eval($0, env: env) }
+
+        for arg in evaluated {
+            guard case let .boolean(b) = arg else {
+                throw LispError.general(msg: "Invalid argument type: \(String(describing: arg))")
+            }
+
+            if firstArg {
+                lastValue = b
+                firstArg = false
+            } else {
+                result = body(lastValue, b)
+            }
+        }
+
+        return .boolean(result)
+    }
+
+    func doSingleBooleanOperation(_ args: [LispType], body:SingleBooleanOperationBody) throws -> LispType {
+        let evaluated = try args.map { try env.eval($0, env: env) }
+
+        guard case let .boolean(b) = evaluated[0] else {
+            throw LispError.general(msg: "Invalid argument type: \(String(describing: evaluated[0]))")
+        }
+
+        return .boolean(body(b))
+    }
 }

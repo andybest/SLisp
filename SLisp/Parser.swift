@@ -81,7 +81,7 @@ class Environment {
     var currentNamespaceName: String = ""
     var namespaces                   = [String: Namespace]()
 
-    let coreImports: [String] = ["core", "math"]
+    let coreImports: [String] = ["core"]
 
     var currentNamespace: Namespace {
         return namespaces[currentNamespaceName]!
@@ -89,7 +89,9 @@ class Environment {
 
     init() {
         createDefaultNamespace()
-        let coreBuiltins = [Core(env: self), MathBuiltins(env: self)]
+
+        /* Core builtins */
+        let coreBuiltins = [Core(env: self)]
 
         coreBuiltins.forEach {
             let ns = createOrGetNamespace($0.namespaceName())
@@ -111,7 +113,28 @@ class Environment {
             } catch {
                 print("Error importing builtins: \(error)")
             }
+        }
 
+        /* Other builtins */
+        let builtins = [MathBuiltins(env: self)]
+
+        builtins.forEach {
+            let ns = createOrGetNamespace($0.namespaceName())
+            $0.initBuiltins().forEach { name, body in
+                _ = bindGlobal(name: name, value: .function(.native(body: body)), toNamespace: ns)
+            }
+        }
+
+        builtins.forEach {
+            let ns = createOrGetNamespace($0.namespaceName())
+            do {
+                let oldNS = currentNamespace
+                try changeNamespace(ns.name)
+                $0.loadImplementation()
+                try changeNamespace(oldNS.name)
+            } catch {
+                print("Error importing builtins: \(error)")
+            }
         }
     }
 
@@ -228,9 +251,8 @@ class Environment {
                     if let val = try env.getValue(symbol, fromNamespace: env.currentNamespace) {
                         return val
                     }
-
-                    return mutableForm
-                    //throw LispError.general(msg: "Symbol '\(symbol)' is not currently bound")
+                    
+                    throw LispError.general(msg: "Symbol '\(symbol)' is not currently bound")
 
                 default:
                     return mutableForm
@@ -261,6 +283,9 @@ class Environment {
                     // after the caller returns
 
                     let evaluatedArgs = try Array(list.dropFirst()).map { arg -> LispType in
+                        if case let .symbol(s) = arg {
+                            return arg
+                        }
                         return try self.eval(arg, env: self)
                     }
 
