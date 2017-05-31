@@ -30,7 +30,7 @@ import Foundation
 enum TokenType: Equatable {
     case lParen
     case rParen
-    case atom(String)
+    case symbol(String)
     case number(Double)
     case lString(String)
 }
@@ -39,7 +39,7 @@ func ==(a: TokenType, b: TokenType) -> Bool {
     switch (a, b) {
     case (.lParen, .lParen): return true
     case (.rParen, .rParen): return true
-    case (.atom(let a), .atom(let b)) where a == b: return true
+    case (.symbol(let a), .symbol(let b)) where a == b: return true
     case (.number(let a), .number(let b)) where a == b: return true
     case (.lString(let a), .lString(let b)) where a == b: return true
     default: return false
@@ -95,7 +95,7 @@ class RParenTokenMatcher: TokenMatcher {
     }
 }
 
-class AtomMatcher: TokenMatcher {
+class SymbolMatcher: TokenMatcher {
     static var matcherCharacterSet: NSMutableCharacterSet?
     static var matcherStartCharacterSet: NSMutableCharacterSet?
 
@@ -115,7 +115,7 @@ class AtomMatcher: TokenMatcher {
                 }
             }
             
-            return TokenType.atom(tok)
+            return TokenType.symbol(tok)
         }
         
         return nil
@@ -223,7 +223,7 @@ let tokenClasses: [TokenMatcher.Type] = [
         RParenTokenMatcher.self,
         NumberMatcher.self,
         StringMatcher.self,
-        AtomMatcher.self,
+        SymbolMatcher.self,
 ]
 
 class StringStream {

@@ -43,7 +43,7 @@ struct TCOInvocation {
 
 enum LispType: CustomStringConvertible {
     case list([LispType])
-    case atom(String)
+    case symbol(String)
     case float(lFloat)
     case `string`(String)
     case boolean(Bool)
@@ -53,7 +53,7 @@ enum LispType: CustomStringConvertible {
     
     var description: String {
         switch self {
-        case .atom(let str):
+        case .symbol(let str):
             return str
         case .boolean(let bool):
             return String(bool)
@@ -138,9 +138,9 @@ class Environment {
                     item = try eval(f, env: env)
                 }
                 
-                // If the first item in the list is an atom, check the environment to see
+                // If the first item in the list is a symbol, check the environment to see
                 // if it has been bound
-                if case let .atom(name) = item {
+                if case let .symbol(name) = item {
                     if let bind = env.currentNamespace.getValue(name: name) {
                         item = bind
                     }
@@ -184,20 +184,20 @@ class Environment {
                     throw LispError.runtime(msg: "'\(String(describing: f))' is not a function.")
                 }
                 
-            case .atom(let atom):
-                if atom == "nil" {
+            case .symbol(let symbol):
+                if symbol == "nil" {
                     return .nil
-                } else if atom == "true" {
+                } else if symbol == "true" {
                     return .boolean(true)
-                } else if atom == "false" {
+                } else if symbol == "false" {
                     return .boolean(false)
                 }
                 
-                if let val = env.currentNamespace.getValue(name: atom) {
+                if let val = env.currentNamespace.getValue(name: symbol) {
                     return val
                 }
                 
-                throw LispError.general(msg: "Atom '\(atom)' is not currently bound")
+                throw LispError.general(msg: "Symbol '\(symbol)' is not currently bound")
                 
             default:
                 return mutableForm
@@ -326,8 +326,8 @@ class Repl {
         switch token {
         case .lParen:
             return try read_list(reader)
-        case .atom(let str):
-            return .atom(str)
+        case .symbol(let str):
+            return .symbol(str)
         case .lString(let str):
             return .string(str)
         case .number(let num):

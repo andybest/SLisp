@@ -49,7 +49,7 @@ func valueIsString(_ val: LispType) -> Bool {
 
 func valueIsAtom(_ val: LispType) -> Bool {
     switch val {
-    case .atom(_):
+    case .symbol(_):
         return true
         
     default:
@@ -143,7 +143,7 @@ func stringFromValue(_ val: LispType) -> String? {
     case .lString(let str):
         return str
         
-    case .atom(let atom):
+    case .symbol(let atom):
         return atom
         
     default:
@@ -156,7 +156,7 @@ func lispTypeToString(_ lt:LispType, env:Environment) -> String {
     case .number(let num):
         return "\(num)"
 
-    case .atom(let atom):
+    case .symbol(let atom):
         return "\(atom)"
 
     case .lString(let str):
@@ -184,8 +184,8 @@ func copyType(_ type: LispType) -> LispType {
     case .number(let num):
         return LispType.number(num)
         
-    case .atom(let atom):
-        return LispType.atom(atom)
+    case .symbol(let atom):
+        return LispType.symbol(atom)
         
     case .lString(let str):
         return LispType.lString(str)

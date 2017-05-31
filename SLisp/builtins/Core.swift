@@ -39,12 +39,12 @@ class Core: Builtins {
                 throw LispError.runtime(msg: "'def' requires exactly 2 arguments. Got \(args.count).")
             }
             
-            guard case let .atom(name) = args[0] else {
-                throw LispError.runtime(msg: "'def' requires the first argument to be an atom. Got \(String(describing: args[0])) instead.")
+            guard case let .symbol(name) = args[0] else {
+                throw LispError.runtime(msg: "'def' requires the first argument to be a symbol. Got \(String(describing: args[0])) instead.")
             }
             
             let binding = env.currentNamespace.bindGlobal(name: name, value: try env.eval(args[1], env: env))
-            return LispType.atom(binding)
+            return LispType.symbol(binding)
         }
 
         addBuiltin("list") { args, env throws in
@@ -132,8 +132,8 @@ class Core: Builtins {
             }
             
             let argNames: [String] = try argList.map {
-                guard case let .atom(argName) = $0 else {
-                    throw LispError.general(msg: "function arguments must be atoms")
+                guard case let .symbol(argName) = $0 else {
+                    throw LispError.general(msg: "function arguments must be symbols")
                 }
                 return argName
             }
@@ -209,11 +209,11 @@ class Core: Builtins {
             return .boolean(true)
         }
         
-        addBuiltin("atom?") { args, env throws in
-            try self.checkArgCount(funcName: "atom?", args: args, expectedNumArgs: 1)
+        addBuiltin("symbol?") { args, env throws in
+            try self.checkArgCount(funcName: "symbol?", args: args, expectedNumArgs: 1)
             
             for arg in args {
-                guard case .atom(_) = try env.eval(arg, env: env) else {
+                guard case .symbol(_) = try env.eval(arg, env: env) else {
                     return .boolean(false)
                 }
             }
@@ -289,8 +289,8 @@ class Core: Builtins {
             env.currentNamespace.pushLocal()
             
             try stride(from: 0, to: bindings.count, by: 2).forEach {
-                guard case let .atom(binding) = bindings[$0] else {
-                    throw LispError.general(msg: "let binding must be an atom. Got \(String(describing: bindings[$0])).")
+                guard case let .symbol(binding) = bindings[$0] else {
+                    throw LispError.general(msg: "let binding must be a symbol. Got \(String(describing: bindings[$0])).")
                 }
                 _ = try env.currentNamespace.bindLocal(name: binding, value: env.eval(bindings[$0 + 1], env: env))
             }

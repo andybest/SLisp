@@ -18,14 +18,14 @@ class LexerTests: XCTestCase {
         super.tearDown()
     }
     
-    func tokensForString(_ str:String) -> [TokenType] {
+    /*func tokensForString(_ str:String) -> [TokenType] {
         let tokenizer = Tokenizer(source: str)
         return tokenizer.tokenizeInput()
     }
 
     
     func testAtom() {
-        let tokens = tokensForString("atom")
+        let tokens = tokensForString("symbol")
         
         XCTAssertEqual(tokens.count, 1)
         //XCTAssertEqual(tokens.first!, TokenType.Atom("atom"))
@@ -39,6 +39,6 @@ class LexerTests: XCTestCase {
         let floatTokens = tokensForString("12.34")
         XCTAssertEqual(floatTokens.count, 1)
         //XCTAssertEqual(floatTokens.first!, TokenType.Number(12.34))
-    }
+    }*/
     
 }
