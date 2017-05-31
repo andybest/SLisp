@@ -54,19 +54,19 @@ class Core: Builtins {
                 throw LispError.runtime(msg: "'def' requires the first argument to be a symbol. Got \(String(describing: args[0])) instead.")
             }
             
-            let binding = env.bindGlobal(name: name, value: try env.eval(args[1], env: env), toNamespace: env.currentNamespace)
+            let binding = env.bindGlobal(name: name, value: try env.eval(args[1]), toNamespace: env.currentNamespace)
             return LispType.symbol(binding)
         }
 
         addBuiltin("list") { args, env throws in
-            let evaluated = try args.map { try env.eval($0, env: env) }
+            let evaluated = try args.map { try env.eval($0) }
             return .list(evaluated)
         }
         
         addBuiltin("cons") { args, env throws in
             try self.checkArgCount(funcName: "cons", args: args, expectedNumArgs: 2)
             
-            let evaluated = try args.map { try env.eval($0, env: env) }
+            let evaluated = try args.map { try env.eval($0) }
             var secondValue: [LispType] = []
             
             switch evaluated[1] {
@@ -85,7 +85,7 @@ class Core: Builtins {
         }
         
         addBuiltin("concat") { args, env throws in
-            let evaluated = try args.map { try env.eval($0, env: env) }
+            let evaluated = try args.map { try env.eval($0) }
             
             let transformed: [LispType] = evaluated.flatMap { input -> [LispType] in
                 if case let .list(list) = input {
@@ -100,7 +100,7 @@ class Core: Builtins {
         addBuiltin("first") { args, env throws in
             try self.checkArgCount(funcName: "first", args: args, expectedNumArgs: 1)
             
-            let evaluated = try args.map { try env.eval($0, env: env) }
+            let evaluated = try args.map { try env.eval($0) }
             
             if case let .list(list) = evaluated[0] {
                 return list.first ?? .nil
@@ -112,7 +112,7 @@ class Core: Builtins {
         addBuiltin("rest") { args, env throws in
             try self.checkArgCount(funcName: "rest", args: args, expectedNumArgs: 1)
             
-            let evaluated = try args.map { try env.eval($0, env: env) }
+            let evaluated = try args.map { try env.eval($0) }
             
             if case let .list(list) = evaluated[0] {
                 return .list(Array(list.dropFirst(1)))
@@ -124,7 +124,7 @@ class Core: Builtins {
         addBuiltin("last") { args, env throws in
             try self.checkArgCount(funcName: "last", args: args, expectedNumArgs: 1)
             
-            let evaluated = try args.map { try env.eval($0, env: env) }
+            let evaluated = try args.map { try env.eval($0) }
             
             if case let .list(list) = evaluated[0] {
                 return list.last ?? .nil
@@ -155,7 +155,7 @@ class Core: Builtins {
         }
         
         addBuiltin("print") { args, env throws in
-            let strings = try args.map { String(describing: try env.eval($0, env: env)) }
+            let strings = try args.map { String(describing: try env.eval($0)) }
             print(strings.joined(separator: ","))
             return .nil
         }
@@ -171,12 +171,12 @@ class Core: Builtins {
         addBuiltin("if") { args, env throws in
             try self.checkArgCount(funcName: "if", args: args, expectedNumArgs: 3)
             
-            guard case let .boolean(condition) = try env.eval(args[0], env: env) else {
+            guard case let .boolean(condition) = try env.eval(args[0]) else {
                 throw LispError.general(msg: "'if' expects the first argument to be a boolean condition")
             }
             
             if condition {
-                return try env.eval(args[1], env: env)
+                return try env.eval(args[1])
             }
             
             return try env.doAll([args[2]])
@@ -187,7 +187,7 @@ class Core: Builtins {
                 throw LispError.general(msg: "'while' requires a body")
             }
             
-            guard case var .boolean(condition) = try env.eval(args[0], env: env) else {
+            guard case var .boolean(condition) = try env.eval(args[0]) else {
                 throw LispError.general(msg: "'while' expects the first argument to be a boolean condition")
             }
             
@@ -197,7 +197,7 @@ class Core: Builtins {
             while condition {
                 rv = try env.doAll(body)
                 
-                switch try env.eval(args[0], env: env) {
+                switch try env.eval(args[0]) {
                 case .boolean(let cond):
                     condition = cond
                 default:
@@ -212,7 +212,7 @@ class Core: Builtins {
             try self.checkArgCount(funcName: "list", args: args, expectedNumArgs: 1)
             
             for arg in args {
-                guard case .list(_) = try env.eval(arg, env: env) else {
+                guard case .list(_) = try env.eval(arg) else {
                     return .boolean(false)
                 }
             }
@@ -224,7 +224,7 @@ class Core: Builtins {
             try self.checkArgCount(funcName: "symbol?", args: args, expectedNumArgs: 1)
             
             for arg in args {
-                guard case .symbol(_) = try env.eval(arg, env: env) else {
+                guard case .symbol(_) = try env.eval(arg) else {
                     return .boolean(false)
                 }
             }
@@ -236,7 +236,7 @@ class Core: Builtins {
             try self.checkArgCount(funcName: "string?", args: args, expectedNumArgs: 1)
             
             for arg in args {
-                guard case .string(_) = try env.eval(arg, env: env) else {
+                guard case .string(_) = try env.eval(arg) else {
                     return .boolean(false)
                 }
             }
@@ -248,7 +248,7 @@ class Core: Builtins {
             try self.checkArgCount(funcName: "float?", args: args, expectedNumArgs: 1)
             
             for arg in args {
-                guard case .float(_) = try env.eval(arg, env: env) else {
+                guard case .float(_) = try env.eval(arg) else {
                     return .boolean(false)
                 }
             }
@@ -260,7 +260,7 @@ class Core: Builtins {
             try self.checkArgCount(funcName: "function?", args: args, expectedNumArgs: 1)
             
             for arg in args {
-                guard case .function(_) = try env.eval(arg, env: env) else {
+                guard case .function(_) = try env.eval(arg) else {
                     return .boolean(false)
                 }
             }
@@ -272,7 +272,7 @@ class Core: Builtins {
             try self.checkArgCount(funcName: "nil?", args: args, expectedNumArgs: 1)
             
             for arg in args {
-                guard case .nil = try env.eval(arg, env: env) else {
+                guard case .nil = try env.eval(arg) else {
                     return .boolean(false)
                 }
             }
@@ -303,7 +303,7 @@ class Core: Builtins {
                 guard case let .symbol(binding) = bindings[$0] else {
                     throw LispError.general(msg: "let binding must be a symbol. Got \(String(describing: bindings[$0])).")
                 }
-                _ = try env.bindLocal(name: binding, value: env.eval(bindings[$0 + 1], env: env), toNamespace: env.currentNamespace)
+                _ = try env.bindLocal(name: binding, value: env.eval(bindings[$0 + 1]), toNamespace: env.currentNamespace)
             }
             
             let rv = try env.doAll(Array(args.dropFirst()))
@@ -319,7 +319,7 @@ class Core: Builtins {
             }
             
             if args.count == 1 {
-                guard case let .string(prompt) = try env.eval(args[0], env: env) else {
+                guard case let .string(prompt) = try env.eval(args[0]) else {
                     throw LispError.general(msg: "'input' requires the argument to be a string")
                 }
                 
@@ -338,7 +338,7 @@ class Core: Builtins {
                 throw LispError.general(msg: "'read-string' requires 1 string argument")
             }
 
-            guard case let .string(input) = try env.eval(args[0], env: env) else {
+            guard case let .string(input) = try env.eval(args[0]) else {
                 throw LispError.general(msg: "'read-string' requires the argument to be a string")
             }
 
@@ -350,7 +350,7 @@ class Core: Builtins {
                 throw LispError.general(msg: "'slurp' requires 1 string argument")
             }
 
-            guard case let .string(filename) = try env.eval(args[0], env: env) else {
+            guard case let .string(filename) = try env.eval(args[0]) else {
                 throw LispError.general(msg: "'slurp' requires the argument to be a string")
             }
 
@@ -368,7 +368,7 @@ class Core: Builtins {
                 throw LispError.general(msg: "'eval' requires 1 argument")
             }
 
-            return try env.eval(env.eval(args[0], env: env), env: env)
+            return try env.eval(env.eval(args[0]))
         }
 
         addBuiltin("str") { args, env throws in
@@ -377,7 +377,7 @@ class Core: Builtins {
             }
 
             let strings = try args.map { arg -> String in
-                let evaluated = try env.eval(arg, env: env)
+                let evaluated = try env.eval(arg)
                 if case let .string(s) = evaluated {
                     return s
                 }

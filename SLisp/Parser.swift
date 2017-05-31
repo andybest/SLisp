@@ -160,7 +160,7 @@ class Environment {
         }
     }
 
-    func eval(_ form: LispType, env: Environment) throws -> LispType {
+    func eval(_ form: LispType) throws -> LispType {
         var tco: Bool   = false
         var mutableForm = form
 
@@ -178,13 +178,13 @@ class Environment {
                     if case .function(_) = f {
                         item = f
                     } else {
-                        item = try eval(f, env: env)
+                        item = try eval(f)
                     }
 
                     // If the first item in the list is a symbol, check the environment to see
                     // if it has been bound
                     if case let .symbol(name) = item {
-                        if let bind = try env.getValue(name, fromNamespace: currentNamespace) {
+                        if let bind = try getValue(name, fromNamespace: currentNamespace) {
                             item = bind
                         }
                     }
@@ -192,7 +192,7 @@ class Environment {
                     if case let .function(body) = item {
                         switch body {
                             case .native(body:let nativeBody):
-                                let rv = try nativeBody(Array(list.dropFirst()), env)
+                                let rv = try nativeBody(Array(list.dropFirst()), self)
 
                                 if case let .tcoInvocation(invocation) = rv {
                                     // Build a new function call list with the returned tco function
@@ -205,25 +205,25 @@ class Environment {
                                 }
                             case .lisp(argnames:let argnames, body:let lispBody):
                                 let args = try Array(list.dropFirst()).map {
-                                    try self.eval($0, env: self)
+                                    try self.eval($0)
                                 }
 
                                 if args.count != argnames.count {
                                     throw LispError.general(msg: "Invalid number of args: \(args.count). Expected \(argnames.count).")
                                 }
 
-                                env.pushLocal(toNamespace: currentNamespace)
+                                pushLocal(toNamespace: currentNamespace)
 
                                 for i in 0..<argnames.count {
-                                    _ = env.bindLocal(name: argnames[i], value: args[i], toNamespace: currentNamespace)
+                                    _ = bindLocal(name: argnames[i], value: args[i], toNamespace: currentNamespace)
                                 }
 
                                 var rv: LispType = .nil
                                 for val in lispBody {
-                                    rv = try eval(val, env: env)
+                                    rv = try eval(val)
                                 }
 
-                                _ = env.popLocal(fromNamespace: currentNamespace)
+                                _ = popLocal(fromNamespace: currentNamespace)
 
                                 if case let .tcoInvocation(invocation) = rv {
                                     // Build a new function call list with the returned tco function
@@ -248,10 +248,10 @@ class Environment {
                         return .boolean(false)
                     }
 
-                    if let val = try env.getValue(symbol, fromNamespace: env.currentNamespace) {
+                    if let val = try getValue(symbol, fromNamespace: currentNamespace) {
                         return val
                     }
-                    
+
                     throw LispError.general(msg: "Symbol '\(symbol)' is not currently bound")
 
                 default:
@@ -270,33 +270,33 @@ class Environment {
         for i in 0..<forms.count {
             if i == forms.count - 1 {
                 guard case let .list(list) = forms[i] else {
-                    return try self.eval(forms[i], env: self)
+                    return try self.eval(forms[i])
                 }
 
                 if list.count > 0 {
-                    let firstItem = try self.eval(list[0], env: self)
+                    let firstItem = try self.eval(list[0])
                     guard case let .function(body) = firstItem else {
-                        return try self.eval(forms[i], env: self)
+                        return try self.eval(forms[i])
                     }
 
                     // Need to evaluate the args here, since any local bindings won't exist
                     // after the caller returns
 
                     let evaluatedArgs = try Array(list.dropFirst()).map { arg -> LispType in
-                        if case let .symbol(s) = arg {
+                        if case .symbol(_) = arg {
                             return arg
                         }
-                        return try self.eval(arg, env: self)
+                        return try self.eval(arg)
                     }
 
                     let invocation = TCOInvocation(function: body, args: evaluatedArgs)
                     return .tcoInvocation(invocation)
                 }
 
-                return try self.eval(forms[i], env: self)
+                return try self.eval(forms[i])
             }
 
-            _ = try self.eval(forms[i], env: self)
+            _ = try self.eval(forms[i])
         }
 
         return .nil
@@ -369,8 +369,8 @@ extension Environment {
 
             let readForm = "(read-string (str \"(do \" (slurp \"\(path)\") \")\"))"
             let form     = try read(readForm)
-            let rv       = try eval(form, env: self)
-            return try eval(rv, env: self)
+            let rv       = try eval(form)
+            return try eval(rv)
         } catch let LispError.runtime(msg:message) {
             print("Runtime Error: \(message)")
         } catch let LispError.general(msg:message) {
@@ -554,7 +554,7 @@ class Repl {
 
         do {
             let form = try environment.read(input)
-            let rv   = try environment.eval(form, env: environment)
+            let rv   = try environment.eval(form)
             return String(describing: rv)
 
         } catch let LispError.runtime(msg:message) {

@@ -56,7 +56,7 @@ class MathBuiltins : Builtins {
                 throw LispError.general(msg: "'sqrt' requires one argument")
             }
             
-            let evaluated = try args.map { try env.eval($0, env: env) }
+            let evaluated = try args.map { try env.eval($0) }
             
             guard case let .float(num) = evaluated[0] else {
                 throw LispError.general(msg: "'sqrt' requires a float argument.")
@@ -68,7 +68,7 @@ class MathBuiltins : Builtins {
         addBuiltin("random") { args, env throws in
             try self.checkArgCount(funcName: "random", args: args, expectedNumArgs: 2)
             
-            let evaluated = try args.map { try env.eval($0, env: env) }
+            let evaluated = try args.map { try env.eval($0) }
             
             guard case let .float(lowerBound) = evaluated[0], case let .float(upperBound) = evaluated[1] else {
                 throw LispError.general(msg: "'random' requires two float arguments")

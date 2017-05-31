@@ -81,7 +81,7 @@ class Builtins {
         var x: lFloat = 0.0
         var firstArg = true
 
-        let evaluated = try args.map { try env.eval($0, env: env) }
+        let evaluated = try args.map { try env.eval($0) }
 
         for arg in evaluated {
             guard case let .float(num) = arg else {
@@ -103,7 +103,7 @@ class Builtins {
         var result: Bool = false
         var lastValue: lFloat = 0.0
         var firstArg = true
-        let evaluated = try args.map { try env.eval($0, env: env) }
+        let evaluated = try args.map { try env.eval($0) }
 
         for arg in evaluated {
             guard case let .float(num) = arg else {
@@ -125,7 +125,7 @@ class Builtins {
         var result: Bool = false
         var lastValue: Bool = false
         var firstArg = true
-        let evaluated = try args.map { try env.eval($0, env: env) }
+        let evaluated = try args.map { try env.eval($0) }
 
         for arg in evaluated {
             guard case let .boolean(b) = arg else {
@@ -144,7 +144,7 @@ class Builtins {
     }
 
     func doSingleBooleanOperation(_ args: [LispType], body:SingleBooleanOperationBody) throws -> LispType {
-        let evaluated = try args.map { try env.eval($0, env: env) }
+        let evaluated = try args.map { try env.eval($0) }
 
         guard case let .boolean(b) = evaluated[0] else {
             throw LispError.general(msg: "Invalid argument type: \(String(describing: evaluated[0]))")
