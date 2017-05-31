@@ -81,24 +81,38 @@ class Environment {
     var currentNamespaceName: String = ""
     var namespaces                   = [String: Namespace]()
 
+    let coreImports: [String] = ["core", "math"]
+
     var currentNamespace: Namespace {
         return namespaces[currentNamespaceName]!
     }
 
     init() {
         createDefaultNamespace()
+        let coreBuiltins = [Core(env: self), MathBuiltins(env: self)]
 
-        let core = Core(env: self)
-        core.initBuiltins().forEach { name, body in
-            _ = currentNamespace.bindGlobal(name: name, value: .function(.native(body: body)))
-        }
-        core.loadImplementation()
+        coreBuiltins.forEach {
+            let ns = createOrGetNamespace($0.namespaceName())
+            $0.initBuiltins().forEach { name, body in
+                _ = bindGlobal(name: name, value: .function(.native(body: body)), toNamespace: ns)
+            }
 
-        let math = MathBuiltins(env: self)
-        math.initBuiltins().forEach { name, body in
-            _ = currentNamespace.bindGlobal(name: name, value: .function(.native(body: body)))
+            // Import this namespace to the default namespace
+            importNamespace(ns, toNamespace: currentNamespace)
         }
-        math.loadImplementation()
+
+        coreBuiltins.forEach {
+            let ns = createOrGetNamespace($0.namespaceName())
+            do {
+                let oldNS = currentNamespace
+                try changeNamespace(ns.name)
+                $0.loadImplementation()
+                try changeNamespace(oldNS.name)
+            } catch {
+                print("Error importing builtins: \(error)")
+            }
+
+        }
     }
 
     func createDefaultNamespace() {
@@ -147,7 +161,7 @@ class Environment {
                     // If the first item in the list is a symbol, check the environment to see
                     // if it has been bound
                     if case let .symbol(name) = item {
-                        if let bind = env.currentNamespace.getValue(name: name) {
+                        if let bind = try env.getValue(name, fromNamespace: currentNamespace) {
                             item = bind
                         }
                     }
@@ -175,10 +189,10 @@ class Environment {
                                     throw LispError.general(msg: "Invalid number of args: \(args.count). Expected \(argnames.count).")
                                 }
 
-                                env.currentNamespace.pushLocal()
+                                env.pushLocal(toNamespace: currentNamespace)
 
                                 for i in 0..<argnames.count {
-                                    _ = env.currentNamespace.bindLocal(name: argnames[i], value: args[i])
+                                    _ = env.bindLocal(name: argnames[i], value: args[i], toNamespace: currentNamespace)
                                 }
 
                                 var rv: LispType = .nil
@@ -186,7 +200,7 @@ class Environment {
                                     rv = try eval(val, env: env)
                                 }
 
-                                _ = env.currentNamespace.popLocal()
+                                _ = env.popLocal(fromNamespace: currentNamespace)
 
                                 if case let .tcoInvocation(invocation) = rv {
                                     // Build a new function call list with the returned tco function
@@ -211,7 +225,7 @@ class Environment {
                         return .boolean(false)
                     }
 
-                    if let val = env.currentNamespace.getValue(name: symbol) {
+                    if let val = try env.getValue(symbol, fromNamespace: env.currentNamespace) {
                         return val
                     }
 
@@ -267,6 +281,7 @@ class Environment {
 
 // Reader
 extension Environment {
+
     func read_token(_ token: TokenType, reader: Reader) throws -> LispType {
         switch token {
             case .lParen:
@@ -315,8 +330,18 @@ extension Environment {
         return try read_token(reader.nextToken()!, reader: reader)
     }
 
-    func evalFile(path: String) -> LispType? {
+    func evalFile(path: String, toNamespace namespace: Namespace) -> LispType? {
         do {
+            let oldNS = currentNamespace
+            try changeNamespace(namespace.name)
+            defer {
+                do {
+                    try changeNamespace(oldNS.name)
+                } catch {
+                    print(error)
+                }
+            }
+
             let readForm = "(read-string (str \"(do \" (slurp \"\(path)\") \")\"))"
             let form     = try read(readForm)
             let rv       = try eval(form, env: self)
@@ -336,51 +361,128 @@ extension Environment {
     }
 }
 
-class Namespace {
-    let name: String
-    var rootBindings = [String: LispType]()
-    var bindingStack = [[String: LispType]]()
+// Namespaces
+extension Environment {
+    func getValue(_ name: String, fromNamespace namespace: Namespace) throws -> LispType? {
+        var targetNamespace: String?
+        var binding:   String
 
-    init(name: String) {
-        self.name = name
-    }
+        // Split the input on the first forward slash to separate by
+        let bindingComponents = name.characters.split(maxSplits: 1, omittingEmptySubsequences: false) {
+            $0 == "/"
+        }.map(String.init)
 
-    func getValue(name: String) -> LispType? {
-        for index in stride(from: bindingStack.count - 1, through: 0, by: -1) {
-            if let val = bindingStack[index][name] {
-                return val
+        if bindingComponents.count == 1 || bindingComponents[0] == "" {
+            if bindingComponents[0] == "" {
+                // If the input starts with a slash, it is part of the binding, not a namespace separator.
+                // This allows looking up "/" (divide) without a namespace qualifier, for example.
+                binding = "/\(bindingComponents[0])"
+            } else {
+                binding = bindingComponents[0]
             }
+        } else {
+            targetNamespace = bindingComponents[0]
+            binding = bindingComponents[1]
         }
 
-        if let val = rootBindings[name] {
-            return val
+        if targetNamespace != nil {
+            // Search for a namespace ref, or namespace with the given name
+            if let ns = namespace.namespaceRefs[targetNamespace!] {
+                if let val = ns.rootBindings[binding] {
+                    return val
+                }
+            } else if let ns = namespaces[targetNamespace!] {
+                if let val = ns.rootBindings[binding] {
+                    return val
+                }
+            }
+        } else {
+            for index in stride(from: namespace.bindingStack.count - 1, through: 0, by: -1) {
+                if let val = namespace.bindingStack[index][name] {
+                    return val
+                }
+            }
+
+            if let val = namespace.rootBindings[name] {
+                return val
+            }
+
+            for ns in namespace.namespaceImports {
+                if let val = ns.rootBindings[name] {
+                    return val
+                }
+            }
         }
 
         return nil
     }
 
-    func pushLocal() {
-        bindingStack.append([:])
+    func pushLocal(toNamespace namespace: Namespace) {
+        namespace.bindingStack.append([:])
     }
 
-    func popLocal() -> [String: LispType] {
-        return bindingStack.popLast() ?? [:]
+    func popLocal(fromNamespace namespace: Namespace) -> [String: LispType] {
+        return namespace.bindingStack.popLast() ?? [:]
     }
 
-    func bindLocal(name: String, value: LispType) -> String {
-        if bindingStack.count > 0 {
-            bindingStack[bindingStack.count - 1][name] = value
+    func bindLocal(name: String, value: LispType, toNamespace namespace: Namespace) -> String {
+        if namespace.bindingStack.count > 0 {
+            namespace.bindingStack[namespace.bindingStack.count - 1][name] = value
         } else {
-            rootBindings[name] = value
+            namespace.rootBindings[name] = value
         }
 
-        return "\(self.name)/\(name)"
+        return "\(namespace.name)/\(name)"
     }
 
-    func bindGlobal(name: String, value: LispType) -> String {
-        rootBindings[name] = value
+    func bindGlobal(name: String, value: LispType, toNamespace namespace: Namespace) -> String {
+        namespace.rootBindings[name] = value
 
-        return "\(self.name)/\(name)"
+        return "\(namespace.name)/\(name)"
+    }
+
+    func importNamespace(_ ns: Namespace, toNamespace namespace: Namespace) {
+        if ns != namespace {
+            namespace.namespaceImports.insert(ns)
+        }
+    }
+
+    func importNamespace(_ ns: Namespace, as importName: String, toNamespace namespace: Namespace) {
+        namespace.namespaceRefs[importName] = ns
+    }
+
+    func createOrGetNamespace(_ name: String) -> Namespace {
+        if let ns = namespaces[name] {
+            return ns
+        }
+
+        let ns = Namespace(name: name)
+        namespaces[name] = ns
+
+        defer {
+            for nsImport in coreImports {
+                importNamespace(createOrGetNamespace(nsImport), toNamespace: ns)
+            }
+        }
+        return ns
+    }
+}
+
+class Namespace: Hashable {
+    let name: String
+    var rootBindings     = [String: LispType]()
+    var bindingStack     = [[String: LispType]]()
+    var namespaceRefs    = [String: Namespace]()
+    var namespaceImports = Set<Namespace>()
+
+    public private(set) var hashValue: Int = 0
+
+    init(name: String) {
+        self.name = name
+    }
+
+    public static func ==(lhs: Namespace, rhs: Namespace) -> Bool {
+        return lhs.name == rhs.name
     }
 }
 

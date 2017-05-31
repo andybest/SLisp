@@ -36,11 +36,15 @@ class MathBuiltins : Builtins {
     override init(env:Environment) {
         super.init(env: env)
     }
-    
-    func loadImplementation() {
+
+    override func namespaceName() -> String {
+        return "math"
+    }
+
+    override func loadImplementation() {
         // Load core library implemented in SLisp
         let path = "./data/math.sl"
-        if env.evalFile(path: path) == nil {
+        if env.evalFile(path: path, toNamespace: env.createOrGetNamespace(self.namespaceName())) == nil {
             print("Math library implementation could not be loaded!")
         }
     }
@@ -122,7 +126,7 @@ class MathBuiltins : Builtins {
         return .boolean(body(b))
     }
     
-    func initBuiltins() -> [String: BuiltinBody] {
+    override func initBuiltins() -> [String: BuiltinBody] {
         addBuiltin("+") { args, env throws in
             return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
                 return x + y

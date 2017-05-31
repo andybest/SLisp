@@ -42,7 +42,14 @@ class Builtins {
     init(env:Environment) {
         self.env = env
     }
-    
+
+    func namespaceName() -> String {
+        return "user"
+    }
+
+    func loadImplementation() {
+    }
+
     func bindToNamespace() {
         
     }
@@ -63,5 +70,9 @@ class Builtins {
         if args.count < expectedNumArgs {
             throw LispError.general(msg: "'\(funcName)' expects \(expectedNumArgs) arguments.")
         }
+    }
+
+    func initBuiltins() -> [String: BuiltinBody] {
+        return [:]
     }
 }

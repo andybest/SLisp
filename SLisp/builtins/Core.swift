@@ -32,15 +32,19 @@ class Core: Builtins {
         super.init(env: env)
     }
 
-    func loadImplementation() {
+    override func namespaceName() -> String {
+        return "core"
+    }
+
+    override func loadImplementation() {
         // Load core library implemented in SLisp
         let path = "./data/core.sl"
-        if env.evalFile(path: path) == nil {
+        if env.evalFile(path: path, toNamespace: env.createOrGetNamespace(self.namespaceName())) == nil {
             print("Core library implementation could not be loaded!")
         }
     }
     
-    func initBuiltins() -> [String: BuiltinBody] {
+    override func initBuiltins() -> [String: BuiltinBody] {
         addBuiltin("def") { args, env throws in
             if args.count != 2 {
                 throw LispError.runtime(msg: "'def' requires exactly 2 arguments. Got \(args.count).")
@@ -50,7 +54,7 @@ class Core: Builtins {
                 throw LispError.runtime(msg: "'def' requires the first argument to be a symbol. Got \(String(describing: args[0])) instead.")
             }
             
-            let binding = env.currentNamespace.bindGlobal(name: name, value: try env.eval(args[1], env: env))
+            let binding = env.bindGlobal(name: name, value: try env.eval(args[1], env: env), toNamespace: env.currentNamespace)
             return LispType.symbol(binding)
         }
 
@@ -293,18 +297,18 @@ class Core: Builtins {
                 throw LispError.general(msg: "'let' requires an even number of items in the binding list")
             }
             
-            env.currentNamespace.pushLocal()
+            env.pushLocal(toNamespace: env.currentNamespace)
             
             try stride(from: 0, to: bindings.count, by: 2).forEach {
                 guard case let .symbol(binding) = bindings[$0] else {
                     throw LispError.general(msg: "let binding must be a symbol. Got \(String(describing: bindings[$0])).")
                 }
-                _ = try env.currentNamespace.bindLocal(name: binding, value: env.eval(bindings[$0 + 1], env: env))
+                _ = try env.bindLocal(name: binding, value: env.eval(bindings[$0 + 1], env: env), toNamespace: env.currentNamespace)
             }
             
             let rv = try env.doAll(Array(args.dropFirst()))
             
-            _ = env.currentNamespace.popLocal()
+            _ = env.popLocal(fromNamespace: env.currentNamespace)
             
             return rv
         }
