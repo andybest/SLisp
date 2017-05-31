@@ -29,6 +29,3 @@
                         (if (outcome player-choice computer-choice)
                             (print "You win")
                             (print "The computer won"))))))))
-
-(while true
-    (rock-paper-scissors))

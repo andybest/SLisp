@@ -327,11 +327,37 @@ class Core: Builtins {
                 throw LispError.general(msg: "'read-string' requires 1 string argument")
             }
 
-            guard case let .string(input) = args[0] else {
+            guard case let .string(input) = try env.eval(args[0], env: env) else {
                 throw LispError.general(msg: "'read-string' requires the argument to be a string")
             }
 
             return try env.read(input)
+        }
+
+        addBuiltin("slurp") { args, env throws in
+            if args.count != 1 {
+                throw LispError.general(msg: "'slurp' requires 1 string argument")
+            }
+
+            guard case let .string(filename) = try env.eval(args[0], env: env) else {
+                throw LispError.general(msg: "'slurp' requires the argument to be a string")
+            }
+
+            do {
+                let fileContents = try String(contentsOfFile: filename)
+                return .string(fileContents)
+            } catch {
+                print("File \(filename) not found.")
+                return .nil
+            }
+        }
+
+        addBuiltin("eval") { args, env throws in
+            if args.count != 1 {
+                throw LispError.general(msg: "'eval' requires 1 argument")
+            }
+
+            return try env.eval(env.eval(args[0], env: env), env: env)
         }
         
         /*
