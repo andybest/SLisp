@@ -35,17 +35,14 @@ class MathBuiltins : Builtins {
     
     override init(env:Environment) {
         super.init(env: env)
-        self.initBuiltins()
     }
     
     func loadImplementation() {
         // Load core library implemented in SLisp
-        /*do {
-            let path = "./data/math.sl"
-            try env.evaluateFile(path)
-        } catch {
-            print("Math library implementation not found!")
-        }*/
+        let path = "./data/math.sl"
+        if env.evalFile(path: path) == nil {
+            print("Math library implementation could not be loaded!")
+        }
     }
     
     // A generic function for arithmetic operations

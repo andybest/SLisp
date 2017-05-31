@@ -30,7 +30,14 @@ class Core: Builtins {
     
     override init(env: Environment) {
         super.init(env: env)
-        let _ = initBuiltins()
+    }
+
+    func loadImplementation() {
+        // Load core library implemented in SLisp
+        let path = "./data/core.sl"
+        if env.evalFile(path: path) == nil {
+            print("Core library implementation could not be loaded!")
+        }
     }
     
     func initBuiltins() -> [String: BuiltinBody] {
@@ -359,6 +366,23 @@ class Core: Builtins {
 
             return try env.eval(env.eval(args[0], env: env), env: env)
         }
+
+        addBuiltin("str") { args, env throws in
+            if args.count == 0 {
+                throw LispError.general(msg: "'str' requires at least one argument")
+            }
+
+            let strings = try args.map { arg -> String in
+                let evaluated = try env.eval(arg, env: env)
+                if case let .string(s) = evaluated {
+                    return s
+                }
+
+                return String(describing: evaluated)
+            }
+
+            return .string(strings.joined())
+        }
         
         /*
         /* Get input from stdin */
@@ -447,7 +471,7 @@ class Core: Builtins {
             
             return p!.value
         }*/
-        
+
         return builtins
     }
 }

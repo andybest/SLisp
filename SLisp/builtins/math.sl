@@ -1,2 +1,2 @@
 (def floor (function (x)
-    (- x (mod x 1))))
+    (- x 1 (mod x 1))))
