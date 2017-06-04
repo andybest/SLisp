@@ -26,5 +26,5 @@
 
 import Foundation
 
-let repl = Repl()
-repl.mainLoop()
+let repl = try Repl()
+repl?.mainLoop()

@@ -87,16 +87,16 @@ class Environment {
         return namespaces[currentNamespaceName]!
     }
 
-    init() {
+    init?() throws {
         createDefaultNamespace()
 
         /* Core builtins */
         let coreBuiltins = [Core(env: self)]
 
-        coreBuiltins.forEach {
+        try coreBuiltins.forEach {
             let ns = createOrGetNamespace($0.namespaceName())
-            $0.initBuiltins().forEach { name, body in
-                _ = bindGlobal(name: name, value: .function(.native(body: body)), toNamespace: ns)
+            try $0.initBuiltins().forEach { name, body in
+                _ = try bindGlobal(name: .symbol(name), value: .function(.native(body: body)), toNamespace: ns)
             }
 
             // Import this namespace to the default namespace
@@ -118,10 +118,10 @@ class Environment {
         /* Other builtins */
         let builtins = [MathBuiltins(env: self)]
 
-        builtins.forEach {
+        try builtins.forEach {
             let ns = createOrGetNamespace($0.namespaceName())
-            $0.initBuiltins().forEach { name, body in
-                _ = bindGlobal(name: name, value: .function(.native(body: body)), toNamespace: ns)
+            try $0.initBuiltins().forEach { name, body in
+                _ = try bindGlobal(name: .symbol(name), value: .function(.native(body: body)), toNamespace: ns)
             }
         }
 
@@ -160,40 +160,150 @@ class Environment {
         }
     }
 
+    func eval_form(_ form: LispType) throws -> LispType {
+        switch form {
+        case .symbol(let symbol):
+            return try getValue(symbol, fromNamespace: currentNamespace)
+        case .list(let list):
+            return .list(try list.map { try self.eval($0) })
+        default:
+            return form
+        }
+    }
+
     func eval(_ form: LispType) throws -> LispType {
         var tco: Bool   = false
         var mutableForm = form
-
-        repeat {
-            tco = false
+        var env_push = 0
+        
+        defer {
+            while env_push > 0 {
+                _ = popLocal(fromNamespace: currentNamespace)
+                env_push -= 1
+            }
+        }
+        
+        while true {
             switch mutableForm {
-
-                case .list(let list):
-                    guard let f = list.first else {
-                        return mutableForm
+            case .list(let list):
+                if list.count == 0 { return form }
+            default:
+                return try eval_form(form)
+            }
+            
+            switch mutableForm {
+            case .list(let list):
+                let args = Array(list.dropFirst())
+                
+                // Handle special forms
+                switch list[0] {
+                case .symbol("def"):
+                    if args.count != 2 {
+                        throw LispError.runtime(msg: "'def' requires 2 arguments")
                     }
-
-                    var item = LispType.nil
-
-                    if case .function(_) = f {
-                        item = f
-                    } else {
-                        item = try eval(f)
+                    return try bindGlobal(name: list[1], value: try eval(list[2]), toNamespace: currentNamespace)
+                case .symbol("let"):
+                    if args.count < 2 {
+                        throw LispError.runtime(msg: "'let' requires at least 2 arguments")
                     }
-
-                    // If the first item in the list is a symbol, check the environment to see
-                    // if it has been bound
-                    if case let .symbol(name) = item {
-                        if let bind = try getValue(name, fromNamespace: currentNamespace) {
-                            item = bind
+                    
+                    guard case let .list(bindings) = args[0] else {
+                        throw LispError.general(msg: "'let' requires the first argument to be a list of bindings")
+                    }
+                    
+                    if bindings.count % 2 != 0 {
+                        throw LispError.general(msg: "'let' requires an even number of items in the binding list")
+                    }
+                    
+                    pushLocal(toNamespace: currentNamespace)
+                    env_push += 1
+                    
+                    try stride(from: 0, to: bindings.count, by: 2).forEach {
+                        _ = try bindLocal(name: bindings[$0], value: self.eval(bindings[$0 + 1]), toNamespace: currentNamespace)
+                    }
+                    
+                    let body: [LispType] = Array(args.dropFirst())
+                    
+                    for (index, form) in body.enumerated() {
+                        if index == body.count - 1 {
+                            mutableForm = form
+                            break
                         }
+                        
+                        _ = try eval(form)
+                    }
+                    
+                    // TCO
+                    mutableForm = body[body.count - 1]
+                    
+                case .symbol("apply"):
+                    break
+                case .symbol("quote"):
+                    if args.count != 1 {
+                        throw LispError.general(msg: "'quote' expects 1 argument, got \(args.count).")
+                    }
+                    
+                    return args[0]
+                case .symbol("do"):
+                    if args.count < 1 {
+                        throw LispError.runtime(msg: "'do' requires at least 1 argument")
+                    }
+                    
+                    for (index, doForm) in args.enumerated() {
+                        if index == args.count - 1 {
+                            mutableForm = doForm
+                            break
+                        }
+                        
+                        _ = try eval(doForm)
+                    }
+                    
+                    // TCO
+                    mutableForm = args[args.count - 1]
+                    
+                case .symbol("function"):
+                    if args.count < 2 {
+                        throw LispError.general(msg: "'function' expects a body")
+                    }
+                    
+                    guard case let .list(argList) = args[0] else {
+                        throw LispError.general(msg: "function arguments must be a list")
+                    }
+                    
+                    let argNames: [String] = try argList.map {
+                        guard case let .symbol(argName) = $0 else {
+                            throw LispError.general(msg: "function arguments must be symbols")
+                        }
+                        return argName
+                    }
+                    
+                    let body = FunctionBody.lisp(argnames: argNames, body: Array(args.dropFirst(1)))
+                    return LispType.function(body)
+                    
+                case .symbol("if"):
+                    if args.count != 3 {
+                        throw LispError.runtime(msg: "'if' expects 3 arguments.")
+                    }
+                    
+                    guard case let .boolean(condition) = try eval(args[0]) else {
+                        throw LispError.general(msg: "'if' expects the first argument to be a boolean condition")
+                    }
+                    
+                    if condition {
+                        mutableForm = args[1]
+                    } else {
+                        mutableForm = args[2]
                     }
 
-                    if case let .function(body) = item {
-                        switch body {
+                default:
+                    switch try eval_form(mutableForm) {
+                    case .list(let list):
+                        switch list[0] {
+                        case .function(let body):
+                            switch body {
                             case .native(body:let nativeBody):
                                 let rv = try nativeBody(Array(list.dropFirst()), self)
-
+                                
                                 if case let .tcoInvocation(invocation) = rv {
                                     // Build a new function call list with the returned tco function
                                     var tcoList = [LispType.function(invocation.function)]
@@ -204,102 +314,46 @@ class Environment {
                                     return rv
                                 }
                             case .lisp(argnames:let argnames, body:let lispBody):
-                                let args = try Array(list.dropFirst()).map {
-                                    try self.eval($0)
-                                }
-
                                 if args.count != argnames.count {
                                     throw LispError.general(msg: "Invalid number of args: \(args.count). Expected \(argnames.count).")
                                 }
-
+                                
                                 pushLocal(toNamespace: currentNamespace)
-
+                                env_push += 1
+                                
                                 for i in 0..<argnames.count {
-                                    _ = bindLocal(name: argnames[i], value: args[i], toNamespace: currentNamespace)
+                                    _ = try bindLocal(name: .symbol(argnames[i]), value: args[i], toNamespace: currentNamespace)
                                 }
-
+                                
                                 var rv: LispType = .nil
                                 for val in lispBody {
                                     rv = try eval(val)
                                 }
-
+                                
                                 _ = popLocal(fromNamespace: currentNamespace)
-
+                                
                                 if case let .tcoInvocation(invocation) = rv {
                                     // Build a new function call list with the returned tco function
                                     var tcoList = [LispType.function(invocation.function)]
                                     tcoList.append(contentsOf: invocation.args)
                                     mutableForm = .list(tcoList)
                                     tco = true
-                                } else {
-                                    return rv
                                 }
+                                
+                                return rv
+                            }
+                        default:
+                            throw LispError.runtime(msg: "\(String(describing: list[0])) is not a function.")
                         }
-                    } else {
-                        throw LispError.runtime(msg: "'\(String(describing: f))' is not a function.")
+                    default:
+                        throw LispError.runtime(msg: "Cannot evaluate form.")
                     }
-
-                case .symbol(let symbol):
-                    if symbol == "nil" {
-                        return .nil
-                    } else if symbol == "true" {
-                        return .boolean(true)
-                    } else if symbol == "false" {
-                        return .boolean(false)
-                    }
-
-                    if let val = try getValue(symbol, fromNamespace: currentNamespace) {
-                        return val
-                    }
-
-                    throw LispError.general(msg: "Symbol '\(symbol)' is not currently bound")
-
-                default:
-                    return mutableForm
-            }
-
-        } while (tco)
-
-        return mutableForm
-    }
-
-    func doAll(_ forms: [LispType]) throws -> LispType {
-        // Evaluate all forms in a list. If the last form is a function call,
-        // return a TCOFunction
-
-        for i in 0..<forms.count {
-            if i == forms.count - 1 {
-                guard case let .list(list) = forms[i] else {
-                    return try self.eval(forms[i])
                 }
-
-                if list.count > 0 {
-                    let firstItem = try self.eval(list[0])
-                    guard case let .function(body) = firstItem else {
-                        return try self.eval(forms[i])
-                    }
-
-                    // Need to evaluate the args here, since any local bindings won't exist
-                    // after the caller returns
-
-                    let evaluatedArgs = try Array(list.dropFirst()).map { arg -> LispType in
-                        if case .symbol(_) = arg {
-                            return arg
-                        }
-                        return try self.eval(arg)
-                    }
-
-                    let invocation = TCOInvocation(function: body, args: evaluatedArgs)
-                    return .tcoInvocation(invocation)
-                }
-
-                return try self.eval(forms[i])
+                
+            default:
+                throw LispError.runtime(msg: "Cannot evaluate form.")
             }
-
-            _ = try self.eval(forms[i])
-        }
-
-        return .nil
+        } // while
     }
 }
 
@@ -388,7 +442,7 @@ extension Environment {
 
 // Namespaces
 extension Environment {
-    func getValue(_ name: String, fromNamespace namespace: Namespace) throws -> LispType? {
+    func getValue(_ name: String, fromNamespace namespace: Namespace) throws -> LispType {
         var targetNamespace: String?
         var binding:   String
 
@@ -439,7 +493,7 @@ extension Environment {
             }
         }
 
-        return nil
+        throw LispError.general(msg: "Value \(name) not found.")
     }
 
     func pushLocal(toNamespace namespace: Namespace) {
@@ -450,20 +504,28 @@ extension Environment {
         return namespace.bindingStack.popLast() ?? [:]
     }
 
-    func bindLocal(name: String, value: LispType, toNamespace namespace: Namespace) -> String {
+    func bindLocal(name: LispType, value: LispType, toNamespace namespace: Namespace) throws -> LispType {
+        guard case let .symbol(bindingName) = name else {
+            throw LispError.runtime(msg: "Values can only be bound to symbols. Got \(String(describing: name))")
+        }
+        
         if namespace.bindingStack.count > 0 {
-            namespace.bindingStack[namespace.bindingStack.count - 1][name] = value
+            namespace.bindingStack[namespace.bindingStack.count - 1][bindingName] = value
         } else {
-            namespace.rootBindings[name] = value
+            namespace.rootBindings[bindingName] = value
         }
 
-        return "\(namespace.name)/\(name)"
+        return .symbol("\(namespace.name)/\(bindingName)")
     }
 
-    func bindGlobal(name: String, value: LispType, toNamespace namespace: Namespace) -> String {
-        namespace.rootBindings[name] = value
+    func bindGlobal(name: LispType, value: LispType, toNamespace namespace: Namespace) throws -> LispType {
+        guard case let .symbol(bindingName) = name else {
+            throw LispError.runtime(msg: "Values can only be bound to symbols. Got \(String(describing: name))")
+        }
+        
+        namespace.rootBindings[bindingName] = value
 
-        return "\(namespace.name)/\(name)"
+        return .symbol("\(namespace.name)/\(bindingName)")
     }
 
     func importNamespace(_ ns: Namespace, toNamespace namespace: Namespace) {
@@ -534,7 +596,11 @@ class Reader {
 
 class Repl {
 
-    let environment = Environment()
+    var environment: Environment
+    
+    init?() throws {
+        environment = try Environment()!
+    }
 
     func mainLoop() {
         while true {

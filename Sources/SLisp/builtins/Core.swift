@@ -45,18 +45,6 @@ class Core: Builtins {
     }
     
     override func initBuiltins() -> [String: BuiltinBody] {
-        addBuiltin("def") { args, env throws in
-            if args.count != 2 {
-                throw LispError.runtime(msg: "'def' requires exactly 2 arguments. Got \(args.count).")
-            }
-            
-            guard case let .symbol(name) = args[0] else {
-                throw LispError.runtime(msg: "'def' requires the first argument to be a symbol. Got \(String(describing: args[0])) instead.")
-            }
-            
-            let binding = env.bindGlobal(name: name, value: try env.eval(args[1]), toNamespace: env.currentNamespace)
-            return LispType.symbol(binding)
-        }
 
         addBuiltin("list") { args, env throws in
             let evaluated = try args.map { try env.eval($0) }
@@ -133,55 +121,13 @@ class Core: Builtins {
             throw LispError.general(msg: "'last' expects an argument that is a list")
         }
         
-        addBuiltin("function") { args, env throws in
-            if args.count < 2 {
-                throw LispError.general(msg: "'function' expects a body")
-            }
-            
-            guard case let .list(argList) = args[0] else {
-                throw LispError.general(msg: "function arguments must be a list")
-            }
-            
-            let argNames: [String] = try argList.map {
-                guard case let .symbol(argName) = $0 else {
-                    throw LispError.general(msg: "function arguments must be symbols")
-                }
-                return argName
-            }
-            
-            let body = FunctionBody.lisp(argnames: argNames, body: Array(args.dropFirst(1)))
-            
-            return LispType.function(body)
-        }
-        
         addBuiltin("print") { args, env throws in
             let strings = try args.map { String(describing: try env.eval($0)) }
             print(strings.joined(separator: ","))
             return .nil
         }
         
-        addBuiltin("quote") { args, env throws in
-            if args.count != 1 {
-                throw LispError.general(msg: "'quote' expects 1 argument, got \(args.count).")
-            }
-            
-            return args[0]
-        }
-        
-        addBuiltin("if") { args, env throws in
-            try self.checkArgCount(funcName: "if", args: args, expectedNumArgs: 3)
-            
-            guard case let .boolean(condition) = try env.eval(args[0]) else {
-                throw LispError.general(msg: "'if' expects the first argument to be a boolean condition")
-            }
-            
-            if condition {
-                return try env.eval(args[1])
-            }
-            
-            return try env.doAll([args[2]])
-        }
-        
+        /*
         addBuiltin("while") { args, env throws in
             if args.count < 2 {
                 throw LispError.general(msg: "'while' requires a body")
@@ -207,6 +153,7 @@ class Core: Builtins {
             
             return rv
         }
+ */
         
         addBuiltin("list?") { args, env throws in
             try self.checkArgCount(funcName: "list", args: args, expectedNumArgs: 1)
@@ -278,39 +225,6 @@ class Core: Builtins {
             }
             
             return .boolean(true)
-        }
-        
-        addBuiltin("do") { args, env throws in
-            try self.checkArgCount(funcName: "do", args: args, expectedNumArgs: 1)
-            
-            return try env.doAll(args)
-        }
-        
-        addBuiltin("let") { args, env throws in
-            try self.checkArgCount(funcName: "let", args: args, expectedNumArgs: 2)
-            
-            guard case let .list(bindings) = args[0] else {
-                throw LispError.general(msg: "'let' requires the first argument to be a list of bindings")
-            }
-            
-            if bindings.count % 2 != 0 {
-                throw LispError.general(msg: "'let' requires an even number of items in the binding list")
-            }
-            
-            env.pushLocal(toNamespace: env.currentNamespace)
-            
-            try stride(from: 0, to: bindings.count, by: 2).forEach {
-                guard case let .symbol(binding) = bindings[$0] else {
-                    throw LispError.general(msg: "let binding must be a symbol. Got \(String(describing: bindings[$0])).")
-                }
-                _ = try env.bindLocal(name: binding, value: env.eval(bindings[$0 + 1]), toNamespace: env.currentNamespace)
-            }
-            
-            let rv = try env.doAll(Array(args.dropFirst()))
-            
-            _ = env.popLocal(fromNamespace: env.currentNamespace)
-            
-            return rv
         }
         
         addBuiltin("input") { args, env throws in
