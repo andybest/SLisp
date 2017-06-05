@@ -36,33 +36,45 @@ class Repl {
 
     func mainLoop() {
         while true {
-            Swift.print("user> ", terminator: "")
-
-            if let input: String = readLine(strippingNewline: true), input.characters.count > 0 {
-                Swift.print(rep(input))
+            if let output = getInput() {
+                print(output)
             }
         }
     }
 
-    func print() {
+    func getInput() -> String? {
+        Swift.print("\(environment.currentNamespaceName)> ", terminator: "")
 
-    }
+        var input: String = ""
 
-    func rep(_ input: String) -> String {
+        while true {
+            input += readLine(strippingNewline: true)!
 
-        do {
-            let form = try Reader.read(input)
-            let rv   = try environment.eval(form)
-            return String(describing: rv)
+            if input.characters.count > 0 {
 
-        } catch let LispError.runtime(msg:message) {
-            return "Runtime Error: \(message)"
-        } catch let LispError.general(msg:message) {
-            return "Error: \(message)"
-        } catch let LispError.lexer(msg:message) {
-            return "Syntax Error: \(message)"
-        } catch {
-            return String(describing: error)
+                var rv: LispType? = nil
+                do {
+                    let form = try Reader.read(input)
+                    rv = try environment.eval(form)
+
+                } catch let LispError.runtime(msg:message) {
+                    return "Runtime Error: \(message)"
+                } catch let LispError.general(msg:message) {
+                    return "Error: \(message)"
+                } catch let LispError.lexer(msg:message) {
+                    return "Syntax Error: \(message)"
+                } catch LispError.readerNotEOF {
+                    // Input hasn't been completed
+                    Swift.print("...\t", terminator: "")
+                } catch {
+                    return String(describing: error)
+                }
+                if rv != nil {
+                    return String(describing: rv!)
+                }
+            } else {
+                return nil
+            }
         }
     }
 }

@@ -81,7 +81,7 @@ class Reader {
         }
 
         if !endOfList {
-            throw LispError.lexer(msg: "Expected ')'.")
+            throw LispError.readerNotEOF
         }
 
         return .list(list)
