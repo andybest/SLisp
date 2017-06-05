@@ -89,7 +89,16 @@ class Environment {
     func eval_form(_ form: LispType) throws -> LispType {
         switch form {
             case .symbol(let symbol):
-                return try getValue(symbol, fromNamespace: currentNamespace)
+                switch symbol {
+                    case "true":
+                        return .boolean(true)
+                    case "false":
+                        return .boolean(false)
+                    case "nil":
+                        return .nil
+                    default:
+                        return try getValue(symbol, fromNamespace: currentNamespace)
+                }
             case .list(let list):
                 return .list(try list.map {
                     try self.eval($0)
@@ -118,7 +127,7 @@ class Environment {
                         return form
                     }
                 default:
-                    return try eval_form(form)
+                    return try eval_form(mutableForm)
             }
 
             switch mutableForm {
@@ -227,12 +236,12 @@ class Environment {
 
                         default:
                             switch try eval_form(mutableForm) {
-                                case .list(let list):
-                                    switch list[0] {
+                                case .list(let lst):
+                                    switch lst[0] {
                                         case .function(let body):
                                             switch body {
                                                 case .native(body:let nativeBody):
-                                                    let rv = try nativeBody(Array(list.dropFirst()), self)
+                                                    let rv = try nativeBody(Array(lst.dropFirst()), self)
 
                                                     if case let .tcoInvocation(invocation) = rv {
                                                         // Build a new function call list with the returned tco function
@@ -244,15 +253,15 @@ class Environment {
                                                         return rv
                                                     }
                                                 case .lisp(argnames:let argnames, body:let lispBody):
-                                                    if args.count != argnames.count {
-                                                        throw LispError.general(msg: "Invalid number of args: \(args.count). Expected \(argnames.count).")
+                                                    let funcArgs = Array(lst.dropFirst())
+                                                    if funcArgs.count != argnames.count {
+                                                        throw LispError.general(msg: "Invalid number of args: \(funcArgs.count). Expected \(argnames.count).")
                                                     }
 
                                                     pushLocal(toNamespace: currentNamespace)
-                                                    env_push += 1
 
                                                     for i in 0..<argnames.count {
-                                                        _ = try bindLocal(name: .symbol(argnames[i]), value: args[i], toNamespace: currentNamespace)
+                                                        _ = try bindLocal(name: .symbol(argnames[i]), value: funcArgs[i], toNamespace: currentNamespace)
                                                     }
 
                                                     var rv: LispType = .nil

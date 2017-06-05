@@ -48,7 +48,11 @@ class Repl {
         var input: String = ""
 
         while true {
-            input += readLine(strippingNewline: true)!
+            guard let newInput = readLine(strippingNewline: true) else {
+                continue
+            }
+
+            input += newInput
 
             if input.characters.count > 0 {
 
