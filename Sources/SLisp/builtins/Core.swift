@@ -256,7 +256,7 @@ class Core: Builtins {
                 throw LispError.general(msg: "'read-string' requires the argument to be a string")
             }
 
-            return try env.read(input)
+            return try Reader.read(input)
         }
 
         addBuiltin("slurp") { args, env throws in
