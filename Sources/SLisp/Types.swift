@@ -49,6 +49,7 @@ enum LispType: CustomStringConvertible {
     case `nil`
     case function(FunctionBody)
     case tcoInvocation(TCOInvocation)
+    case key(String)
 
     var description: String {
         switch self {
@@ -71,6 +72,8 @@ enum LispType: CustomStringConvertible {
                 return "#<function>"
             case .tcoInvocation(_):
                 return "#<TCOInvocation>"
+            case .key(let key):
+            return ":\(key)"
         }
     }
 }
