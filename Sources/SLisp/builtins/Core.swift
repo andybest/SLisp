@@ -290,105 +290,59 @@ class Core: Builtins {
                 throw LispError.general(msg: "'str' requires at least one argument")
             }
 
-            let strings = try args.map { arg -> String in
-                let evaluated = try env.eval(arg)
-                if case let .string(s) = evaluated {
+            let strings = args.map { arg -> String in
+                if case let .string(s) = arg {
                     return s
                 }
 
-                return String(describing: evaluated)
+                return String(describing: arg)
             }
 
             return .string(strings.joined())
         }
-        
-        /*
-        /* Get input from stdin */
-        addBuiltin("input") { args in
-            let argList = getArgList(args, env: self.env)
-            
-            if argList.count > 0 {
-                if valueIsString(argList[0]) {
-                    let prompt = stringFromValue(argList[0])
-                    print(prompt!, terminator: "")
-                } else {
-                    print("Input requires the first argument to be a string")
-                    return LispType.nil
+
+        addBuiltin("string=") { args, env throws in
+            if args.count < 2 {
+                throw LispError.general(msg: "'string=' requires at least 2 arguments.")
+            }
+
+            let strings = try args.map { arg -> String in
+                if case let .string(s) = arg {
+                    return s
+                }
+                throw LispError.runtime(msg: "'string=' expects string arguments. Got \(String(describing: arg))")
+            }
+
+            let comp = strings[0]
+            for s in strings {
+                if s !=  comp {
+                    return .boolean(false)
                 }
             }
-            
-            let keyboard = FileHandle.standardInput
-            let inputData = keyboard.availableData
-            let input = NSString(data: inputData, encoding: String.Encoding.utf8.rawValue)!
-                .trimmingCharacters(in: CharacterSet.newlines)
-            return LispType.lString(input as String)
+
+            return .boolean(true)
         }
-        
-        addBuiltin("string=") { args in
-            var result: Bool = false
-            var lastValue: String = ""
-            var firstArg = true
-            var p: Pair? = checkArgs(args, env: self.env)
-            
-            while p != nil {
-                switch p!.value {
-                case .lString(let s):
-                    if firstArg {
-                        lastValue = s
-                        firstArg = false
-                    } else {
-                        result = s == lastValue
-                        lastValue = s
-                    }
-                    break
-                    
-                default:
-                    print("Invalid argument: \(p!.value)")
-                    return LispType.nil
-                }
-                
-                p = p?.next
+
+        addBuiltin("at") { args, env in
+
+            if args.count != 2 {
+                throw LispError.runtime(msg: "'at' requires 2 arguments.")
             }
             
-            return LispType.lBoolean(result)
+            guard case let .list(list) = args[0] else {
+                throw LispError.runtime(msg: "'at' requires the first argument to be a list.")
+            }
+
+            guard case let .float(index) = args[1] else {
+                throw LispError.runtime(msg: "'at' requires the second argument to be a numerical index.")
+            }
+
+            if Int(index) >= list.count || index < 0 {
+                throw LispError.runtime(msg: "Index out of range: \(index)")
+            }
+
+            return list[Int(index)]
         }
-        
-        addBuiltin("at") { args in
-            let argList = getArgList(args, env: self.env)
-            
-            if argList.count != 2 {
-                print("at requires 2 arguments")
-                return LispType.nil
-            }
-            
-            if !valueIsPair(argList[0]) {
-                print("at requires the first argument to be a list")
-                return LispType.nil
-            }
-            
-            if !valueIsNumber(argList[1]) {
-                print("at requires the second argument to be a number")
-                return LispType.nil
-            }
-            
-            let list = pairFromValue(argList[0])
-            let index = Int(numberFromValue(argList[1]))
-            var count = 0
-            
-            var p: Pair? = list
-            
-            while count < index && p != nil {
-                count += 1
-                p = p!.next
-            }
-            
-            if p == nil {
-                print("Index '\(index)' is out of range")
-                return LispType.nil
-            }
-            
-            return p!.value
-        }*/
 
         addBuiltin("+") { args, env throws in
             return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
