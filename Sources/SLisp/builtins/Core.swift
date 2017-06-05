@@ -124,34 +124,6 @@ class Core: Builtins {
             return .nil
         }
 
-        /*
-        addBuiltin("while") { args, env throws in
-            if args.count < 2 {
-                throw LispError.general(msg: "'while' requires a body")
-            }
-            
-            guard case var .boolean(condition) = try env.eval(args[0]) else {
-                throw LispError.general(msg: "'while' expects the first argument to be a boolean condition")
-            }
-            
-            let body = Array(args.dropFirst())
-            
-            var rv: LispType = .nil
-            while condition {
-                rv = try env.doAll(body)
-                
-                switch try env.eval(args[0]) {
-                case .boolean(let cond):
-                    condition = cond
-                default:
-                    throw LispError.general(msg: "'while' expects the first argument to be a boolean condition")
-                }
-            }
-            
-            return rv
-        }
- */
-
         addBuiltin("list?") { args, env throws in
             try self.checkArgCount(funcName: "list", args: args, expectedNumArgs: 1)
 

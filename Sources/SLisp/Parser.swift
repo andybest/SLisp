@@ -234,6 +234,33 @@ class Environment {
                                 mutableForm = args[2]
                             }
 
+                        case .symbol("while"):
+                            if args.count < 2 {
+                                throw LispError.runtime(msg: "'while' requires a condition and a body")
+                            }
+
+                            func getCondition() throws -> Bool {
+                                if case let .boolean(b) = try eval(args[0]) {
+                                    return b
+                                }
+                                throw LispError.runtime(msg: "'while' expects the first argument to be a boolean.")
+                            }
+
+                            var rv: LispType = .nil
+                            var condition = try getCondition()
+                            while condition {
+                                let body = Array(args.dropFirst())
+
+                                for form in body {
+                                    rv = try eval(form)
+                                }
+
+                                condition = try getCondition()
+                            }
+
+                            // TCO
+                            mutableForm = rv
+
                         default:
                             switch try eval_form(mutableForm) {
                                 case .list(let lst):
