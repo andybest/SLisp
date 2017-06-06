@@ -59,9 +59,9 @@ class Reader {
                 }
 
                 return .symbol(str)
-            case .lString(let str):
+            case .string(let str):
                 return .string(str)
-            case .number(let num):
+            case .float(let num):
                 return .float(num)
             default:
                 Swift.print("Error while reading token \(token) at index \(pos)")

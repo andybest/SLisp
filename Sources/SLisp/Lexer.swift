@@ -31,8 +31,9 @@ enum TokenType: Equatable {
     case lParen
     case rParen
     case symbol(String)
-    case number(Double)
-    case lString(String)
+    case float(Double)
+    case integer(Int)
+    case string(String)
 }
 
 func ==(a: TokenType, b: TokenType) -> Bool {
@@ -40,15 +41,15 @@ func ==(a: TokenType, b: TokenType) -> Bool {
     case (.lParen, .lParen): return true
     case (.rParen, .rParen): return true
     case (.symbol(let a), .symbol(let b)) where a == b: return true
-    case (.number(let a), .number(let b)) where a == b: return true
-    case (.lString(let a), .lString(let b)) where a == b: return true
+    case (.float(let a), .float(let b)) where a == b: return true
+    case (.string(let a), .string(let b)) where a == b: return true
     default: return false
     }
 }
 
 protocol TokenMatcher {
     static func isMatch(_ stream:StringStream) -> Bool
-    static func getToken(_ stream:StringStream) -> TokenType?
+    static func getToken(_ stream:StringStream) throws -> TokenType?
 }
 
 func characterIsInSet(_ c: Character, set: CharacterSet) -> Bool {
@@ -117,7 +118,6 @@ class SymbolMatcher: TokenMatcher {
             
             return TokenType.symbol(tok)
         }
-        
         return nil
     }
     
@@ -164,7 +164,7 @@ class StringMatcher: TokenMatcher {
             
             stream.advanceCharacter()
             
-            return TokenType.lString(tok)
+            return TokenType.string(tok)
         }
         
         return nil
@@ -192,7 +192,7 @@ class NumberMatcher: TokenMatcher {
         return matches
     }
     
-    static func getToken(_ stream: StringStream) -> TokenType? {
+    static func getToken(_ stream: StringStream) throws -> TokenType? {
         if isMatch(stream) {
             var tok = ""
             
@@ -202,7 +202,18 @@ class NumberMatcher: TokenMatcher {
                 stream.advanceCharacter()
             }
             
-            return TokenType.number(Double(tok)!)
+            if tok.contains(".") {
+                guard let num = Double(tok) else {
+                    throw LispError.lexer(msg: "\(tok) is not a valid floating point number.")
+                }
+                return TokenType.float(num)
+            } else {
+                guard let num = Int(tok) else {
+                    throw LispError.lexer(msg: "\(tok) is not a valid number.")
+                }
+                return TokenType.integer(num)
+            }
+            
         }
         
         return nil
@@ -319,7 +330,7 @@ class Tokenizer {
         
         for matcher in tokenClasses {
             if matcher.isMatch(stream) {
-                return matcher.getToken(stream)
+                return try matcher.getToken(stream)
             }
         }
         
