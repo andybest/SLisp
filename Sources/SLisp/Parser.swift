@@ -43,7 +43,9 @@ class Environment {
 
         try coreBuiltins.forEach {
             let ns = createOrGetNamespace($0.namespaceName())
-            try $0.initBuiltins().forEach { name, body in
+            try $0.initBuiltins().forEach { (arg) in
+                
+                let (name, body) = arg
                 _ = try bindGlobal(name: .symbol(name), value: .function(.native(body: body)), toNamespace: ns)
             }
 
@@ -68,7 +70,9 @@ class Environment {
 
         try builtins.forEach {
             let ns = createOrGetNamespace($0.namespaceName())
-            try $0.initBuiltins().forEach { name, body in
+            try $0.initBuiltins().forEach { (arg) in
+                
+                let (name, body) = arg
                 _ = try bindGlobal(name: .symbol(name), value: .function(.native(body: body)), toNamespace: ns)
             }
         }

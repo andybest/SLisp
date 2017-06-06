@@ -237,14 +237,14 @@ class StringStream {
 
     init(source: String) {
         str = source
-        characterCount = str.characters.count
+        characterCount = str.count
         position = 0
         currentCharacterIdx = str.startIndex
         nextCharacterIdx = str.index(after: currentCharacterIdx)
         currentCharacter = str.characters[currentCharacterIdx]
         
-        if str.characters.count > 1 {
-            nextCharacter = str.characters[nextCharacterIdx!]
+        if str.count > 1 {
+            nextCharacter = str[nextCharacterIdx!]
         }
     }
 
@@ -259,13 +259,13 @@ class StringStream {
         }
         
         currentCharacterIdx = nextCharacterIdx!
-        currentCharacter = str.characters[currentCharacterIdx]
+        currentCharacter = str[currentCharacterIdx]
         
         if position >= characterCount - 1 {
             nextCharacter = nil
         } else {
             nextCharacterIdx = str.index(after: currentCharacterIdx)
-            nextCharacter = str.characters[nextCharacterIdx!]
+            nextCharacter = str[nextCharacterIdx!]
         }
     }
 
@@ -287,8 +287,8 @@ class StringStream {
         
         currentCharacterIdx = str.startIndex
         nextCharacterIdx = str.index(after: currentCharacterIdx)
-        currentCharacter = str.characters[currentCharacterIdx]
-        nextCharacter = str.characters[nextCharacterIdx!]
+        currentCharacter = str[currentCharacterIdx]
+        nextCharacter = str[nextCharacterIdx!]
     }
 }
 
@@ -313,7 +313,7 @@ class Tokenizer {
     }
     
     func getNextToken() throws -> TokenType? {
-        if stream.position >= stream.str.characters.count {
+        if stream.position >= stream.str.count {
             return nil
         }
         
@@ -325,12 +325,12 @@ class Tokenizer {
         
         let count = stream.eatWhitespace()
         
-        if stream.position >= stream.str.characters.count {
+        if stream.position >= stream.str.count {
             return nil
         }
         
         if count == 0 {
-            throw LispError.lexer(msg: "Unrecognized character '\(stream.currentCharacter ?? " ".characters.first!)'")
+            throw LispError.lexer(msg: "Unrecognized character '\(stream.currentCharacter ?? " ".first!)'")
         }
         
         return try getNextToken()

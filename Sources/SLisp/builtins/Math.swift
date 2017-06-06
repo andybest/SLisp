@@ -125,7 +125,7 @@ class MathBuiltins : Builtins {
 
         addBuiltin("negate") { args, env throws in
             return try self.doSingleArgArithmeticOperation(args, name: "negate") {
-                return $0.negated()
+                return -$0
             }
         }
 

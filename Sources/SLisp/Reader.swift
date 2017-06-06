@@ -57,7 +57,7 @@ class Reader {
                 if str.hasPrefix(":") {
                     return .key(str.substring(from: str.index(after: str.startIndex)))
                 }
-                
+
                 return .symbol(str)
             case .lString(let str):
                 return .string(str)
