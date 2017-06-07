@@ -245,6 +245,21 @@ class LexerTests: XCTestCase {
                         TokenType.float(1234.1234),
                         TokenType.string("Hello"),
                         TokenType.rParen])
+        
+        // Test case from Rosetta Code:
+        // https://rosettacode.org/wiki/S-Expressions
+        XCTAssertEqual(testTokensCorrect(source: "((data \"quoted data\" 123 4.5)\n\t\t(data (!@# (4.5) \"(more\" \"data)\")))"), [
+                TokenType.lParen,           TokenType.lParen,
+                TokenType.symbol("data"),   TokenType.string("quoted data"),
+                TokenType.integer(123),     TokenType.float(4.5),
+                TokenType.rParen,           TokenType.lParen,
+                TokenType.symbol("data"),   TokenType.lParen,
+                TokenType.symbol("!@#"),    TokenType.lParen,
+                TokenType.float(4.5),       TokenType.rParen,
+                TokenType.string("(more"),  TokenType.string("data)"),
+                TokenType.rParen,           TokenType.rParen,
+                TokenType.rParen
+            ])
     }
 
 }
