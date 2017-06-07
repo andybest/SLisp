@@ -42,6 +42,7 @@ func ==(a: TokenType, b: TokenType) -> Bool {
     case (.rParen, .rParen): return true
     case (.symbol(let a), .symbol(let b)) where a == b: return true
     case (.float(let a), .float(let b)) where a == b: return true
+    case (.integer(let a), .integer(let b)) where a == b: return true
     case (.string(let a), .string(let b)) where a == b: return true
     default: return false
     }
@@ -135,7 +136,6 @@ class SymbolMatcher: TokenMatcher {
     static func startCharacterSet() -> CharacterSet {
         if matcherStartCharacterSet == nil {
             matcherStartCharacterSet = NSMutableCharacterSet.letter()
-            matcherStartCharacterSet!.formUnion(with: CharacterSet.decimalDigits)
             matcherStartCharacterSet!.formUnion(with: CharacterSet.punctuationCharacters)
             matcherStartCharacterSet!.formUnion(with: NSMutableCharacterSet.symbol() as CharacterSet)
             matcherStartCharacterSet!.removeCharacters(in: "()")
@@ -151,7 +151,7 @@ class StringMatcher: TokenMatcher {
         return stream.currentCharacter == "\""
     }
     
-    static func getToken(_ stream: StringStream) -> TokenType? {
+    static func getToken(_ stream: StringStream) throws -> TokenType? {
         if isMatch(stream) {
             stream.advanceCharacter()
             
@@ -160,6 +160,10 @@ class StringMatcher: TokenMatcher {
             while stream.currentCharacter != nil && !isMatch(stream) {
                 tok += String(stream.currentCharacter!)
                 stream.advanceCharacter()
+            }
+            
+            if stream.currentCharacter != "\"" {
+                throw LispError.lexer(msg: "Expected '\"'")
             }
             
             stream.advanceCharacter()
@@ -298,8 +302,11 @@ class StringStream {
         
         currentCharacterIdx = str.startIndex
         nextCharacterIdx = str.index(after: currentCharacterIdx)
-        currentCharacter = str[currentCharacterIdx]
-        nextCharacter = str[nextCharacterIdx!]
+        currentCharacter = str.characters[currentCharacterIdx]
+        
+        if str.count > 1 {
+            nextCharacter = str[nextCharacterIdx!]
+        }
     }
 }
 
