@@ -26,15 +26,15 @@
 
 import Foundation
 
-class Repl {
+public class Repl {
 
     var environment: Environment
 
-    init?() throws {
+    public init?() throws {
         environment = try Environment()!
     }
 
-    func mainLoop() {
+    public func mainLoop() {
         while true {
             if let output = getInput() {
                 print(output)

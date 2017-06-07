@@ -3,5 +3,9 @@
 import PackageDescription
 
 let package = Package(
-    name: "SLisp"
+    name: "SLisp",
+    targets: [
+        Target(name: "SLisp", dependencies: ["SLispCore"]),
+        Target(name: "SLispCore")
+    ]
 )
