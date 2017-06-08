@@ -40,10 +40,11 @@ struct TCOInvocation {
     let args:     [LispType]
 }
 
-enum LispType: CustomStringConvertible {
+enum LispType: CustomStringConvertible, Equatable {
     case list([LispType])
     case symbol(String)
     case float(lFloat)
+    case integer(Int)
     case `string`(String)
     case boolean(Bool)
     case `nil`
@@ -59,6 +60,8 @@ enum LispType: CustomStringConvertible {
                 return String(bool)
             case .float(let f):
                 return String(f)
+            case .integer(let i):
+                return String(i)
             case .nil:
                 return "nil"
             case .string(let str):
@@ -75,5 +78,18 @@ enum LispType: CustomStringConvertible {
             case .key(let key):
             return ":\(key)"
         }
+    }
+}
+
+func ==(a: LispType, b: LispType) -> Bool {
+    switch (a, b) {
+    case (.list(let a), .list(let b)) where a == b: return true
+    case (.symbol(let a), .symbol(let b)) where a == b: return true
+    case (.float(let a), .float(let b)) where a == b: return true
+    case (.integer(let a), .integer(let b)) where a == b: return true
+    case (.string(let a), .string(let b)) where a == b: return true
+    case (.boolean(let a), .boolean(let b)) where a == b: return true
+    case (.key(let a), .key(let b)) where a == b: return true
+    default: return false
     }
 }

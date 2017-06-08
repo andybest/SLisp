@@ -84,6 +84,8 @@ class Builtins {
         let evaluated = try args.map { try env.eval($0) }
 
         for arg in evaluated {
+            
+            
             guard case let .float(num) = arg else {
                 throw LispError.general(msg: "Invalid argument type: \(String(describing: arg))")
             }

@@ -348,7 +348,9 @@ class Environment {
             print("Error: \(message)")
         } catch let LispError.lexer(msg:message) {
             print("Syntax Error: \(message)")
-        } catch {
+        } catch LispError.readerNotEOF {
+            print("Syntax Error: expected ')'")
+        }catch {
             print(String(describing: error))
         }
 
