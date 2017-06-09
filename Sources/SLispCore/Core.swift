@@ -164,11 +164,31 @@ class Core: Builtins {
             try self.checkArgCount(funcName: "float?", args: args, expectedNumArgs: 1)
 
             for arg in args {
-                guard case .float(_) = arg else {
+                guard case .number(let n) = arg else {
+                    return .boolean(false)
+                }
+                
+                if n.isFloat {
                     return .boolean(false)
                 }
             }
 
+            return .boolean(true)
+        }
+        
+        addBuiltin("integer?") { args, env throws in
+            try self.checkArgCount(funcName: "integer?", args: args, expectedNumArgs: 1)
+            
+            for arg in args {
+                guard case .number(let n) = arg else {
+                    return .boolean(false)
+                }
+                
+                if n.isInteger {
+                    return .boolean(false)
+                }
+            }
+            
             return .boolean(true)
         }
 
@@ -293,7 +313,6 @@ class Core: Builtins {
         }
 
         addBuiltin("at") { args, env in
-
             if args.count != 2 {
                 throw LispError.runtime(msg: "'at' requires 2 arguments.")
             }
@@ -302,63 +321,59 @@ class Core: Builtins {
                 throw LispError.runtime(msg: "'at' requires the first argument to be a list.")
             }
 
-            guard case let .float(index) = args[1] else {
-                throw LispError.runtime(msg: "'at' requires the second argument to be a numerical index.")
+            guard case let .number(num) = args[1], case let .integer(index) = num else {
+                throw LispError.runtime(msg: "'at' requires the second argument to be an integer.")
             }
 
-            if Int(index) >= list.count || index < 0 {
+            if index >= list.count || index < 0 {
                 throw LispError.runtime(msg: "Index out of range: \(index)")
             }
 
-            return list[Int(index)]
+            return list[index]
         }
 
         addBuiltin("+") { args, env throws in
-            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
-                return x + y
-            }
+            return try self.doArithmeticOperation(args, body: LispNumber.add)
         }
 
         addBuiltin("-") { args, env throws in
-            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
-                return x - y
-            }
+            return try self.doArithmeticOperation(args, body: LispNumber.subtract)
         }
 
         addBuiltin("*") { args, env throws in
-            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
-                return x * y
-            }
+            return try self.doArithmeticOperation(args, body: LispNumber.multiply)
         }
 
         addBuiltin("/") { args, env throws in
-            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
-                return x / y
-            }
+            return try self.doArithmeticOperation(args, body: LispNumber.divide)
         }
 
         addBuiltin("mod") { args, env throws in
-            return try self.doArithmeticOperation(args) { (x: Double, y: Double) -> Double in
-                return remainder(x, y)
-            }
+            return try self.doArithmeticOperation(args, body: LispNumber.mod)
         }
-
+        
+        
         addBuiltin(">") { args, env throws in
-            return try self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
-                return x > y
-            }
+            return try self.doBooleanArithmeticOperation(args, body: LispNumber.greaterThan)
         }
 
         addBuiltin("<") { args, env throws in
-            return try self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
-                return x < y
-            }
+            return try self.doBooleanArithmeticOperation(args, body: LispNumber.lessThan)
         }
 
         addBuiltin("==") { args, env throws in
-            return try self.doBooleanArithmeticOperation(args) { (x: Double, y: Double) -> Bool in
-                return x == y
+            if args.count < 2 {
+                throw LispError.runtime(msg: "'==' requires at least 2 arguments")
             }
+            
+            let comp = args[0]
+            for arg in args.dropFirst() {
+                if arg != comp {
+                    return .boolean(false)
+                }
+            }
+            
+            return .boolean(true)
         }
 
         addBuiltin("and") { args, env throws in

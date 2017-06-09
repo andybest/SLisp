@@ -78,49 +78,50 @@ class Builtins {
 
     // A generic function for arithmetic operations
     func doArithmeticOperation(_ args: [LispType], body:ArithmeticOperationBody) throws -> LispType {
-        var x: lFloat = 0.0
-        var firstArg = true
-
-        let evaluated = try args.map { try env.eval($0) }
-
-        for arg in evaluated {
-            
-            
-            guard case let .float(num) = arg else {
+        if args.count < 2 {
+            throw LispError.runtime(msg: "Operation expects at least 2 arguments")
+        }
+        
+        var numbers: [LispNumber] = []
+        
+        for arg in args {
+            guard case let .number(num) = arg else {
                 throw LispError.general(msg: "Invalid argument type: \(String(describing: arg))")
             }
-
-            if firstArg {
-                x = num
-                firstArg = false
-            } else {
-                x = body(x, num)
-            }
+            numbers.append(num)
         }
-
-        return .float(x)
+        
+        var val = numbers.first!
+        for arg in numbers.dropFirst() {
+            val = body(val, arg)
+        }
+        
+        return .number(val)
     }
 
     func doBooleanArithmeticOperation(_ args: [LispType], body: ArithmeticBooleanOperationBody) throws -> LispType {
-        var result: Bool = false
-        var lastValue: lFloat = 0.0
-        var firstArg = true
-        let evaluated = try args.map { try env.eval($0) }
-
-        for arg in evaluated {
-            guard case let .float(num) = arg else {
+        if args.count < 2 {
+            throw LispError.runtime(msg: "Operation expects at least 2 arguments")
+        }
+        
+        var numbers: [LispNumber] = []
+        
+        for arg in args {
+            guard case let .number(num) = arg else {
                 throw LispError.general(msg: "Invalid argument type: \(String(describing: arg))")
             }
-
-            if firstArg {
-                lastValue = num
-                firstArg = false
-            } else {
-                result = body(lastValue, num)
+            numbers.append(num)
+        }
+        
+        let comp = numbers[0]
+        
+        for arg in numbers.dropFirst() {
+            if !body(comp, arg) {
+                return .boolean(false)
             }
         }
-
-        return .boolean(result)
+        
+        return .boolean(true)
     }
 
     func doBooleanOperation(_ args: [LispType], body:BooleanOperationBody) throws -> LispType {

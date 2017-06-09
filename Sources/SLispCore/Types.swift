@@ -26,8 +26,6 @@
 
 import Foundation
 
-typealias lFloat = Double
-
 typealias BuiltinBody = ([LispType], Environment) throws -> LispType
 
 indirect enum FunctionBody {
@@ -43,8 +41,7 @@ struct TCOInvocation {
 enum LispType: CustomStringConvertible, Equatable {
     case list([LispType])
     case symbol(String)
-    case float(lFloat)
-    case integer(Int)
+    case number(LispNumber)
     case `string`(String)
     case boolean(Bool)
     case `nil`
@@ -58,10 +55,8 @@ enum LispType: CustomStringConvertible, Equatable {
                 return str
             case .boolean(let bool):
                 return String(bool)
-            case .float(let f):
-                return String(f)
-            case .integer(let i):
-                return String(i)
+            case .number(let n):
+                return String(describing: n)
             case .nil:
                 return "nil"
             case .string(let str):
@@ -85,11 +80,131 @@ func ==(a: LispType, b: LispType) -> Bool {
     switch (a, b) {
     case (.list(let a), .list(let b)) where a == b: return true
     case (.symbol(let a), .symbol(let b)) where a == b: return true
-    case (.float(let a), .float(let b)) where a == b: return true
-    case (.integer(let a), .integer(let b)) where a == b: return true
+    case (.number(let a), .number(let b)) where a == b: return true
     case (.string(let a), .string(let b)) where a == b: return true
     case (.boolean(let a), .boolean(let b)) where a == b: return true
     case (.key(let a), .key(let b)) where a == b: return true
     default: return false
     }
 }
+
+enum LispNumber: CustomStringConvertible {
+    case float(Double)
+    case integer(Int)
+    
+    var description: String {
+        switch self {
+        case .float(let n): return String(n)
+        case .integer(let n): return String(n)
+        }
+    }
+    
+    enum PromotionResult {
+        case float(Double, Double)
+        case integer(Int, Int)
+    }
+    
+    var isFloat: Bool {
+        if case .float(_) = self {
+            return true
+        }
+        return false
+    }
+    
+    var isInteger: Bool {
+        if case .integer(_) = self {
+            return true
+        }
+        return false
+    }
+}
+
+extension LispNumber {
+    func floatValue() -> Double {
+        switch self {
+        case .float(let n): return n
+        case .integer(let n): return Double(n)
+        }
+    }
+    
+    func intValue() -> Int {
+        switch self {
+        case .float(let n): return Int(n)
+        case .integer(let n): return n
+        }
+    }
+}
+
+extension LispNumber {
+    static func promoteIfNecessary(_ lhs: LispNumber, _ rhs: LispNumber) -> PromotionResult {
+        switch lhs {
+        case .float(let l):
+            switch rhs {
+            case .integer(let r): return .float(l, Double(r))
+            case .float(let r): return .float(l, r)
+            }
+        case .integer(let l):
+            switch rhs {
+            case .integer(let r): return .integer(l, r)
+            case .float(let r): return .float(Double(l), r)
+            }
+        }
+    }
+    
+    static func ==(_ lhs: LispNumber, _ rhs: LispNumber) -> Bool {
+        switch promoteIfNecessary(lhs, rhs) {
+        case .float(let l, let r): return l == r
+        case .integer(let l, let r): return l == r
+        }
+    }
+    
+    static func add(_ lhs: LispNumber, _ rhs: LispNumber) -> LispNumber {
+        switch promoteIfNecessary(lhs, rhs) {
+        case .float(let l, let r): return .float(l + r)
+        case .integer(let l, let r): return .integer(l + r)
+        }
+    }
+    
+    static func subtract(_ lhs: LispNumber, _ rhs: LispNumber) -> LispNumber {
+        switch promoteIfNecessary(lhs, rhs) {
+        case .float(let l, let r): return .float(l - r)
+        case .integer(let l, let r): return .integer(l - r)
+        }
+    }
+    
+    static func multiply(_ lhs: LispNumber, _ rhs: LispNumber) -> LispNumber {
+        switch promoteIfNecessary(lhs, rhs) {
+        case .float(let l, let r): return .float(l * r)
+        case .integer(let l, let r): return .integer(l * r)
+        }
+    }
+    
+    static func divide(_ lhs: LispNumber, _ rhs: LispNumber) -> LispNumber {
+        switch promoteIfNecessary(lhs, rhs) {
+        case .float(let l, let r): return .float(l / r)
+        case .integer(let l, let r): return .integer(l / r)
+        }
+    }
+    
+    static func mod(_ lhs: LispNumber, _ rhs: LispNumber) -> LispNumber {
+        switch promoteIfNecessary(lhs, rhs) {
+        case .float(let l, let r): return .float(l.truncatingRemainder(dividingBy: r) )
+        case .integer(let l, let r): return .integer(l % r)
+        }
+    }
+    
+    static func lessThan(_ lhs: LispNumber, _ rhs: LispNumber) -> Bool {
+        switch promoteIfNecessary(lhs, rhs) {
+        case .float(let l, let r): return l < r
+        case .integer(let l, let r): return l < r
+        }
+    }
+    
+    static func greaterThan(_ lhs: LispNumber, _ rhs: LispNumber) -> Bool {
+        switch promoteIfNecessary(lhs, rhs) {
+        case .float(let l, let r): return l > r
+        case .integer(let l, let r): return l > r
+        }
+    }
+}
+

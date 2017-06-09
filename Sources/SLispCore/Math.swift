@@ -26,10 +26,10 @@
 
 import Foundation
 
-typealias ArithmeticOperationBody = (lFloat, lFloat) -> lFloat
-typealias SingleValueArithmeticOperationBody = (lFloat) -> lFloat
-typealias ArithmeticBooleanOperationBody = (lFloat, lFloat) -> Bool
-typealias SingleArithmeticBooleanOperationBody = (lFloat) -> Bool
+typealias ArithmeticOperationBody = (LispNumber, LispNumber) -> LispNumber
+typealias SingleValueArithmeticOperationBody = (LispNumber) -> LispNumber
+typealias ArithmeticBooleanOperationBody = (LispNumber, LispNumber) -> Bool
+typealias SingleArithmeticBooleanOperationBody = (LispNumber) -> Bool
 typealias BooleanOperationBody = (Bool, Bool) -> Bool
 typealias SingleBooleanOperationBody = (Bool) -> Bool
 
@@ -58,11 +58,11 @@ class MathBuiltins : Builtins {
 
         let evaluated = try args.map { try env.eval($0) }
 
-        guard case let .float(num) = evaluated[0] else {
-            throw LispError.general(msg: "'\(name)' requires a float argument.")
+        guard case let .number(num) = evaluated[0] else {
+            throw LispError.general(msg: "'\(name)' requires a number argument.")
         }
 
-        return .float(body(num))
+        return .number(body(num))
     }
 
     func doSingleArgBooleanArithmeticOperation(_ args: [LispType], name: String, body:SingleArithmeticBooleanOperationBody) throws -> LispType {
@@ -72,8 +72,8 @@ class MathBuiltins : Builtins {
 
         let evaluated = try args.map { try env.eval($0) }
 
-        guard case let .float(num) = evaluated[0] else {
-            throw LispError.general(msg: "'\(name)' requires a float argument.")
+        guard case let .number(num) = evaluated[0] else {
+            throw LispError.general(msg: "'\(name)' requires a number argument.")
         }
 
         return .boolean(body(num))
@@ -81,7 +81,7 @@ class MathBuiltins : Builtins {
     
     override func initBuiltins() -> [String: BuiltinBody] {
 
-        addBuiltin("sqrt") { args, env throws in
+        /*addBuiltin("sqrt") { args, env throws in
             return try self.doSingleArgArithmeticOperation(args, name: "sqrt", body: sqrt)
         }
         
@@ -127,7 +127,7 @@ class MathBuiltins : Builtins {
             return try self.doSingleArgArithmeticOperation(args, name: "negate") {
                 return -$0
             }
-        }
+        }*/
 
         
         return builtins

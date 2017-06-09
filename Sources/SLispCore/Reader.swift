@@ -62,9 +62,9 @@ class Reader {
             case .string(let str):
                 return .string(str)
             case .float(let num):
-                return .float(num)
-        case .integer(let num):
-                return .integer(num)
+                return .number(.float(num))
+            case .integer(let num):
+                return .number(.integer(num))
             default:
                 Swift.print("Error while reading token \(token) at index \(pos)")
                 return .nil
