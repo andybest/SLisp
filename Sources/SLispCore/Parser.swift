@@ -290,27 +290,17 @@ class Environment {
                                                     }
 
                                                     pushLocal(toNamespace: currentNamespace)
+                                                    env_push += 1
 
                                                     for i in 0..<argnames.count {
                                                         _ = try bindLocal(name: .symbol(argnames[i]), value: funcArgs[i], toNamespace: currentNamespace)
                                                     }
-
-                                                    var rv: LispType = .nil
-                                                    for val in lispBody {
-                                                        rv = try eval(val)
+                                                    
+                                                    for val in lispBody.dropLast() {
+                                                        _ = try eval(val)
                                                     }
-
-                                                    _ = popLocal(fromNamespace: currentNamespace)
-
-                                                    if case let .tcoInvocation(invocation) = rv {
-                                                        // Build a new function call list with the returned tco function
-                                                        var tcoList = [LispType.function(invocation.function)]
-                                                        tcoList.append(contentsOf: invocation.args)
-                                                        mutableForm = .list(tcoList)
-                                                        tco = true
-                                                    }
-
-                                                    return rv
+                                                    
+                                                    mutableForm = lispBody.last!
                                             }
                                         default:
                                             throw LispError.runtime(msg: "\(String(describing: list[0])) is not a function.")

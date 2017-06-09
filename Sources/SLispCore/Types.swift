@@ -161,28 +161,28 @@ extension LispNumber {
     static func add(_ lhs: LispNumber, _ rhs: LispNumber) -> LispNumber {
         switch promoteIfNecessary(lhs, rhs) {
         case .float(let l, let r): return .float(l + r)
-        case .integer(let l, let r): return .integer(l + r)
+        case .integer(let l, let r): return .integer(l.addingReportingOverflow(r).partialValue)
         }
     }
     
     static func subtract(_ lhs: LispNumber, _ rhs: LispNumber) -> LispNumber {
         switch promoteIfNecessary(lhs, rhs) {
         case .float(let l, let r): return .float(l - r)
-        case .integer(let l, let r): return .integer(l - r)
+        case .integer(let l, let r): return .integer(l.subtractingReportingOverflow(r).partialValue)
         }
     }
     
     static func multiply(_ lhs: LispNumber, _ rhs: LispNumber) -> LispNumber {
         switch promoteIfNecessary(lhs, rhs) {
         case .float(let l, let r): return .float(l * r)
-        case .integer(let l, let r): return .integer(l * r)
+        case .integer(let l, let r): return .integer(l.multipliedReportingOverflow(by: r).partialValue)
         }
     }
     
     static func divide(_ lhs: LispNumber, _ rhs: LispNumber) -> LispNumber {
         switch promoteIfNecessary(lhs, rhs) {
         case .float(let l, let r): return .float(l / r)
-        case .integer(let l, let r): return .integer(l / r)
+        case .integer(let l, let r): return .integer(l.dividedReportingOverflow(by:r).partialValue)
         }
     }
     
