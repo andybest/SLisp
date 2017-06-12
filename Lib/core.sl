@@ -1,4 +1,4 @@
-(defmacro defn (function (fName args & body) (function args body)))
+(defmacro defn (function (fName args & body) `(def ~fName (function ~args ~(cons 'do body)))))
 
 (def reduce (function (l f val)
     (if (nil? l)

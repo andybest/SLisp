@@ -62,6 +62,35 @@ class Reader {
                     return .list([.symbol("quote"), try read_token(nextToken()!)])
                 }
                 
+                if str == "`" {
+                    return .list([.symbol("quasiquote"), try read_token(nextToken()!)])
+                }
+                
+                if str == "~" {
+                    return .list([.symbol("unquote"), try read_token(nextToken()!)])
+                }
+                
+                if str == "~@" {
+                    return .list([.symbol("splice-unquote"), try read_token(nextToken()!)])
+                }
+                
+                if str.hasPrefix("'") {
+                    return .list([.symbol("quote"), .symbol(String(str.dropFirst()))])
+                }
+                
+                if str.hasPrefix("`") {
+                    return .list([.symbol("quasiquote"), .symbol(String(str.dropFirst()))])
+                }
+                
+                if str.hasPrefix("~@") {
+                    return .list([.symbol("splice-unquote"), .symbol(String(str.dropFirst(2)))])
+                }
+                
+                if str.hasPrefix("~") {
+                    return .list([.symbol("unquote"), .symbol(String(str.dropFirst()))])
+                }
+                
+                
                 if str == "#" {
                     let body = try read_token(nextToken()!)
                     guard case let .list(f) = body else {

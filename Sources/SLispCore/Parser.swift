@@ -446,7 +446,7 @@ class Environment {
                             } else {
                                 if bindList {
                                     // Bind the rest of the arguments as a list
-                                    _ = try bindLocal(name: .symbol(argList[i]), value: .list(Array(funcArgs[i...])), toNamespace: currentNamespace)
+                                    _ = try bindLocal(name: .symbol(argList[i]), value: .list(Array(funcArgs[(i - 1)...])), toNamespace: currentNamespace)
                                 } else {
                                     _ = try bindLocal(name: .symbol(argList[i]), value: funcArgs[i], toNamespace: currentNamespace)
                                 }
