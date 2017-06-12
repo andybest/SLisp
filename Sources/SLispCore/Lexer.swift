@@ -128,7 +128,7 @@ class SymbolMatcher: TokenMatcher {
             matcherCharacterSet!.formUnion(with: CharacterSet.decimalDigits)
             matcherCharacterSet!.formUnion(with: CharacterSet.punctuationCharacters)
             matcherCharacterSet!.formUnion(with: NSMutableCharacterSet.symbol() as CharacterSet)
-            matcherCharacterSet!.removeCharacters(in: "()")
+            matcherCharacterSet!.removeCharacters(in: "();")
         }
         return matcherCharacterSet! as CharacterSet
     }
@@ -138,7 +138,7 @@ class SymbolMatcher: TokenMatcher {
             matcherStartCharacterSet = NSMutableCharacterSet.letter()
             matcherStartCharacterSet!.formUnion(with: CharacterSet.punctuationCharacters)
             matcherStartCharacterSet!.formUnion(with: NSMutableCharacterSet.symbol() as CharacterSet)
-            matcherStartCharacterSet!.removeCharacters(in: "()")
+            matcherStartCharacterSet!.removeCharacters(in: "();")
         }
         return matcherStartCharacterSet! as CharacterSet
     }
@@ -366,8 +366,22 @@ class Tokenizer {
             return nil
         }
         
-        if count == 0 {
-            throw LispError.lexer(msg: "Unrecognized character '\(stream.currentCharacter ?? " ".first!)'")
+        if stream.currentCharacter == ";" {
+            while stream.currentCharacter != "\n" {
+                if stream.position >= stream.str.count {
+                    return nil
+                }
+                stream.advanceCharacter()
+            }
+            stream.advanceCharacter()
+            
+            if stream.position >= stream.str.count {
+                return nil
+            }
+        } else {
+            if count == 0 {
+                throw LispError.lexer(msg: "Unrecognized character '\(stream.currentCharacter ?? " ".first!)'")
+            }
         }
         
         return try getNextToken()

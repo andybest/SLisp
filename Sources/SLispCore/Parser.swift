@@ -312,7 +312,7 @@ class Environment {
                     switch try eval_form(macroExpand(mutableForm)) {
                     case .list(let lst):
                         switch lst[0] {
-                        case .function(let body, isMacro: let isMacro):
+                        case .function(let body, isMacro: _):
                             switch body {
                             case .native(body:let nativeBody):
                                 let rv = try nativeBody(Array(lst.dropFirst()), self)

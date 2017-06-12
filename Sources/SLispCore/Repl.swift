@@ -48,7 +48,7 @@ public class Repl {
         var input: String = ""
 
         while true {
-            guard let newInput = readLine(strippingNewline: true) else {
+            guard let newInput = readLine(strippingNewline: false) else {
                 continue
             }
 
