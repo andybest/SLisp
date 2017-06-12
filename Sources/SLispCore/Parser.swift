@@ -278,6 +278,12 @@ class Environment {
                     }
                     
                     return try bindGlobal(name: list[1], value: .function(body, isMacro: true), toNamespace: currentNamespace)
+                    
+                case .symbol("macroexpand"):
+                    if args.count != 1 {
+                        throw LispError.runtime(msg: "'macroexpand' expects one argument")
+                    }
+                    return try macroExpand(args[0])
                 default:
                     switch try eval_form(macroExpand(mutableForm)) {
                     case .list(let lst):
