@@ -331,8 +331,26 @@ class Core: Builtins {
 
             return list[index]
         }
+        
+        initCoreMathBuiltins()
+        initCoreNamespaceBuiltins()
 
         return builtins
+    }
+    
+    func initCoreNamespaceBuiltins() {
+        addBuiltin("in-ns") { args, env throws in
+            if args.count != 1 {
+                throw LispError.runtime(msg: "'in-ns' expects one argument.")
+            }
+            
+            guard case let .symbol(ns) = args[0] else {
+                throw LispError.runtime(msg: "'in-ns' expects a symbol as an argument")
+            }
+            
+            try env.changeNamespace(env.createOrGetNamespace(ns).name)
+            return .nil
+        }
     }
     
     func initCoreMathBuiltins() {
