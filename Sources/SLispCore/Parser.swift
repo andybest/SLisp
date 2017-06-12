@@ -190,6 +190,11 @@ class Environment {
                     }
                     
                     return args[0]
+                case .symbol("quasiquote"):
+                    if args.count != 1 {
+                        throw LispError.general(msg: "'quasiquote' expects 1 argument, got \(args.count).")
+                    }
+                    mutableForm = try quasiquote(args[0])
                 case .symbol("do"):
                     if args.count < 1 {
                         throw LispError.runtime(msg: "'do' requires at least 1 argument")
@@ -212,8 +217,18 @@ class Environment {
                         throw LispError.general(msg: "'function' expects a body")
                     }
                     
-                    guard case let .list(argList) = args[0] else {
-                        throw LispError.general(msg: "function arguments must be a list")
+                    let argList: [LispType]
+                    
+                    if case let .symbol(argSymb) = args[0] {
+                        guard case let .list(argListFromSym) = try getValue(argSymb, fromNamespace: currentNamespace) else {
+                            throw LispError.general(msg: "function arguments must be a list")
+                        }
+                        argList = argListFromSym
+                    } else {
+                        guard case let .list(argListFromList) = args[0] else {
+                            throw LispError.general(msg: "function arguments must be a list")
+                        }
+                        argList = argListFromList
                     }
                     
                     let argNames: [String] = try argList.map {
@@ -221,6 +236,15 @@ class Environment {
                             throw LispError.general(msg: "function arguments must be symbols")
                         }
                         return argName
+                    }
+                    
+                    if (argNames.filter { $0 == "&" }).count > 1 {
+                        throw LispError.runtime(msg: "Function arguments must only include one '&'")
+                    }
+                    
+                    let andIdx = argNames.index(of: "&")
+                    if andIdx != nil && andIdx != argNames.endIndex.advanced(by: -2) {
+                        throw LispError.runtime(msg: "Functions require the '&' to be the second to last argument")
                     }
                     
                     let body = FunctionBody.lisp(argnames: argNames, body: Array(args.dropFirst(1)))
@@ -295,15 +319,28 @@ class Environment {
                                 return rv
                             case .lisp(argnames:let argnames, body:let lispBody):
                                 let funcArgs = Array(lst.dropFirst())
-                                if funcArgs.count != argnames.count {
+                                if funcArgs.count != argnames.count && argnames.index(of: "&") == nil {
                                     throw LispError.general(msg: "Invalid number of args: \(funcArgs.count). Expected \(argnames.count).")
                                 }
                                 
                                 pushLocal(toNamespace: currentNamespace)
                                 env_push += 1
                                 
+                                var bindList = false
                                 for i in 0..<argnames.count {
-                                    _ = try bindLocal(name: .symbol(argnames[i]), value: funcArgs[i], toNamespace: currentNamespace)
+                                    if argnames[i] == "&" {
+                                        bindList = true
+                                        if i != argnames.count - 2 {
+                                            throw LispError.runtime(msg: "Functions require the '&' to be the second to last argument")
+                                        }
+                                    } else {
+                                        if bindList {
+                                            // Bind the rest of the arguments as a list
+                                            _ = try bindLocal(name: .symbol(argnames[i]), value: .list(Array(funcArgs[(i-1)...])), toNamespace: currentNamespace)
+                                        } else {
+                                            _ = try bindLocal(name: .symbol(argnames[i]), value: funcArgs[i], toNamespace: currentNamespace)
+                                        }
+                                    }
                                 }
                                 
                                 for val in lispBody.dropLast() {
@@ -324,6 +361,32 @@ class Environment {
                 throw LispError.runtime(msg: "Cannot evaluate form.")
             }
         } // while
+    }
+    
+    func quasiquote(_ form: LispType) throws -> LispType {
+        // If the argument isn't a list, just return the argument with a regular quote
+        guard case let .list(args) = form, args.count > 0 else {
+            return .list([.symbol("quote")] + [form])
+        }
+        
+        if case .symbol("unquote") = args[0] {
+            if args.count != 2 {
+                throw LispError.runtime(msg: "'unquote' requires one argument")
+            }
+            return args[1]
+        }
+        
+        if case let .list(list) = args[0], list.count > 0 {
+            if case .symbol("splice-unquote") = list[0] {
+                if list.count != 2 {
+                    throw LispError.runtime(msg: "'splice-unquote' requires one argument")
+                }
+                return .list([.symbol("concat"), list[1], try quasiquote(.list(Array(args.dropFirst())))])
+            }
+        }
+        
+        return .list([.symbol("cons"), try quasiquote(args[0]), try quasiquote(.list(Array(args.dropFirst())))])
+        
     }
     
     func is_macro(_ form: LispType) throws -> Bool {
@@ -366,15 +429,28 @@ class Environment {
                 if case let .function(body, isMacro: _) = f {
                     if case let .lisp(argList, lispBody) = body {
                         let funcArgs = Array(list.dropFirst())
-                        if funcArgs.count != argList.count {
+                        if funcArgs.count != argList.count && argList.index(of: "&") == nil {
                             throw LispError.general(msg: "Invalid number of args: \(funcArgs.count). Expected \(argList.count).")
                         }
                         
                         pushLocal(toNamespace: currentNamespace)
                         local_push += 1
                         
+                        var bindList = false
                         for i in 0..<argList.count {
-                            _ = try bindLocal(name: .symbol(argList[i]), value: funcArgs[i], toNamespace: currentNamespace)
+                            if argList[i] == "&" {
+                                bindList = true
+                                if i != argList.count - 2 {
+                                    throw LispError.runtime(msg: "Macros require the '&' to be the second to last argument")
+                                }
+                            } else {
+                                if bindList {
+                                    // Bind the rest of the arguments as a list
+                                    _ = try bindLocal(name: .symbol(argList[i]), value: .list(Array(funcArgs[i...])), toNamespace: currentNamespace)
+                                } else {
+                                    _ = try bindLocal(name: .symbol(argList[i]), value: funcArgs[i], toNamespace: currentNamespace)
+                                }
+                            }
                         }
                         
                         for val in lispBody {
