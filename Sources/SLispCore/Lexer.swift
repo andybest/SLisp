@@ -190,15 +190,28 @@ class StringMatcher: TokenMatcher {
 
 class NumberMatcher: TokenMatcher {
     static var matcherCharacterSet: NSMutableCharacterSet?
+    static var matcherStartCharacterSet: NSMutableCharacterSet?
 
     static func isMatch(_ stream: StringStream) -> Bool {
-        let matches = characterIsInSet(stream.currentCharacter!, set: CharacterSet(charactersIn: "0123456789"))
+        var matches: Bool
+        if stream.currentCharacter! == "-" {
+            if let next = stream.nextCharacter {
+                matches = characterIsInSet(next, set: characterSet())
+            } else {
+                return false
+            }
+        } else {
+            matches = characterIsInSet(stream.currentCharacter!, set: startCharacterSet())
+        }
         return matches
     }
     
     static func getToken(_ stream: StringStream) throws -> TokenType? {
         if isMatch(stream) {
             var tok = ""
+            
+            tok += String(stream.currentCharacter!)
+            stream.advanceCharacter()
             
             while stream.currentCharacter != nil &&
                 characterIsInSet(stream.currentCharacter!, set: characterSet()) {
@@ -229,6 +242,13 @@ class NumberMatcher: TokenMatcher {
             matcherCharacterSet = NSMutableCharacterSet(charactersIn: "0123456789.")
         }
         return matcherCharacterSet! as CharacterSet
+    }
+    
+    static func startCharacterSet() -> CharacterSet {
+        if matcherStartCharacterSet == nil {
+            matcherStartCharacterSet = NSMutableCharacterSet(charactersIn: "-0123456789.")
+        }
+        return matcherStartCharacterSet! as CharacterSet
     }
 }
 
