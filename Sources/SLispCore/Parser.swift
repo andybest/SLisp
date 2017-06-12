@@ -273,16 +273,7 @@ class Environment {
                                             switch body {
                                                 case .native(body:let nativeBody):
                                                     let rv = try nativeBody(Array(lst.dropFirst()), self)
-
-                                                    if case let .tcoInvocation(invocation) = rv {
-                                                        // Build a new function call list with the returned tco function
-                                                        var tcoList = [LispType.function(invocation.function)]
-                                                        tcoList.append(contentsOf: invocation.args)
-                                                        mutableForm = .list(tcoList)
-                                                        tco = true
-                                                    } else {
-                                                        return rv
-                                                    }
+                                                    return rv
                                                 case .lisp(argnames:let argnames, body:let lispBody):
                                                     let funcArgs = Array(lst.dropFirst())
                                                     if funcArgs.count != argnames.count {

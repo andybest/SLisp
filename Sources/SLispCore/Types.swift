@@ -33,11 +33,6 @@ indirect enum FunctionBody {
     case lisp(argnames: [String], body: [LispType])
 }
 
-struct TCOInvocation {
-    let function: FunctionBody
-    let args:     [LispType]
-}
-
 enum LispType: CustomStringConvertible, Equatable {
     case list([LispType])
     case symbol(String)
@@ -46,7 +41,6 @@ enum LispType: CustomStringConvertible, Equatable {
     case boolean(Bool)
     case `nil`
     case function(FunctionBody)
-    case tcoInvocation(TCOInvocation)
     case key(String)
 
     var description: String {
@@ -68,8 +62,6 @@ enum LispType: CustomStringConvertible, Equatable {
                 return "(\(elements))"
             case .function(_):
                 return "#<function>"
-            case .tcoInvocation(_):
-                return "#<TCOInvocation>"
             case .key(let key):
             return ":\(key)"
         }
