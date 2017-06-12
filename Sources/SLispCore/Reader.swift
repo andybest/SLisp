@@ -57,6 +57,19 @@ class Reader {
                 if str.hasPrefix(":") {
                     return .key(str.substring(from: str.index(after: str.startIndex)))
                 }
+                
+                if str == "'" {
+                    return .list([.symbol("quote"), try read_token(nextToken()!)])
+                }
+                
+                if str == "#" {
+                    let body = try read_token(nextToken()!)
+                    guard case let .list(f) = body else {
+                        throw LispError.lexer(msg: "Reader macro # expects a list")
+                    }
+                    
+                    return .list([.symbol("function")] + f)
+                }
 
                 return .symbol(str)
             case .string(let str):

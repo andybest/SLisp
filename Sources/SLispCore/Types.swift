@@ -40,7 +40,7 @@ enum LispType: CustomStringConvertible, Equatable {
     case `string`(String)
     case boolean(Bool)
     case `nil`
-    case function(FunctionBody)
+    case function(FunctionBody, isMacro: Bool)
     case key(String)
 
     var description: String {
