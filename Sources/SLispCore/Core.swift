@@ -332,10 +332,15 @@ class Core: Builtins {
             return list[index]
         }
 
+        return builtins
+    }
+    
+    func initCoreMathBuiltins() {
+        
         addBuiltin("+") { args, env throws in
             return try self.doArithmeticOperation(args, body: LispNumber.add)
         }
-
+        
         addBuiltin("-") { args, env throws in
             if args.count == 1 {
                 return try self.doSingleArgArithmeticOperation(args, name: "-", body: LispNumber.negate)
@@ -343,15 +348,15 @@ class Core: Builtins {
                 return try self.doArithmeticOperation(args, body: LispNumber.subtract)
             }
         }
-
+        
         addBuiltin("*") { args, env throws in
             return try self.doArithmeticOperation(args, body: LispNumber.multiply)
         }
-
+        
         addBuiltin("/") { args, env throws in
             return try self.doArithmeticOperation(args, body: LispNumber.divide)
         }
-
+        
         addBuiltin("mod") { args, env throws in
             return try self.doArithmeticOperation(args, body: LispNumber.mod)
         }
@@ -360,11 +365,11 @@ class Core: Builtins {
         addBuiltin(">") { args, env throws in
             return try self.doBooleanArithmeticOperation(args, body: LispNumber.greaterThan)
         }
-
+        
         addBuiltin("<") { args, env throws in
             return try self.doBooleanArithmeticOperation(args, body: LispNumber.lessThan)
         }
-
+        
         addBuiltin("==") { args, env throws in
             if args.count < 2 {
                 throw LispError.runtime(msg: "'==' requires at least 2 arguments")
@@ -379,25 +384,23 @@ class Core: Builtins {
             
             return .boolean(true)
         }
-
-        addBuiltin("and") { args, env throws in
+        
+        addBuiltin("&&") { args, env throws in
             return try self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
                 return x && y
             }
         }
-
-        addBuiltin("or") { args, env throws in
+        
+        addBuiltin("||") { args, env throws in
             return try self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
                 return x || y
             }
         }
-
-        addBuiltin("not") { args, env throws in
+        
+        addBuiltin("!") { args, env throws in
             return try self.doSingleBooleanOperation(args) { (x: Bool) -> Bool in
                 return !x
             }
         }
-
-        return builtins
     }
 }
