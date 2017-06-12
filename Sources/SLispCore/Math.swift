@@ -51,33 +51,7 @@ class MathBuiltins : Builtins {
         }
     }
 
-    func doSingleArgArithmeticOperation(_ args: [LispType], name: String, body:SingleValueArithmeticOperationBody) throws -> LispType {
-        if args.count != 1 {
-            throw LispError.general(msg: "'\(name)' requires one argument")
-        }
-
-        let evaluated = try args.map { try env.eval($0) }
-
-        guard case let .number(num) = evaluated[0] else {
-            throw LispError.general(msg: "'\(name)' requires a number argument.")
-        }
-
-        return .number(body(num))
-    }
-
-    func doSingleArgBooleanArithmeticOperation(_ args: [LispType], name: String, body:SingleArithmeticBooleanOperationBody) throws -> LispType {
-        if args.count != 1 {
-            throw LispError.general(msg: "'\(name)' requires one argument")
-        }
-
-        let evaluated = try args.map { try env.eval($0) }
-
-        guard case let .number(num) = evaluated[0] else {
-            throw LispError.general(msg: "'\(name)' requires a number argument.")
-        }
-
-        return .boolean(body(num))
-    }
+    
     
     override func initBuiltins() -> [String: BuiltinBody] {
 

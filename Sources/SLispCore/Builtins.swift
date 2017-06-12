@@ -98,6 +98,34 @@ class Builtins {
         
         return .number(val)
     }
+    
+    func doSingleArgArithmeticOperation(_ args: [LispType], name: String, body:SingleValueArithmeticOperationBody) throws -> LispType {
+        if args.count != 1 {
+            throw LispError.general(msg: "'\(name)' requires one argument")
+        }
+        
+        let evaluated = try args.map { try env.eval($0) }
+        
+        guard case let .number(num) = evaluated[0] else {
+            throw LispError.general(msg: "'\(name)' requires a number argument.")
+        }
+        
+        return .number(body(num))
+    }
+    
+    func doSingleArgBooleanArithmeticOperation(_ args: [LispType], name: String, body:SingleArithmeticBooleanOperationBody) throws -> LispType {
+        if args.count != 1 {
+            throw LispError.general(msg: "'\(name)' requires one argument")
+        }
+        
+        let evaluated = try args.map { try env.eval($0) }
+        
+        guard case let .number(num) = evaluated[0] else {
+            throw LispError.general(msg: "'\(name)' requires a number argument.")
+        }
+        
+        return .boolean(body(num))
+    }
 
     func doBooleanArithmeticOperation(_ args: [LispType], body: ArithmeticBooleanOperationBody) throws -> LispType {
         if args.count < 2 {

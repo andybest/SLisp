@@ -198,5 +198,12 @@ extension LispNumber {
         case .integer(let l, let r): return l > r
         }
     }
+    
+    static func negate(_ num: LispNumber) -> LispNumber {
+        switch(num) {
+        case .float(let n): return .float(-n)
+        case .integer(let n): return .integer(-n)
+        }
+    }
 }
 

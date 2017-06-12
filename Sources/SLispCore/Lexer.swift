@@ -236,7 +236,6 @@ class NumberMatcher: TokenMatcher {
         return nil
     }
 
-    
     static func characterSet() -> CharacterSet {
         if matcherCharacterSet == nil {
             matcherCharacterSet = NSMutableCharacterSet(charactersIn: "0123456789.")

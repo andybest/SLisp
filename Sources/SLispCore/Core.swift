@@ -337,7 +337,11 @@ class Core: Builtins {
         }
 
         addBuiltin("-") { args, env throws in
-            return try self.doArithmeticOperation(args, body: LispNumber.subtract)
+            if args.count == 1 {
+                return try self.doSingleArgArithmeticOperation(args, name: "-", body: LispNumber.negate)
+            } else {
+                return try self.doArithmeticOperation(args, body: LispNumber.subtract)
+            }
         }
 
         addBuiltin("*") { args, env throws in
