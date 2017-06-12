@@ -1,5 +1,5 @@
 #!/bin/sh
 
 swift build
-mkdir -p .build/debug/data
-cp ./Lib/* .build/debug/data/
+mkdir -p .build/debug/Lib
+cp ./Lib/* .build/debug/Lib/
