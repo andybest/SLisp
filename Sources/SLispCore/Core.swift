@@ -38,7 +38,7 @@ class Core: Builtins {
 
     override func loadImplementation() {
         // Load core library implemented in SLisp
-        let path = "./data/core.sl"
+        let path = "./Lib/core.sl"
         if env.evalFile(path: path, toNamespace: env.createOrGetNamespace(self.namespaceName())) == nil {
             print("Core library implementation could not be loaded!")
         }

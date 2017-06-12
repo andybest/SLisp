@@ -45,13 +45,11 @@ class MathBuiltins : Builtins {
 
     override func loadImplementation() {
         // Load core library implemented in SLisp
-        let path = "./data/math.sl"
+        let path = "./Lib/math.sl"
         if env.evalFile(path: path, toNamespace: env.createOrGetNamespace(self.namespaceName())) == nil {
             print("Math library implementation could not be loaded!")
         }
     }
-
-    
     
     override func initBuiltins() -> [String: BuiltinBody] {
 
