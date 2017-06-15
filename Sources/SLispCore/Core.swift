@@ -54,71 +54,7 @@ class Core: Builtins {
 
     override func initBuiltins() -> [String: BuiltinDef] {
 
-        addBuiltin("list", docstring: "") { args, env throws in
-            return .list(args)
-        }
-
-        addBuiltin("cons", docstring: "") { args, env throws in
-            try self.checkArgCount(funcName: "cons", args: args, expectedNumArgs: 2)
-
-            var secondValue: [LispType] = []
-
-            switch args[1] {
-                case .list(let listVal):
-                    secondValue = listVal
-                    break
-                case .nil:
-                    break
-                default:
-                    throw LispError.general(msg: "'cons' requires the second argument to be a list or 'nil'")
-            }
-
-            secondValue.insert(args[0], at: 0)
-
-            return .list(secondValue)
-        }
-
-        addBuiltin("concat", docstring: "") { args, env throws in
-            let transformed: [LispType] = args.flatMap { input -> [LispType] in
-                if case let .list(list) = input {
-                    return list
-                }
-                return [input]
-            }
-
-            return .list(transformed)
-        }
-
-        addBuiltin("first", docstring: "") { args, env throws in
-            try self.checkArgCount(funcName: "first", args: args, expectedNumArgs: 1)
-
-            if case let .list(list) = args[0] {
-                return list.first ?? .nil
-            }
-
-            throw LispError.general(msg: "'first' expects an argument that is a list")
-        }
-
-        addBuiltin("rest", docstring: "") { args, env throws in
-            try self.checkArgCount(funcName: "rest", args: args, expectedNumArgs: 1)
-
-            if case let .list(list) = args[0] {
-                return .list(Array(list.dropFirst(1)))
-            }
-
-            throw LispError.general(msg: "'rest' expects an argument that is a list")
-        }
-
-        addBuiltin("last", docstring: "") { args, env throws in
-            try self.checkArgCount(funcName: "last", args: args, expectedNumArgs: 1)
-
-            if case let .list(list) = args[0] {
-                return list.last ?? .nil
-            }
-
-            throw LispError.general(msg: "'last' expects an argument that is a list")
-        }
-
+        
         addBuiltin("print", docstring: "") { args, env throws in
             let strings = args.map { arg -> String in
                 switch arg {
@@ -235,36 +171,6 @@ class Core: Builtins {
 
             return .boolean(true)
         }
-        
-        addBuiltin("empty?", docstring: "") { args, env throws in
-            try self.checkArgCount(funcName: "empty?", args: args, expectedNumArgs: 1)
-            
-            for arg in args {
-                if case .list(let l) = arg {
-                    return .boolean(l.count == 0)
-                } else if case .string(let s) = arg {
-                    return .boolean(s.count == 0)
-                }
-            }
-            
-            return .boolean(false)
-        }
-        
-        addBuiltin("count", docstring: "") { args, env throws in
-            if args.count != 1 {
-                throw LispError.runtime(msg: "'count' expects 1 argument")
-            }
-            
-            for arg in args {
-                if case .list(let l) = arg {
-                    return .number(.integer(l.count))
-                } else if case .string(let s) = arg {
-                    return .number(.integer(s.count))
-                }
-            }
-            
-            throw LispError.runtime(msg: "'count' expects an argument that is a list or a string")
-        }
 
         addBuiltin("input", docstring: "") { args, env throws in
             if args.count > 1 {
@@ -361,27 +267,8 @@ class Core: Builtins {
 
             return .boolean(true)
         }
-
-        addBuiltin("at", docstring: "") { args, env in
-            if args.count != 2 {
-                throw LispError.runtime(msg: "'at' requires 2 arguments.")
-            }
-
-            guard case let .list(list) = args[0] else {
-                throw LispError.runtime(msg: "'at' requires the first argument to be a list.")
-            }
-
-            guard case let .number(num) = args[1], case let .integer(index) = num else {
-                throw LispError.runtime(msg: "'at' requires the second argument to be an integer.")
-            }
-
-            if index >= list.count || index < 0 {
-                throw LispError.runtime(msg: "Index out of range: \(index)")
-            }
-
-            return list[index]
-        }
         
+        initCoreCollectionBuiltins()
         initCoreMathBuiltins()
         initCoreNamespaceBuiltins()
 
