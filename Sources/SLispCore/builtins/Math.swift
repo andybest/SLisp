@@ -52,7 +52,24 @@ class MathBuiltins : Builtins {
     }
     
     override func initBuiltins() -> [String: BuiltinDef] {
-
+        addBuiltin("range", docstring: """
+        range
+        (min max)
+        Creates a list of numbers min < n < max
+        """) { args, env throws in
+            if args.count != 2 {
+                throw LispError.runtime(msg: "'range' requires 2 arguments")
+            }
+            
+            guard case let .number(minN) = args[0], case let .integer(min) = minN,
+                case let .number(maxN) = args[1], case let .integer(max) = maxN else {
+                throw LispError.runtime(msg: "'range' requires 2 integer arguments")
+            }
+            
+            let rv: [LispType] = (min..<max).map { LispType.number(.integer($0)) }
+            return .list(rv)
+        }
+        
         /*addBuiltin("sqrt") { args, env throws in
             return try self.doSingleArgArithmeticOperation(args, name: "sqrt", body: sqrt)
         }

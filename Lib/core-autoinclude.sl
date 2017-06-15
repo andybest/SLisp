@@ -36,15 +36,37 @@
             (if (nil? docstring)
                 `(def ~fName ~(concat `(function ~args) fBody))
                 `(def ~fName ~(concat `(function ~docstring ~args) fBody))))))
+                
+(defn map (f coll)
+  (let (mapInt 
+    (function (f processed remaining)
+      (if (|| (empty? remaining) (nil? remaining))
+        processed
+        (mapInt f (concat processed (f (first remaining))) (rest remaining)))))
+      (mapInt f '() coll)))
+    
 
-(defn reduce (f & args)
-    (let (argCount (count args))
-        (if (|| (< argCount 1) (> argCount 2))
-            (do (print "Error: reduce requires 1 or 2 arguments") nil)
-            (do (print args) (let (val (if (== argCount 2) (first args) nil)
-                  coll (if (== argCount 2) (at args 1) (first args)))
-                (if (|| (nil? coll) (empty? coll))  ; If the collection is empty, return the value
-                    val
-                    (if (nil? val)
-                        (reduce f (f (first coll) (at coll 1)) (rest (rest coll)))
-                        (reduce f (f val (first coll))))))))))
+; (defn reduce (f & args)
+;     (let (argCount (count args))
+;         (if (|| (< argCount 1) (> argCount 2))
+;             (do (print "Error: reduce requires 1 or 2 arguments") nil)
+;             (do (print args) (let (val (if (== argCount 2) (first args) nil)
+;                   coll (if (== argCount 2) (at args 1) (first args)))
+;                 (if (|| (nil? coll) (empty? coll))  ; If the collection is empty, return the value
+;                     val
+;                     (if (nil? val)
+;                         (reduce f (f (first coll) (at coll 1)) (rest (rest coll)))
+;                         (reduce f (f val (first coll))))))))))
+
+(defn zip (l1 l2)
+  (concat (map 
+    (function (i) (list (at l1 i) (at l2 i)))
+    (math/range 0 (count l1)))))
+
+; (defmacro defstruct
+;   #("defstruct"
+;     (name fields)
+;     `(do
+;         (defn ~(str "make-" name) ~fields
+;           (map #((fieldName) )))
+;           )))
