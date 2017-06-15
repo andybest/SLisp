@@ -47,7 +47,7 @@ class Environment {
             try $0.initBuiltins().forEach { (arg) in
                 
                 let (name, body) = arg
-                _ = try bindGlobal(name: .symbol(name), value: .function(.native(body: body), isMacro: false), toNamespace: ns)
+                _ = try bindGlobal(name: .symbol(name), value: .function(.native(body: body), docstring: "", isMacro: false), toNamespace: ns)
             }
             
             // Import this namespace to the default namespace
@@ -76,7 +76,7 @@ class Environment {
             try $0.initBuiltins().forEach { (arg) in
                 
                 let (name, body) = arg
-                _ = try bindGlobal(name: .symbol(name), value: .function(.native(body: body), isMacro: false), toNamespace: ns)
+                _ = try bindGlobal(name: .symbol(name), value: .function(.native(body: body), docstring: "", isMacro: false), toNamespace: ns)
             }
         }
         
@@ -221,14 +221,27 @@ class Environment {
                     }
                     
                     let argList: [LispType]
+                    var docString: String?
                     
-                    if case let .symbol(argSymb) = args[0] {
+                    var fArgs = args
+                    
+                    if case let .string(ds) = args[0] {
+                        docString = ds
+                        fArgs = Array(args.dropFirst())
+                    } else if case let .symbol(argSymb) = args[0] {
+                        if case let .string(ds) = try getValue(argSymb, fromNamespace: currentNamespace) {
+                            docString = ds
+                            fArgs = Array(args.dropFirst())
+                        }
+                    }
+                    
+                    if case let .symbol(argSymb) = fArgs[0] {
                         guard case let .list(argListFromSym) = try getValue(argSymb, fromNamespace: currentNamespace) else {
                             throw LispError.general(msg: "function arguments must be a list")
                         }
                         argList = argListFromSym
                     } else {
-                        guard case let .list(argListFromList) = args[0] else {
+                        guard case let .list(argListFromList) = fArgs[0] else {
                             throw LispError.general(msg: "function arguments must be a list")
                         }
                         argList = argListFromList
@@ -250,8 +263,8 @@ class Environment {
                         throw LispError.runtime(msg: "Functions require the '&' to be the second to last argument")
                     }
                     
-                    let body = FunctionBody.lisp(argnames: argNames, body: Array(args.dropFirst(1)))
-                    return LispType.function(body, isMacro: false)
+                    let body = FunctionBody.lisp(argnames: argNames, body: Array(fArgs.dropFirst(1)))
+                    return LispType.function(body, docstring: docString, isMacro: false)
                     
                 case .symbol("if"):
                     if args.count != 3 {
@@ -300,11 +313,11 @@ class Environment {
                         throw LispError.runtime(msg: "'defmacro' requires 2 arguments")
                     }
                     
-                    guard case let .function(body, _) = try eval(list[2]) else {
+                    guard case let .function(body, _, _) = try eval(list[2]) else {
                         throw LispError.runtime(msg: "'defmacro' requires the 2nd argument to be a function")
                     }
                     
-                    return try bindGlobal(name: list[1], value: .function(body, isMacro: true), toNamespace: currentNamespace)
+                    return try bindGlobal(name: list[1], value: .function(body, docstring: "", isMacro: true), toNamespace: currentNamespace)
                     
                 case .symbol("macroexpand"):
                     if args.count != 1 {
@@ -315,7 +328,7 @@ class Environment {
                     switch try eval_form(macroExpand(mutableForm)) {
                     case .list(let lst):
                         switch lst[0] {
-                        case .function(let body, isMacro: _):
+                        case .function(let body, _, isMacro: _):
                             switch body {
                             case .native(body:let nativeBody):
                                 let rv = try nativeBody(Array(lst.dropFirst()), self)
@@ -401,7 +414,7 @@ class Environment {
             case .symbol(let symbol):
                 do {
                     let val = try getValue(symbol, fromNamespace: currentNamespace)
-                    if case let .function(_, isMacro: isMacro) = val {
+                    if case let .function(_, _, isMacro: isMacro) = val {
                         return isMacro
                     }
                     return false
@@ -429,7 +442,7 @@ class Environment {
         while try is_macro(mutableForm) {
             if case let .list(list) = mutableForm, list.count > 0, case let .symbol(sym) = list.first! {
                 let f = try getValue(sym, fromNamespace: currentNamespace)
-                if case let .function(body, isMacro: _) = f {
+                if case let .function(body, docstring: _, isMacro: _) = f {
                     if case let .lisp(argList, lispBody) = body {
                         let funcArgs = Array(list.dropFirst())
                         if funcArgs.count != argList.count && argList.index(of: "&") == nil {

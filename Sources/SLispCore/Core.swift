@@ -470,5 +470,17 @@ class Core: Builtins {
                 return !x
             }
         }
+        
+        addBuiltin("doc") { args, env throws in
+            if args.count != 1 {
+                throw LispError.runtime(msg: "'doc' requires 1 argument")
+            }
+            
+            guard case let .function(_, docstring, _) = args[0] else {
+                throw LispError.runtime(msg: "'doc' requires the argument to be a function")
+            }
+            
+            return .string(docstring ?? "")
+        }
     }
 }
