@@ -55,7 +55,11 @@ class Core: Builtins {
     override func initBuiltins() -> [String: BuiltinDef] {
 
         
-        addBuiltin("print", docstring: "") { args, env throws in
+        addBuiltin("print", docstring: """
+        print
+        (x y ...)
+        Prints the arguments to the console
+        """) { args, env throws in
             let strings = args.map { arg -> String in
                 switch arg {
                     case .string(let s):
@@ -68,7 +72,11 @@ class Core: Builtins {
             return .nil
         }
 
-        addBuiltin("input", docstring: "") { args, env throws in
+        addBuiltin("input", docstring: """
+        input
+        (prompt)
+        Gets a line of input from the user, printing the optional prompt
+        """) { args, env throws in
             if args.count > 1 {
                 throw LispError.general(msg: "'input' expects 0 or 1 argument")
             }
@@ -88,7 +96,11 @@ class Core: Builtins {
             return .nil
         }
 
-        addBuiltin("read-string", docstring: "") { args, env throws in
+        addBuiltin("read-string", docstring: """
+        read-string
+        (x)
+        Converts the string x to a SLisp form
+        """) { args, env throws in
             if args.count != 1 {
                 throw LispError.general(msg: "'read-string' requires 1 string argument")
             }
@@ -100,7 +112,11 @@ class Core: Builtins {
             return try Reader.read(input)
         }
 
-        addBuiltin("slurp", docstring: "") { args, env throws in
+        addBuiltin("slurp", docstring: """
+        slurp
+        (fileName)
+        Reads the file at 'fileName' and returns it as a string
+        """) { args, env throws in
             if args.count != 1 {
                 throw LispError.general(msg: "'slurp' requires 1 string argument")
             }
@@ -118,7 +134,11 @@ class Core: Builtins {
             }
         }
 
-        addBuiltin("eval", docstring: "") { args, env throws in
+        addBuiltin("eval", docstring: """
+        eval
+        (x)
+        Evaluates x
+        """) { args, env throws in
             if args.count != 1 {
                 throw LispError.general(msg: "'eval' requires 1 argument")
             }
@@ -126,7 +146,11 @@ class Core: Builtins {
             return try env.eval(args[0])
         }
 
-        addBuiltin("str", docstring: "") { args, env throws in
+        addBuiltin("str", docstring: """
+        str
+        (x y ...)
+        Converts all of the arguments to strings and concatenates them
+        """) { args, env throws in
             if args.count == 0 {
                 throw LispError.general(msg: "'str' requires at least one argument")
             }
@@ -142,7 +166,11 @@ class Core: Builtins {
             return .string(strings.joined())
         }
 
-        addBuiltin("string=", docstring: "") { args, env throws in
+        addBuiltin("string=", docstring: """
+        string=
+        (x y ...)
+        Returns true if all of the string arguments are equal
+        """) { args, env throws in
             if args.count < 2 {
                 throw LispError.general(msg: "'string=' requires at least 2 arguments.")
             }
@@ -162,6 +190,22 @@ class Core: Builtins {
             }
 
             return .boolean(true)
+        }
+        
+        addBuiltin("doc", docstring: """
+        doc
+        (f)
+        Returns the docstring for the function
+        """) { args, env throws in
+            if args.count != 1 {
+                throw LispError.runtime(msg: "'doc' requires 1 argument")
+            }
+            
+            guard case let .function(_, docstring, _) = args[0] else {
+                throw LispError.runtime(msg: "'doc' requires the argument to be a function")
+            }
+            
+            return .string(docstring ?? "")
         }
         
         initCoreTypeBuiltins()
@@ -327,11 +371,19 @@ class Core: Builtins {
     
     func initCoreMathBuiltins() {
         
-        addBuiltin("+", docstring: "") { args, env throws in
+        addBuiltin("+", docstring: """
+        +
+        (x y ...)
+        Adds the arguments together
+        """) { args, env throws in
             return try self.doArithmeticOperation(args, body: LispNumber.add)
         }
         
-        addBuiltin("-", docstring: "") { args, env throws in
+        addBuiltin("-", docstring: """
+        -
+        (x y ...)
+        Subtracts the arguments from each other
+        """) { args, env throws in
             if args.count == 1 {
                 return try self.doSingleArgArithmeticOperation(args, name: "-", body: LispNumber.negate)
             } else {
@@ -339,28 +391,51 @@ class Core: Builtins {
             }
         }
         
-        addBuiltin("*", docstring: "") { args, env throws in
+        addBuiltin("*", docstring: """
+        *
+        (x y ...)
+        Multiplies the arguments together
+        """) { args, env throws in
             return try self.doArithmeticOperation(args, body: LispNumber.multiply)
         }
         
-        addBuiltin("/", docstring: "") { args, env throws in
+        addBuiltin("/", docstring: """
+        /
+        (x y ...)
+        Divides the arguments
+        """) { args, env throws in
             return try self.doArithmeticOperation(args, body: LispNumber.divide)
         }
         
-        addBuiltin("mod", docstring: "") { args, env throws in
+        addBuiltin("mod", docstring: """
+        mod
+        (x y ...)
+        Perfoms a modulo on the arguments
+        """) { args, env throws in
             return try self.doArithmeticOperation(args, body: LispNumber.mod)
         }
         
-        
-        addBuiltin(">", docstring: "") { args, env throws in
+        addBuiltin(">", docstring: """
+        >
+        (x y ...)
+        Returns true if x is greater than all of the arguments
+        """) { args, env throws in
             return try self.doBooleanArithmeticOperation(args, body: LispNumber.greaterThan)
         }
         
-        addBuiltin("<", docstring: "") { args, env throws in
+        addBuiltin("<", docstring: """
+        <
+        (x y ...)
+        Returns true if x is less than all of the arguments
+        """) { args, env throws in
             return try self.doBooleanArithmeticOperation(args, body: LispNumber.lessThan)
         }
         
-        addBuiltin("==", docstring: "") { args, env throws in
+        addBuiltin("==", docstring: """
+        ==
+        (x y ...)
+        Returns true if all of the arguments are equal
+        """) { args, env throws in
             if args.count < 2 {
                 throw LispError.runtime(msg: "'==' requires at least 2 arguments")
             }
@@ -375,34 +450,34 @@ class Core: Builtins {
             return .boolean(true)
         }
         
-        addBuiltin("&&", docstring: "") { args, env throws in
+        addBuiltin("&&", docstring: """
+        &&
+        (x y ...)
+        Performs a logical AND on all of the arguments
+        """) { args, env throws in
             return try self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
                 return x && y
             }
         }
         
-        addBuiltin("||", docstring: "") { args, env throws in
+        addBuiltin("||", docstring: """
+        ||
+        (x y ...)
+        Performs a logical OR on all of the arguments
+        """) { args, env throws in
             return try self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
                 return x || y
             }
         }
         
-        addBuiltin("!", docstring: "") { args, env throws in
+        addBuiltin("!", docstring: """
+        !
+        (x)
+        Performs a logical NOT on the argument
+        """) { args, env throws in
             return try self.doSingleBooleanOperation(args) { (x: Bool) -> Bool in
                 return !x
             }
-        }
-        
-        addBuiltin("doc", docstring: "") { args, env throws in
-            if args.count != 1 {
-                throw LispError.runtime(msg: "'doc' requires 1 argument")
-            }
-            
-            guard case let .function(_, docstring, _) = args[0] else {
-                throw LispError.runtime(msg: "'doc' requires the argument to be a function")
-            }
-            
-            return .string(docstring ?? "")
         }
     }
 }
