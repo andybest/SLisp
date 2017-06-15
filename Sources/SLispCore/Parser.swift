@@ -154,11 +154,14 @@ class Environment {
                 
                 // Handle special forms
                 switch list[0] {
+                // MARK: def
                 case .symbol("def"):
                     if args.count != 2 {
                         throw LispError.runtime(msg: "'def' requires 2 arguments")
                     }
                     return try bindGlobal(name: list[1], value: try eval(list[2]), toNamespace: currentNamespace)
+                    
+                // MARK: let
                 case .symbol("let"):
                     if args.count < 2 {
                         throw LispError.runtime(msg: "'let' requires at least 2 arguments")
@@ -193,19 +196,26 @@ class Environment {
                     // TCO
                     mutableForm = body[body.count - 1]
                     
+                // MARK: apply
                 case .symbol("apply"):
                     break
+                    
+                // MARK: quote
                 case .symbol("quote"):
                     if args.count != 1 {
                         throw LispError.general(msg: "'quote' expects 1 argument, got \(args.count).")
                     }
                     
                     return args[0]
+                    
+                // MARK: quasiquote
                 case .symbol("quasiquote"):
                     if args.count != 1 {
                         throw LispError.general(msg: "'quasiquote' expects 1 argument, got \(args.count).")
                     }
                     mutableForm = try quasiquote(args[0])
+                    
+                // MARK: do
                 case .symbol("do"):
                     if args.count < 1 {
                         throw LispError.runtime(msg: "'do' requires at least 1 argument")
@@ -223,6 +233,7 @@ class Environment {
                     // TCO
                     mutableForm = args[args.count - 1]
                     
+                // MARK: function
                 case .symbol("function"):
                     if args.count < 2 {
                         throw LispError.general(msg: "'function' expects a body")
@@ -274,6 +285,7 @@ class Environment {
                     let body = FunctionBody.lisp(argnames: argNames, body: Array(fArgs.dropFirst(1)))
                     return LispType.function(body, docstring: docString, isMacro: false)
                     
+                // MARK: if
                 case .symbol("if"):
                     if args.count != 3 {
                         throw LispError.runtime(msg: "'if' expects 3 arguments.")
@@ -289,6 +301,7 @@ class Environment {
                         mutableForm = args[2]
                     }
                     
+                // MARK: while
                 case .symbol("while"):
                     if args.count < 2 {
                         throw LispError.runtime(msg: "'while' requires a condition and a body")
@@ -316,17 +329,19 @@ class Environment {
                     // TCO
                     mutableForm = rv
                     
+                // MARK: defmacro
                 case .symbol("defmacro"):
                     if args.count != 2 {
                         throw LispError.runtime(msg: "'defmacro' requires 2 arguments")
                     }
                     
-                    guard case let .function(body, _, _) = try eval(list[2]) else {
+                    guard case let .function(body, docstring: docstring, _) = try eval(list[2]) else {
                         throw LispError.runtime(msg: "'defmacro' requires the 2nd argument to be a function")
                     }
                     
-                    return try bindGlobal(name: list[1], value: .function(body, docstring: "", isMacro: true), toNamespace: currentNamespace)
+                    return try bindGlobal(name: list[1], value: .function(body, docstring: docstring, isMacro: true), toNamespace: currentNamespace)
                     
+                // MARK: macroexpand
                 case .symbol("macroexpand"):
                     if args.count != 1 {
                         throw LispError.runtime(msg: "'macroexpand' expects one argument")

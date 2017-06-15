@@ -25,8 +25,17 @@
 
 ; Macro for shorthand function declarations
 (defmacro defn
-    (function (fName args & body)
-        `(def ~fName ~(concat `(function ~args) body))))
+    (function
+        "defn
+(name [docstring] args body)
+    Defines a function with the given name. Accepts an optional docstring."
+    (fName & body)
+        (let (docstring (if (string? (first body)) (first body) nil)
+              args (if (nil? docstring) (first body) (at body 1))
+              fBody (if (nil? docstring) (rest body) (rest (rest body))))
+            (if (nil? docstring)
+                `(def ~fName ~(concat `(function ~args) fBody))
+                `(def ~fName ~(concat `(function ~docstring ~args) fBody))))))
 
 (defn reduce (f & args)
     (let (argCount (count args))
