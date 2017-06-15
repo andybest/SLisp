@@ -38,8 +38,9 @@ class Environment {
     init?() throws {
         createDefaultNamespace()
         
+        let core = Core(env: self)
         /* Core builtins */
-        let coreBuiltins = [Core(env: self)]
+        let coreBuiltins = [core]
         
         try coreBuiltins.forEach {
             let ns = createOrGetNamespace($0.namespaceName())
@@ -64,6 +65,8 @@ class Environment {
                 print("Error importing builtins: \(error)")
             }
         }
+        
+        core.loadAutoincludeImplementation(toNamespace: core.namespaceName())
         
         /* Other builtins */
         let builtins = [MathBuiltins(env: self)]

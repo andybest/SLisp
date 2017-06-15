@@ -43,6 +43,14 @@ class Core: Builtins {
             print("Core library implementation could not be loaded!")
         }
     }
+    
+    func loadAutoincludeImplementation(toNamespace ns: String) {
+        // Load core library implemented in SLisp
+        let path = "./Lib/core-autoinclude.sl"
+        if env.evalFile(path: path, toNamespace: env.createOrGetNamespace(ns)) == nil {
+            print("Core library autoinclude implementation could not be loaded!")
+        }
+    }
 
     override func initBuiltins() -> [String: BuiltinBody] {
 
@@ -159,6 +167,18 @@ class Core: Builtins {
 
             return .boolean(true)
         }
+        
+        addBuiltin("number?") { args, env throws in
+            try self.checkArgCount(funcName: "number?", args: args, expectedNumArgs: 1)
+            
+            for arg in args {
+                guard case .number(_) = arg else {
+                    return .boolean(false)
+                }
+            }
+            
+            return .boolean(true)
+        }
 
         addBuiltin("float?") { args, env throws in
             try self.checkArgCount(funcName: "float?", args: args, expectedNumArgs: 1)
@@ -168,7 +188,7 @@ class Core: Builtins {
                     return .boolean(false)
                 }
                 
-                if n.isFloat {
+                if n.isInteger {
                     return .boolean(false)
                 }
             }
@@ -184,7 +204,7 @@ class Core: Builtins {
                     return .boolean(false)
                 }
                 
-                if n.isInteger {
+                if n.isFloat {
                     return .boolean(false)
                 }
             }
@@ -214,6 +234,36 @@ class Core: Builtins {
             }
 
             return .boolean(true)
+        }
+        
+        addBuiltin("empty?") { args, env throws in
+            try self.checkArgCount(funcName: "empty?", args: args, expectedNumArgs: 1)
+            
+            for arg in args {
+                if case .list(let l) = arg {
+                    return .boolean(l.count == 0)
+                } else if case .string(let s) = arg {
+                    return .boolean(s.count == 0)
+                }
+            }
+            
+            return .boolean(false)
+        }
+        
+        addBuiltin("count") { args, env throws in
+            if args.count != 1 {
+                throw LispError.runtime(msg: "'count' expects 1 argument")
+            }
+            
+            for arg in args {
+                if case .list(let l) = arg {
+                    return .number(.integer(l.count))
+                } else if case .string(let s) = arg {
+                    return .number(.integer(s.count))
+                }
+            }
+            
+            throw LispError.runtime(msg: "'count' expects an argument that is a list or a string")
         }
 
         addBuiltin("input") { args, env throws in
