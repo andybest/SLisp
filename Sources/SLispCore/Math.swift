@@ -51,7 +51,7 @@ class MathBuiltins : Builtins {
         }
     }
     
-    override func initBuiltins() -> [String: BuiltinBody] {
+    override func initBuiltins() -> [String: BuiltinDef] {
 
         /*addBuiltin("sqrt") { args, env throws in
             return try self.doSingleArgArithmeticOperation(args, name: "sqrt", body: sqrt)

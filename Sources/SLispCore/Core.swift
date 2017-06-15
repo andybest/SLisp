@@ -52,13 +52,13 @@ class Core: Builtins {
         }
     }
 
-    override func initBuiltins() -> [String: BuiltinBody] {
+    override func initBuiltins() -> [String: BuiltinDef] {
 
-        addBuiltin("list") { args, env throws in
+        addBuiltin("list", docstring: "") { args, env throws in
             return .list(args)
         }
 
-        addBuiltin("cons") { args, env throws in
+        addBuiltin("cons", docstring: "") { args, env throws in
             try self.checkArgCount(funcName: "cons", args: args, expectedNumArgs: 2)
 
             var secondValue: [LispType] = []
@@ -78,7 +78,7 @@ class Core: Builtins {
             return .list(secondValue)
         }
 
-        addBuiltin("concat") { args, env throws in
+        addBuiltin("concat", docstring: "") { args, env throws in
             let transformed: [LispType] = args.flatMap { input -> [LispType] in
                 if case let .list(list) = input {
                     return list
@@ -89,7 +89,7 @@ class Core: Builtins {
             return .list(transformed)
         }
 
-        addBuiltin("first") { args, env throws in
+        addBuiltin("first", docstring: "") { args, env throws in
             try self.checkArgCount(funcName: "first", args: args, expectedNumArgs: 1)
 
             if case let .list(list) = args[0] {
@@ -99,7 +99,7 @@ class Core: Builtins {
             throw LispError.general(msg: "'first' expects an argument that is a list")
         }
 
-        addBuiltin("rest") { args, env throws in
+        addBuiltin("rest", docstring: "") { args, env throws in
             try self.checkArgCount(funcName: "rest", args: args, expectedNumArgs: 1)
 
             if case let .list(list) = args[0] {
@@ -109,7 +109,7 @@ class Core: Builtins {
             throw LispError.general(msg: "'rest' expects an argument that is a list")
         }
 
-        addBuiltin("last") { args, env throws in
+        addBuiltin("last", docstring: "") { args, env throws in
             try self.checkArgCount(funcName: "last", args: args, expectedNumArgs: 1)
 
             if case let .list(list) = args[0] {
@@ -119,7 +119,7 @@ class Core: Builtins {
             throw LispError.general(msg: "'last' expects an argument that is a list")
         }
 
-        addBuiltin("print") { args, env throws in
+        addBuiltin("print", docstring: "") { args, env throws in
             let strings = args.map { arg -> String in
                 switch arg {
                     case .string(let s):
@@ -132,7 +132,7 @@ class Core: Builtins {
             return .nil
         }
 
-        addBuiltin("list?") { args, env throws in
+        addBuiltin("list?", docstring: "") { args, env throws in
             try self.checkArgCount(funcName: "list", args: args, expectedNumArgs: 1)
 
             for arg in args {
@@ -144,7 +144,7 @@ class Core: Builtins {
             return .boolean(true)
         }
 
-        addBuiltin("symbol?") { args, env throws in
+        addBuiltin("symbol?", docstring: "") { args, env throws in
             try self.checkArgCount(funcName: "symbol?", args: args, expectedNumArgs: 1)
 
             for arg in args {
@@ -156,7 +156,7 @@ class Core: Builtins {
             return .boolean(true)
         }
 
-        addBuiltin("string?") { args, env throws in
+        addBuiltin("string?", docstring: "") { args, env throws in
             try self.checkArgCount(funcName: "string?", args: args, expectedNumArgs: 1)
 
             for arg in args {
@@ -168,7 +168,7 @@ class Core: Builtins {
             return .boolean(true)
         }
         
-        addBuiltin("number?") { args, env throws in
+        addBuiltin("number?", docstring: "") { args, env throws in
             try self.checkArgCount(funcName: "number?", args: args, expectedNumArgs: 1)
             
             for arg in args {
@@ -180,7 +180,7 @@ class Core: Builtins {
             return .boolean(true)
         }
 
-        addBuiltin("float?") { args, env throws in
+        addBuiltin("float?", docstring: "") { args, env throws in
             try self.checkArgCount(funcName: "float?", args: args, expectedNumArgs: 1)
 
             for arg in args {
@@ -196,7 +196,7 @@ class Core: Builtins {
             return .boolean(true)
         }
         
-        addBuiltin("integer?") { args, env throws in
+        addBuiltin("integer?", docstring: "") { args, env throws in
             try self.checkArgCount(funcName: "integer?", args: args, expectedNumArgs: 1)
             
             for arg in args {
@@ -212,7 +212,7 @@ class Core: Builtins {
             return .boolean(true)
         }
 
-        addBuiltin("function?") { args, env throws in
+        addBuiltin("function?", docstring: "") { args, env throws in
             try self.checkArgCount(funcName: "function?", args: args, expectedNumArgs: 1)
 
             for arg in args {
@@ -224,7 +224,7 @@ class Core: Builtins {
             return .boolean(true)
         }
 
-        addBuiltin("nil?") { args, env throws in
+        addBuiltin("nil?", docstring: "") { args, env throws in
             try self.checkArgCount(funcName: "nil?", args: args, expectedNumArgs: 1)
 
             for arg in args {
@@ -236,7 +236,7 @@ class Core: Builtins {
             return .boolean(true)
         }
         
-        addBuiltin("empty?") { args, env throws in
+        addBuiltin("empty?", docstring: "") { args, env throws in
             try self.checkArgCount(funcName: "empty?", args: args, expectedNumArgs: 1)
             
             for arg in args {
@@ -250,7 +250,7 @@ class Core: Builtins {
             return .boolean(false)
         }
         
-        addBuiltin("count") { args, env throws in
+        addBuiltin("count", docstring: "") { args, env throws in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'count' expects 1 argument")
             }
@@ -266,7 +266,7 @@ class Core: Builtins {
             throw LispError.runtime(msg: "'count' expects an argument that is a list or a string")
         }
 
-        addBuiltin("input") { args, env throws in
+        addBuiltin("input", docstring: "") { args, env throws in
             if args.count > 1 {
                 throw LispError.general(msg: "'input' expects 0 or 1 argument")
             }
@@ -286,7 +286,7 @@ class Core: Builtins {
             return .nil
         }
 
-        addBuiltin("read-string") { args, env throws in
+        addBuiltin("read-string", docstring: "") { args, env throws in
             if args.count != 1 {
                 throw LispError.general(msg: "'read-string' requires 1 string argument")
             }
@@ -298,7 +298,7 @@ class Core: Builtins {
             return try Reader.read(input)
         }
 
-        addBuiltin("slurp") { args, env throws in
+        addBuiltin("slurp", docstring: "") { args, env throws in
             if args.count != 1 {
                 throw LispError.general(msg: "'slurp' requires 1 string argument")
             }
@@ -316,7 +316,7 @@ class Core: Builtins {
             }
         }
 
-        addBuiltin("eval") { args, env throws in
+        addBuiltin("eval", docstring: "") { args, env throws in
             if args.count != 1 {
                 throw LispError.general(msg: "'eval' requires 1 argument")
             }
@@ -324,7 +324,7 @@ class Core: Builtins {
             return try env.eval(args[0])
         }
 
-        addBuiltin("str") { args, env throws in
+        addBuiltin("str", docstring: "") { args, env throws in
             if args.count == 0 {
                 throw LispError.general(msg: "'str' requires at least one argument")
             }
@@ -340,7 +340,7 @@ class Core: Builtins {
             return .string(strings.joined())
         }
 
-        addBuiltin("string=") { args, env throws in
+        addBuiltin("string=", docstring: "") { args, env throws in
             if args.count < 2 {
                 throw LispError.general(msg: "'string=' requires at least 2 arguments.")
             }
@@ -362,7 +362,7 @@ class Core: Builtins {
             return .boolean(true)
         }
 
-        addBuiltin("at") { args, env in
+        addBuiltin("at", docstring: "") { args, env in
             if args.count != 2 {
                 throw LispError.runtime(msg: "'at' requires 2 arguments.")
             }
@@ -389,7 +389,7 @@ class Core: Builtins {
     }
     
     func initCoreNamespaceBuiltins() {
-        addBuiltin("in-ns") { args, env throws in
+        addBuiltin("in-ns", docstring: "") { args, env throws in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'in-ns' expects one argument.")
             }
@@ -405,11 +405,11 @@ class Core: Builtins {
     
     func initCoreMathBuiltins() {
         
-        addBuiltin("+") { args, env throws in
+        addBuiltin("+", docstring: "") { args, env throws in
             return try self.doArithmeticOperation(args, body: LispNumber.add)
         }
         
-        addBuiltin("-") { args, env throws in
+        addBuiltin("-", docstring: "") { args, env throws in
             if args.count == 1 {
                 return try self.doSingleArgArithmeticOperation(args, name: "-", body: LispNumber.negate)
             } else {
@@ -417,28 +417,28 @@ class Core: Builtins {
             }
         }
         
-        addBuiltin("*") { args, env throws in
+        addBuiltin("*", docstring: "") { args, env throws in
             return try self.doArithmeticOperation(args, body: LispNumber.multiply)
         }
         
-        addBuiltin("/") { args, env throws in
+        addBuiltin("/", docstring: "") { args, env throws in
             return try self.doArithmeticOperation(args, body: LispNumber.divide)
         }
         
-        addBuiltin("mod") { args, env throws in
+        addBuiltin("mod", docstring: "") { args, env throws in
             return try self.doArithmeticOperation(args, body: LispNumber.mod)
         }
         
         
-        addBuiltin(">") { args, env throws in
+        addBuiltin(">", docstring: "") { args, env throws in
             return try self.doBooleanArithmeticOperation(args, body: LispNumber.greaterThan)
         }
         
-        addBuiltin("<") { args, env throws in
+        addBuiltin("<", docstring: "") { args, env throws in
             return try self.doBooleanArithmeticOperation(args, body: LispNumber.lessThan)
         }
         
-        addBuiltin("==") { args, env throws in
+        addBuiltin("==", docstring: "") { args, env throws in
             if args.count < 2 {
                 throw LispError.runtime(msg: "'==' requires at least 2 arguments")
             }
@@ -453,25 +453,25 @@ class Core: Builtins {
             return .boolean(true)
         }
         
-        addBuiltin("&&") { args, env throws in
+        addBuiltin("&&", docstring: "") { args, env throws in
             return try self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
                 return x && y
             }
         }
         
-        addBuiltin("||") { args, env throws in
+        addBuiltin("||", docstring: "") { args, env throws in
             return try self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
                 return x || y
             }
         }
         
-        addBuiltin("!") { args, env throws in
+        addBuiltin("!", docstring: "") { args, env throws in
             return try self.doSingleBooleanOperation(args) { (x: Bool) -> Bool in
                 return !x
             }
         }
         
-        addBuiltin("doc") { args, env throws in
+        addBuiltin("doc", docstring: "") { args, env throws in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'doc' requires 1 argument")
             }

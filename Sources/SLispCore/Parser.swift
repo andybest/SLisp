@@ -46,8 +46,12 @@ class Environment {
             let ns = createOrGetNamespace($0.namespaceName())
             try $0.initBuiltins().forEach { (arg) in
                 
-                let (name, body) = arg
-                _ = try bindGlobal(name: .symbol(name), value: .function(.native(body: body), docstring: "", isMacro: false), toNamespace: ns)
+                let (name, builtinDef) = arg
+                _ = try bindGlobal(name: .symbol(name),
+                                   value: .function(.native(body: builtinDef.body),
+                                                    docstring: builtinDef.docstring,
+                                                    isMacro: false),
+                                   toNamespace: ns)
             }
             
             // Import this namespace to the default namespace
@@ -75,8 +79,12 @@ class Environment {
             let ns = createOrGetNamespace($0.namespaceName())
             try $0.initBuiltins().forEach { (arg) in
                 
-                let (name, body) = arg
-                _ = try bindGlobal(name: .symbol(name), value: .function(.native(body: body), docstring: "", isMacro: false), toNamespace: ns)
+                let (name, builtinDef) = arg
+                _ = try bindGlobal(name: .symbol(name),
+                                   value: .function(.native(body: builtinDef.body),
+                                                    docstring: builtinDef.docstring,
+                                                    isMacro: false),
+                                   toNamespace: ns)
             }
         }
         

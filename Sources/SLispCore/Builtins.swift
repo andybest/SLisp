@@ -35,9 +35,14 @@ extension Dictionary {
     }
 }
 
+struct BuiltinDef {
+    let body: BuiltinBody
+    let docstring: String?
+}
+
 class Builtins {
     let env: Environment
-    var builtins = [String : BuiltinBody]()
+    var builtins = [String : BuiltinDef]()
     
     init(env:Environment) {
         self.env = env
@@ -54,11 +59,11 @@ class Builtins {
         
     }
     
-    func addBuiltin(_ name: String, _ body: @escaping BuiltinBody) {
-        builtins[name] = body
+    func addBuiltin(_ name: String, docstring: String?, _ body: @escaping BuiltinBody) {
+        builtins[name] = BuiltinDef(body: body, docstring: docstring)
     }
     
-    func getBuiltins() -> [String: BuiltinBody] {
+    func getBuiltins() -> [String: BuiltinDef] {
         return builtins
     }
     
@@ -72,7 +77,7 @@ class Builtins {
         }
     }
 
-    func initBuiltins() -> [String: BuiltinBody] {
+    func initBuiltins() -> [String: BuiltinDef] {
         return [:]
     }
 
