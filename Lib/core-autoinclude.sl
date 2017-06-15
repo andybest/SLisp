@@ -63,10 +63,9 @@
     (function (i) (list (at l1 i) (at l2 i)))
     (math/range 0 (count l1)))))
 
-; (defmacro defstruct
-;   #("defstruct"
-;     (name fields)
-;     `(do
-;         (defn ~(str "make-" name) ~fields
-;           (map #((fieldName) )))
-;           )))
+(defmacro defstruct
+  (function "defstruct"
+    (name slots)
+    `(do
+        (defn ~(str "make-" name) ~slots
+          (concat ~(map #((slot) (list `(quote ~slot) slot))))))))
