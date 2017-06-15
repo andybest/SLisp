@@ -155,6 +155,8 @@ extension Core {
             return list[index]
         }
         
+        
+        // MARK: count
         addBuiltin("count", docstring: """
         count
         (x)
@@ -175,6 +177,8 @@ extension Core {
             throw LispError.runtime(msg: "'count' expects an argument that is a list or a string")
         }
         
+        
+        // MARK: empty?
         addBuiltin("empty?", docstring: """
         empty?
         (x)

@@ -53,7 +53,7 @@ class Core: Builtins {
     }
 
     override func initBuiltins() -> [String: BuiltinDef] {
-        
+        // MARK: print
         addBuiltin("print", docstring: """
         print
         (x y ...)
@@ -70,7 +70,9 @@ class Core: Builtins {
             print(strings.joined(separator: ","))
             return .nil
         }
-
+        
+        
+        // MARK: input
         addBuiltin("input", docstring: """
         input
         (prompt)
@@ -94,7 +96,9 @@ class Core: Builtins {
 
             return .nil
         }
-
+        
+        
+        // MARK: read-string
         addBuiltin("read-string", docstring: """
         read-string
         (x)
@@ -110,7 +114,9 @@ class Core: Builtins {
 
             return try Reader.read(input)
         }
-
+        
+        
+        // MARK: slurp
         addBuiltin("slurp", docstring: """
         slurp
         (fileName)
@@ -132,7 +138,9 @@ class Core: Builtins {
                 return .nil
             }
         }
-
+        
+        
+        // MARK: eval
         addBuiltin("eval", docstring: """
         eval
         (x)
@@ -144,7 +152,9 @@ class Core: Builtins {
 
             return try env.eval(args[0])
         }
-
+        
+        
+        // MARK: str
         addBuiltin("str", docstring: """
         str
         (x y ...)
@@ -164,7 +174,9 @@ class Core: Builtins {
 
             return .string(strings.joined())
         }
-
+        
+        
+        // MARK: string=
         addBuiltin("string=", docstring: """
         string=
         (x y ...)
@@ -191,6 +203,8 @@ class Core: Builtins {
             return .boolean(true)
         }
         
+        
+        // MARK: doc
         addBuiltin("doc", docstring: """
         doc
         (f)
@@ -218,7 +232,12 @@ class Core: Builtins {
     }
     
     func initCoreNamespaceBuiltins() {
-        addBuiltin("in-ns", docstring: "") { args, env throws in
+        // MARK: in-ns
+        addBuiltin("in-ns", docstring: """
+        in-ns
+        (x)
+            Move to the namespace indicated by the symbol x
+        """) { args, env throws in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'in-ns' expects one argument.")
             }
@@ -233,6 +252,7 @@ class Core: Builtins {
     }
     
     func initCoreTypeBuiltins() {
+        // MARK: list?
         addBuiltin("list?", docstring: """
         list?
         (x)
@@ -249,6 +269,8 @@ class Core: Builtins {
             return .boolean(true)
         }
         
+        
+        // MARK: symbol?
         addBuiltin("symbol?", docstring: """
         symbol?
         (x)
@@ -265,6 +287,8 @@ class Core: Builtins {
             return .boolean(true)
         }
         
+        
+        // MARK: string?
         addBuiltin("string?", docstring: """
         string?
         (x)
@@ -281,6 +305,8 @@ class Core: Builtins {
             return .boolean(true)
         }
         
+        
+        // MARK: number?
         addBuiltin("number?", docstring: """
         number?
         (x)
@@ -297,6 +323,8 @@ class Core: Builtins {
             return .boolean(true)
         }
         
+        
+        // MARK: float?
         addBuiltin("float?", docstring: """
         float?
         (x)
@@ -317,6 +345,8 @@ class Core: Builtins {
             return .boolean(true)
         }
         
+        
+        // MARK: integer?
         addBuiltin("integer?", docstring: """
         integer?
         (x)
@@ -337,6 +367,8 @@ class Core: Builtins {
             return .boolean(true)
         }
         
+        
+        // MARK: function?
         addBuiltin("function?", docstring: """
         function?
         (x)
@@ -353,6 +385,8 @@ class Core: Builtins {
             return .boolean(true)
         }
         
+        
+        // MARK: nil?
         addBuiltin("nil?", docstring: """
         nil?
         (x)
@@ -372,6 +406,7 @@ class Core: Builtins {
     
     func initCoreMathBuiltins() {
         
+        // MARK: +
         addBuiltin("+", docstring: """
         +
         (x y ...)
@@ -380,6 +415,8 @@ class Core: Builtins {
             return try self.doArithmeticOperation(args, body: LispNumber.add)
         }
         
+        
+        // MARK: subtract
         addBuiltin("-", docstring: """
         -
         (x y ...)
@@ -392,6 +429,8 @@ class Core: Builtins {
             }
         }
         
+        
+        // MARK: *
         addBuiltin("*", docstring: """
         *
         (x y ...)
@@ -400,6 +439,8 @@ class Core: Builtins {
             return try self.doArithmeticOperation(args, body: LispNumber.multiply)
         }
         
+        
+        // MARK: /
         addBuiltin("/", docstring: """
         /
         (x y ...)
@@ -408,6 +449,8 @@ class Core: Builtins {
             return try self.doArithmeticOperation(args, body: LispNumber.divide)
         }
         
+        
+        // MARK: mod
         addBuiltin("mod", docstring: """
         mod
         (x y ...)
@@ -416,6 +459,8 @@ class Core: Builtins {
             return try self.doArithmeticOperation(args, body: LispNumber.mod)
         }
         
+        
+        // MARK: >
         addBuiltin(">", docstring: """
         >
         (x y ...)
@@ -424,6 +469,8 @@ class Core: Builtins {
             return try self.doBooleanArithmeticOperation(args, body: LispNumber.greaterThan)
         }
         
+        
+        // MARK: <
         addBuiltin("<", docstring: """
         <
         (x y ...)
@@ -432,6 +479,8 @@ class Core: Builtins {
             return try self.doBooleanArithmeticOperation(args, body: LispNumber.lessThan)
         }
         
+        
+        // MARK: ==
         addBuiltin("==", docstring: """
         ==
         (x y ...)
@@ -451,6 +500,8 @@ class Core: Builtins {
             return .boolean(true)
         }
         
+        
+        // MARK: &&
         addBuiltin("&&", docstring: """
         &&
         (x y ...)
@@ -461,6 +512,8 @@ class Core: Builtins {
             }
         }
         
+        
+        // MARK: ||
         addBuiltin("||", docstring: """
         ||
         (x y ...)
@@ -471,6 +524,8 @@ class Core: Builtins {
             }
         }
         
+        
+        // MARK: !
         addBuiltin("!", docstring: """
         !
         (x)
