@@ -33,7 +33,7 @@ extension Core {
         addBuiltin("list", docstring: """
         list
         (items)
-        Constructs a new list containing the items
+            Constructs a new list containing the items
         """) { args, env throws in
             return .list(args)
         }
@@ -43,7 +43,7 @@ extension Core {
         addBuiltin("cons", docstring: """
         cons
         (i l)
-        Constructs a new list where i is the first element, and l is the rest
+            Constructs a new list where i is the first element, and l is the rest
         """) { args, env throws in
             try self.checkArgCount(funcName: "cons", args: args, expectedNumArgs: 2)
             
@@ -69,7 +69,7 @@ extension Core {
         addBuiltin("concat", docstring: """
         concat
         (x y)
-        Concatenates 2 lists
+            Concatenates 2 lists
         """) { args, env throws in
             let transformed: [LispType] = args.flatMap { input -> [LispType] in
                 if case let .list(list) = input {
@@ -86,7 +86,7 @@ extension Core {
         addBuiltin("first", docstring: """
         first
         (x)
-        Returns the first item in the collection x
+            Returns the first item in the collection x
         """) { args, env throws in
             try self.checkArgCount(funcName: "first", args: args, expectedNumArgs: 1)
             
@@ -102,7 +102,7 @@ extension Core {
         addBuiltin("rest", docstring: """
         rest
         (x)
-        Returns all but the first item in the collection x
+            Returns all but the first item in the collection x
         """) { args, env throws in
             try self.checkArgCount(funcName: "rest", args: args, expectedNumArgs: 1)
             
@@ -118,7 +118,7 @@ extension Core {
         addBuiltin("last", docstring: """
         last
         (x)
-        Returns the last item in the collection x
+            Returns the last item in the collection x
         """) { args, env throws in
             try self.checkArgCount(funcName: "last", args: args, expectedNumArgs: 1)
             
@@ -134,7 +134,7 @@ extension Core {
         addBuiltin("at", docstring: """
         at
         (x i)
-        Returns the item at index i from collection x
+            Returns the item at index i from collection x
         """) { args, env in
             if args.count != 2 {
                 throw LispError.runtime(msg: "'at' requires 2 arguments.")
@@ -158,7 +158,7 @@ extension Core {
         addBuiltin("count", docstring: """
         count
         (x)
-        Returns the count/length of the collection or string x
+            Returns the count/length of the collection or string x
         """) { args, env throws in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'count' expects 1 argument")
@@ -178,7 +178,7 @@ extension Core {
         addBuiltin("empty?", docstring: """
         empty?
         (x)
-        Returns a boolean indicating whether the string/collection is empty
+            Returns a boolean indicating whether the string/collection is empty
         """) { args, env throws in
             try self.checkArgCount(funcName: "empty?", args: args, expectedNumArgs: 1)
             
