@@ -44,19 +44,6 @@
         processed
         (mapInt f (concat processed (f (first remaining))) (rest remaining)))))
       (mapInt f '() coll)))
-    
-
-; (defn reduce (f & args)
-;     (let (argCount (count args))
-;         (if (|| (< argCount 1) (> argCount 2))
-;             (do (print "Error: reduce requires 1 or 2 arguments") nil)
-;             (do (print args) (let (val (if (== argCount 2) (first args) nil)
-;                   coll (if (== argCount 2) (at args 1) (first args)))
-;                 (if (|| (nil? coll) (empty? coll))  ; If the collection is empty, return the value
-;                     val
-;                     (if (nil? val)
-;                         (reduce f (f (first coll) (at coll 1)) (rest (rest coll)))
-;                         (reduce f (f val (first coll))))))))))
 
 (defn zip (l1 l2)
   (concat (map 
@@ -67,5 +54,16 @@
   (function "defstruct"
     (name slots)
     `(do
-        (defn ~(str "make-" name) ~slots
-          (concat ~(map #((slot) (list `(quote ~slot) slot))))))))
+        ; make-[structname]
+        (defn ~(symbol (str "make-" name)) ~slots
+          ~(cons 'list (concat (map #((slot) (list (keyword slot) slot)) slots))))
+        
+        ; [structname]-[slotname]
+        ~(concat 'do (map 
+          (function (slotnum)
+            (let (slotname (at slots slotnum))
+               `((defn ~(symbol (str name "-" slotname)) (struct)
+                   (at struct ~(+ (* slotnum 2) 1))))))
+          (math/range 0 (count slots))))
+        
+        )))

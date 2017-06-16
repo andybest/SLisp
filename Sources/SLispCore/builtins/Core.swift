@@ -204,6 +204,50 @@ class Core: Builtins {
         }
         
         
+        // MARK: symbol
+        addBuiltin("symbol", docstring: """
+        symbol
+        (x)
+            Converts the string argument to a symbol
+        """) { args, env throws in
+            if args.count != 1 {
+                throw LispError.general(msg: "'symbol' requires one argument")
+            }
+            
+            guard case let .string(str) = args[0] else {
+                throw LispError.runtime(msg: "'symbol' requires a string argument")
+            }
+            
+            return .symbol(str)
+        }
+        
+        
+        // MARK: key
+        addBuiltin("keyword", docstring: """
+        keyword
+        (x)
+            Converts the string, symbol or keyword argument to a keyword
+        """) { args, env throws in
+            if args.count != 1 {
+                throw LispError.general(msg: "'keyword' requires one argument")
+            }
+            
+            switch args[0] {
+            case .key(_):
+                return args[0]
+                
+            case .string(let str):
+                return .key(str)
+                
+            case .symbol(let sym):
+                return .key(sym)
+                
+            default:
+                throw LispError.runtime(msg: "'keyword' requires a string, symbol or keyword argument")
+            }
+        }
+        
+        
         // MARK: doc
         addBuiltin("doc", docstring: """
         doc

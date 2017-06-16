@@ -198,7 +198,19 @@ class Environment {
                     
                 // MARK: apply
                 case .symbol("apply"):
-                    break
+                    if args.count != 2 {
+                        throw LispError.runtime(msg: "'apply' requires 2 arguments")
+                    }
+                    
+                    guard case .function(_) = try eval(args[0]) else {
+                        throw LispError.runtime(msg: "'apply' requires the first argument to be a function")
+                    }
+                    
+                    guard case let .list(applyArgs) = try eval(args[1]) else {
+                        throw LispError.runtime(msg: "'apply' requires the second argument to be a list")
+                    }
+                    
+                    mutableForm = .list([args[0]] + applyArgs)
                     
                 // MARK: quote
                 case .symbol("quote"):
