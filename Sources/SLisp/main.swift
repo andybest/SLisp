@@ -1,4 +1,9 @@
 import SLispCore
 
 let repl = try Repl()
-repl?.mainLoop()
+
+do {
+    try repl?.mainLoop()
+} catch {
+    print(error)
+}

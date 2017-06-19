@@ -25,32 +25,33 @@
  */
 
 import Foundation
+import LineNoise
 
 public class Repl {
 
     var environment: Environment
+    let ln: LineNoise
 
     public init?() throws {
         environment = try Environment()!
+        ln = LineNoise()
     }
 
-    public func mainLoop() {
+    public func mainLoop() throws {
         while true {
-            if let output = getInput() {
+            if let output = try getInput() {
                 print(output)
             }
         }
     }
 
-    func getInput() -> String? {
-        Swift.print("\(environment.currentNamespaceName)> ", terminator: "")
+    func getInput() throws -> String? {
+        var prompt = "\(environment.currentNamespaceName)> "
 
         var input: String = ""
 
         while true {
-            guard let newInput = readLine(strippingNewline: false) else {
-                continue
-            }
+            let newInput = try ln.getLine(prompt: prompt)
 
             input += newInput
 
@@ -58,6 +59,10 @@ public class Repl {
 
                 var rv: LispType? = nil
                 do {
+                    if input == "(exit)" {
+                        exit(0)
+                    }
+                    
                     let form = try Reader.read(input)
                     rv = try environment.eval(form)
 
@@ -69,11 +74,13 @@ public class Repl {
                     return "Syntax Error: \(message)"
                 } catch LispError.readerNotEOF {
                     // Input hasn't been completed
-                    Swift.print("...\t", terminator: "")
+                    prompt = "...\t"
                 } catch {
                     return String(describing: error)
                 }
                 if rv != nil {
+                    print("\n")
+                    ln.addHistory(input)
                     return String(describing: rv!)
                 }
             } else {
