@@ -26,14 +26,14 @@
 
 import Foundation
 
-typealias BuiltinBody = ([LispType], Environment) throws -> LispType
+public typealias BuiltinBody = ([LispType], Environment) throws -> LispType
 
-indirect enum FunctionBody {
+public indirect enum FunctionBody {
     case native(body: BuiltinBody)
     case lisp(argnames: [String], body: [LispType])
 }
 
-enum LispType: CustomStringConvertible, Equatable {
+public enum LispType: CustomStringConvertible, Equatable {
     case list([LispType])
     case symbol(String)
     case number(LispNumber)
@@ -43,7 +43,7 @@ enum LispType: CustomStringConvertible, Equatable {
     case function(FunctionBody, docstring: String?, isMacro: Bool)
     case key(String)
     
-    var description: String {
+    public var description: String {
         switch self {
         case .symbol(let str):
             return str
@@ -68,7 +68,7 @@ enum LispType: CustomStringConvertible, Equatable {
     }
 }
 
-func ==(a: LispType, b: LispType) -> Bool {
+public func ==(a: LispType, b: LispType) -> Bool {
     switch (a, b) {
     case (.list(let a), .list(let b)) where a == b: return true
     case (.symbol(let a), .symbol(let b)) where a == b: return true
@@ -80,11 +80,11 @@ func ==(a: LispType, b: LispType) -> Bool {
     }
 }
 
-enum LispNumber: CustomStringConvertible {
+public enum LispNumber: CustomStringConvertible {
     case float(Double)
     case integer(Int)
     
-    var description: String {
+    public var description: String {
         switch self {
         case .float(let n): return String(n)
         case .integer(let n): return String(n)

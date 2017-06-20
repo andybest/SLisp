@@ -27,11 +27,11 @@
 
 import Foundation
 
-class Reader {
+public class Reader {
     let tokens: [TokenType]
     var pos = 0
 
-    init(tokens: [TokenType]) {
+    public init(tokens: [TokenType]) {
         self.tokens = tokens
     }
 
@@ -137,7 +137,7 @@ class Reader {
         return .list(list)
     }
 
-    static func read(_ input: String) throws -> LispType {
+    public static func read(_ input: String) throws -> LispType {
         let tokenizer = Tokenizer(source: input)
         let tokens    = try tokenizer.tokenizeInput()
 

@@ -26,7 +26,7 @@
 
 import Foundation
 
-class Namespace: Hashable {
+public class Namespace: Hashable {
     let name: String
     var rootBindings     = [String: LispType]()
     var bindingStack     = [[String: LispType]]()

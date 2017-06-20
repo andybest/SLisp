@@ -26,16 +26,16 @@
 
 import Foundation
 
-class Environment {
-    var currentNamespaceName: String   = ""
+public class Environment {
+    public var currentNamespaceName: String   = ""
     var namespaces                     = [String: Namespace]()
     let coreImports:          [String] = ["core"]
     
-    var currentNamespace: Namespace {
+    public var currentNamespace: Namespace {
         return namespaces[currentNamespaceName]!
     }
     
-    init?() throws {
+    public init?() throws {
         createDefaultNamespace()
         
         let core = Core(env: self)
@@ -124,7 +124,7 @@ class Environment {
         }
     }
     
-    func eval(_ form: LispType) throws -> LispType {
+    public func eval(_ form: LispType) throws -> LispType {
         var tco: Bool   = false
         var mutableForm = form
         var env_push    = 0

@@ -25,6 +25,7 @@
  */
 
 import Foundation
+import SLispCore
 import LineNoise
 
 public class Repl {
@@ -79,7 +80,7 @@ public class Repl {
                     return String(describing: error)
                 }
                 if rv != nil {
-                    print("\n")
+                    print("\n", terminator: "")
                     ln.addHistory(input)
                     return String(describing: rv!)
                 }

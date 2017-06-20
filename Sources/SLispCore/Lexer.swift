@@ -27,7 +27,7 @@
 import Foundation
 
 
-enum TokenType: Equatable {
+public enum TokenType: Equatable {
     case lParen
     case rParen
     case symbol(String)
@@ -36,7 +36,7 @@ enum TokenType: Equatable {
     case string(String)
 }
 
-func ==(a: TokenType, b: TokenType) -> Bool {
+public func ==(a: TokenType, b: TokenType) -> Bool {
     switch (a, b) {
     case (.lParen, .lParen): return true
     case (.rParen, .rParen): return true
