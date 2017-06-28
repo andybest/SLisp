@@ -124,6 +124,19 @@ extension Environment {
 
         throw LispError.general(msg: "Value \(name) not found.")
     }
+    
+    func setValue(name: String, value: LispType, inNamespace namespace: Namespace) throws -> LispType {
+        
+        // Search binding from the top for target value
+        for var bindings in namespace.bindingStack.reversed() {
+            if bindings[name] != nil {
+                bindings[name] = value
+                return .string(name)
+            }
+        }
+        
+        throw LispError.runtime(msg: "Unable to set value \(name) as it can't be found")
+    }
 
     func pushLocal(toNamespace namespace: Namespace) {
         namespace.bindingStack.append([:])

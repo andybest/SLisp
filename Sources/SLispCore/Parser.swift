@@ -266,9 +266,13 @@ public class Environment {
                             fArgs = Array(args.dropFirst())
                         }
                     } else if case .list(_) = args[0] {
-                        if case let .string(ds) = try eval(args[0]) {
-                            docString = ds
-                            fArgs = Array(args.dropFirst())
+                        do {
+                            if case let .string(ds) = try eval(args[0]) {
+                                docString = ds
+                                fArgs = Array(args.dropFirst())
+                            }
+                        } catch {
+                            // Don't do anything, since this doesn't return a string.
                         }
                     }
                     

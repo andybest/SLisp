@@ -30,26 +30,16 @@
             "defn"
             "(name [docstring] args body)"
             "Defines a function with the given name. Accepts an optional docstring.")
-    (fName & body)
-        (let (docstring (if (string? (first body)) (first body) nil)
-              args (if (nil? docstring) (first body) (at body 1))
-              fBody (if (nil? docstring) (rest body) (rest (rest body))))
-            (if (nil? docstring)
-                `(def ~fName ~(concat `(function ~args) fBody))
-                `(def ~fName ~(concat `(function ~docstring ~args) fBody))))))
-                
-(defn map (f coll)
-  (let (mapInt 
-    (function (f processed remaining)
-      (if (|| (empty? remaining) (nil? remaining))
-        processed
-        (mapInt f (concat processed (f (first remaining))) (rest remaining)))))
-      (mapInt f '() coll)))
+        (fName & body)
+            `(def ~fName ~(concat '(function) body))))
 
-(defn zip (l1 l2)
-  (concat (map 
-    (function (i) (list (at l1 i) (at l2 i)))
-    (math/range 0 (count l1)))))
+                
+(defn map "Test" (f coll)
+    (let (mapInt #((f1 processed remaining)
+                        (if (|| (empty? remaining) (nil? remaining))
+                            processed
+                            (mapInt f1 (concat processed (f1 (first remaining))) (rest remaining)))))
+        (mapInt f '() coll)))
 
 (defmacro defstruct
   (function "defstruct"
