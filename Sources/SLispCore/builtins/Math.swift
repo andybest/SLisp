@@ -46,7 +46,7 @@ class MathBuiltins : Builtins {
     override func loadImplementation() {
         // Load core library implemented in SLisp
         let path = "./Lib/math.sl"
-        if env.evalFile(path: path, toNamespace: env.createOrGetNamespace(self.namespaceName())) == nil {
+        if env.evalFile(path: path) == nil {
             print("Math library implementation could not be loaded!")
         }
     }
@@ -69,55 +69,6 @@ class MathBuiltins : Builtins {
             let rv: [LispType] = (min..<max).map { LispType.number(.integer($0)) }
             return .list(rv)
         }
-        
-        /*addBuiltin("sqrt") { args, env throws in
-            return try self.doSingleArgArithmeticOperation(args, name: "sqrt", body: sqrt)
-        }
-        
-        addBuiltin("random") { args, env throws in
-            try self.checkArgCount(funcName: "random", args: args, expectedNumArgs: 2)
-            
-            let evaluated = try args.map { try env.eval($0) }
-            
-            guard case let .float(lowerBound) = evaluated[0], case let .float(upperBound) = evaluated[1] else {
-                throw LispError.general(msg: "'random' requires two float arguments")
-            }
-            
-            let r = (Double(arc4random()) / Double(UInt32.max) * (upperBound - lowerBound)) + lowerBound
-            
-            return .float(r)
-        }
-
-        addBuiltin("sin") { args, env throws in
-            return try self.doSingleArgArithmeticOperation(args, name: "sin", body: sin)
-        }
-
-        addBuiltin("cos") { args, env throws in
-            return try self.doSingleArgArithmeticOperation(args, name: "sin", body: cos)
-        }
-
-        addBuiltin("tan") { args, env throws in
-            return try self.doSingleArgArithmeticOperation(args, name: "tan", body: tan)
-        }
-
-        addBuiltin("isNaN?") { args, env throws in
-            return try self.doSingleArgBooleanArithmeticOperation(args, name: "isNaN?") {
-                return $0.isNaN
-            }
-        }
-
-        addBuiltin("isInfinite?") { args, env throws in
-            return try self.doSingleArgBooleanArithmeticOperation(args, name: "isInfinite?") {
-                return $0.isInfinite
-            }
-        }
-
-        addBuiltin("negate") { args, env throws in
-            return try self.doSingleArgArithmeticOperation(args, name: "negate") {
-                return -$0
-            }
-        }*/
-
         
         return builtins
     }

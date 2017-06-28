@@ -58,19 +58,11 @@ public class Environment {
             importNamespace(ns, toNamespace: currentNamespace)
         }
         
-        coreBuiltins.forEach {
-            let ns = createOrGetNamespace($0.namespaceName())
-            do {
-                let oldNS = currentNamespace
-                try changeNamespace(ns.name)
-                $0.loadImplementation()
-                try changeNamespace(oldNS.name)
-            } catch {
-                print("Error importing builtins: \(error)")
-            }
-        }
-        
         core.loadAutoincludeImplementation(toNamespace: core.namespaceName())
+        
+        coreBuiltins.forEach {
+            $0.loadImplementation()
+        }
         
         /* Other builtins */
         let builtins = [MathBuiltins(env: self)]
@@ -89,15 +81,7 @@ public class Environment {
         }
         
         builtins.forEach {
-            let ns = createOrGetNamespace($0.namespaceName())
-            do {
-                let oldNS = currentNamespace
-                try changeNamespace(ns.name)
-                $0.loadImplementation()
-                try changeNamespace(oldNS.name)
-            } catch {
-                print("Error importing builtins: \(error)")
-            }
+            $0.loadImplementation()
         }
     }
     
@@ -195,6 +179,19 @@ public class Environment {
                     
                     // TCO
                     mutableForm = body[body.count - 1]
+                    
+                // MARK: set!
+                case .symbol("set!"):
+                    if args.count != 2 {
+                        throw LispError.runtime(msg: "'set!' requires 2 arguments")
+                    }
+                    
+                    guard case let .symbol(name) = args[0] else {
+                        throw LispError.runtime(msg: "'set!' requires the variable name to be a symbol")
+                    }
+                    
+                    _ = try setValue(name: name, value: self.eval(args[1]), inNamespace: currentNamespace)
+                    return .nil
                     
                 // MARK: apply
                 case .symbol("apply"):
@@ -533,6 +530,37 @@ public class Environment {
         do {
             let oldNS = currentNamespace
             try changeNamespace(namespace.name)
+            defer {
+                do {
+                    try changeNamespace(oldNS.name)
+                } catch {
+                    print(error)
+                }
+            }
+            
+            let readForm = "(read-string (str \"(do \" (slurp \"\(path)\") \")\"))"
+            let form     = try Reader.read(readForm)
+            let rv       = try eval(form)
+            return try eval(rv)
+        } catch let LispError.runtime(msg:message) {
+            print("Runtime Error: \(message)")
+        } catch let LispError.general(msg:message) {
+            print("Error: \(message)")
+        } catch let LispError.lexer(msg:message) {
+            print("Syntax Error: \(message)")
+        } catch LispError.readerNotEOF {
+            print("Syntax Error: expected ')'")
+        }catch {
+            print(String(describing: error))
+        }
+        
+        print("evalFile: File could not be loaded!")
+        return nil
+    }
+    
+    func evalFile(path: String) -> LispType? {
+        do {
+            let oldNS = currentNamespace
             defer {
                 do {
                     try changeNamespace(oldNS.name)

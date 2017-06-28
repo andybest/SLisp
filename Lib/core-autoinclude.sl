@@ -22,67 +22,10 @@
 
 ; This file will be included by default into any generated namespace
 
-
-; Macro for shorthand function declarations
-(defmacro defn
-    (function
-        (str
-            "defn"
-            "(name [docstring] args body)"
-            "Defines a function with the given name. Accepts an optional docstring.")
-        (fName & body)
-            `(def ~fName ~(concat '(function) body))))
-
-                
-(defn map "Test" (f coll)
-    (let (mapInt #((f1 processed remaining)
-                        (if (|| (empty? remaining) (nil? remaining))
-                            processed
-                            (mapInt f1 (concat processed (f1 (first remaining))) (rest remaining)))))
-        (mapInt f '() coll)))
-
-(defmacro defstruct
-  (function "defstruct"
-    (name slots)
-    `(do
-        ; make-[structname]
-        (defn ~(symbol (str "make-" name)) ~slots
-          ~(cons 'list (concat (map #((slot) (list (keyword slot) slot)) slots))))
-        
-        ; [structname]-[slotname]
-        ~(concat 'do (map 
-          (function (slotnum)
-            (let (slotname (at slots slotnum))
-               `((defn ~(symbol (str name "-" slotname)) (struct)
-                   (at struct ~(+ (* slotnum 2) 1))))))
-          (math/range 0 (count slots)))))))
-
-
-;; Collection operations
-(defn second
-    "second
-    (x)
-    Gets the second item from the list x"
-    (l)
-    (at l 1))
-
-(defn reverse
-    "reverse
-    (x)
-    Reverses the items in list x"
-    (l)
-    (let (x (count l)
-         result '())
-        (while (> 0 x)
-            (cons result (at l x))
-            (set! x (+ x 1))
-        result)))
-
 (defmacro ns
-    (function
-        (str
-            "ns"
-            "(name)"
-            "change to namespace")
+    (function "ns\n\t(name)\nchange to namespace"
         (ns-name)
-        `(in-ns ~ns-name)))
+            `(in-ns (quote ~ns-name))))
+
+; Import the rest of the core library
+(refer 'core)

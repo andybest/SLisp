@@ -39,7 +39,7 @@ class Core: Builtins {
     override func loadImplementation() {
         // Load core library implemented in SLisp
         let path = "./Lib/core.sl"
-        if env.evalFile(path: path, toNamespace: env.createOrGetNamespace(self.namespaceName())) == nil {
+        if env.evalFile(path: path) == nil {
             print("Core library implementation could not be loaded!")
         }
     }
@@ -291,6 +291,29 @@ class Core: Builtins {
             }
             
             try env.changeNamespace(env.createOrGetNamespace(ns).name)
+            return .nil
+        }
+        
+        
+        // MARK: refer
+        addBuiltin("refer", docstring: """
+        refer
+        (namespace)
+        Imports all symbols in namespace into the current namespace
+        """) { args, env throws in
+            if args.count != 1 {
+                throw LispError.runtime(msg: "'refer' expects one argument.")
+            }
+            
+            guard case let .symbol(ns) = args[0] else {
+                throw LispError.runtime(msg: "'refer' expects a symbol as an argument")
+            }
+            
+            guard let namespace = env.namespaces[ns] else {
+                throw LispError.runtime(msg: "Unable to find namespace '\(ns)'")
+            }
+            
+            env.importNamespace(namespace, toNamespace: env.currentNamespace)
             return .nil
         }
     }

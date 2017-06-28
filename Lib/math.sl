@@ -1,3 +1,5 @@
+(ns math)
+
 (def *pi* 3.14159265358979323846)
 
 (def floor (function (x)

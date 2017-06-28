@@ -126,11 +126,11 @@ extension Environment {
     }
     
     func setValue(name: String, value: LispType, inNamespace namespace: Namespace) throws -> LispType {
-        
         // Search binding from the top for target value
-        for var bindings in namespace.bindingStack.reversed() {
-            if bindings[name] != nil {
-                bindings[name] = value
+        
+        for i in (0..<namespace.bindingStack.count).reversed() {
+            if namespace.bindingStack[i][name] != nil {
+                namespace.bindingStack[i][name] = value
                 return .string(name)
             }
         }
