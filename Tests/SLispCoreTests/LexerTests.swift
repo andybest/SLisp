@@ -169,6 +169,34 @@ class LexerTests: XCTestCase {
         XCTAssertTrue(invalidStringThrow, "Should throw an exception")
     }
     
+    func testStringMatcherSupportsNewLines() {
+        let stringSource = "\"String on\\ntwo lines\""
+        let stringStream = StringStream(source: stringSource)
+        
+        XCTAssertTrue(StringMatcher.isMatch(stringStream))
+        
+        do {
+            let result = try StringMatcher.getToken(stringStream)
+            XCTAssertEqual(result, TokenType.string("String on\ntwo lines"))
+        } catch {
+            XCTFail("Should not throw an error")
+        }
+    }
+    
+    func testStringMatcherSupportsTabs() {
+        let stringSource = "\"String with \\ttab\""
+        let stringStream = StringStream(source: stringSource)
+        
+        XCTAssertTrue(StringMatcher.isMatch(stringStream))
+        
+        do {
+            let result = try StringMatcher.getToken(stringStream)
+            XCTAssertEqual(result, TokenType.string("String with \ttab"))
+        } catch {
+            XCTFail("Should not throw an error")
+        }
+    }
+    
     func testNumberMatcher() {
         // Integer
         let intSource = "12345"

@@ -158,8 +158,34 @@ class StringMatcher: TokenMatcher {
             var tok = ""
             
             while stream.currentCharacter != nil && !isMatch(stream) {
-                tok += String(stream.currentCharacter!)
-                stream.advanceCharacter()
+                let char = stream.currentCharacter!
+                
+                // Check for escapes
+                if char == "\\" {
+                    stream.advanceCharacter()
+                    
+                    guard let escapeChar = stream.currentCharacter else {
+                        throw LispError.lexer(msg: "Error in string: expected escape character")
+                    }
+                    
+                    let escapeResult: String
+                    
+                    switch escapeChar {
+                    case "n":
+                        escapeResult = "\n"
+                    case "t":
+                        escapeResult = "\t"
+                    default:
+                        throw LispError.lexer(msg: "Unknown escape character in string: \\\(escapeChar)")
+                    }
+                    
+                    tok += escapeResult
+                    stream.advanceCharacter()
+                    
+                } else {
+                    tok += String(char)
+                    stream.advanceCharacter()
+                }
             }
             
             if stream.currentCharacter != "\"" {

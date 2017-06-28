@@ -50,10 +50,10 @@ class ReaderTests: XCTestCase {
         let expected: LispType = .list([
             .list([
                 .symbol("data"), .string("quoted data"),
-                .integer(123), .float(4.5)]),
+                .number(.integer(123)), .number(.float(4.5))]),
                 .list([
                     .symbol("data"), .list([
-                        .symbol("!@#"), .list([ .float(4.5) ]),
+                        .symbol("!@#"), .list([ .number(.float(4.5)) ]),
                         .string("(more"), .string("data)")
                         ])
                     ]),
