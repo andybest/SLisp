@@ -26,9 +26,10 @@
 ; Macro for shorthand function declarations
 (defmacro defn
     (function
-        "defn
-(name [docstring] args body)
-    Defines a function with the given name. Accepts an optional docstring."
+        (str
+            "defn"
+            "(name [docstring] args body)"
+            "Defines a function with the given name. Accepts an optional docstring.")
     (fName & body)
         (let (docstring (if (string? (first body)) (first body) nil)
               args (if (nil? docstring) (first body) (at body 1))
@@ -64,6 +65,34 @@
             (let (slotname (at slots slotnum))
                `((defn ~(symbol (str name "-" slotname)) (struct)
                    (at struct ~(+ (* slotnum 2) 1))))))
-          (math/range 0 (count slots))))
-        
-        )))
+          (math/range 0 (count slots)))))))
+
+
+;; Collection operations
+(defn second
+    "second
+    (x)
+    Gets the second item from the list x"
+    (l)
+    (at l 1))
+
+(defn reverse
+    "reverse
+    (x)
+    Reverses the items in list x"
+    (l)
+    (let (x (count l)
+         result '())
+        (while (> 0 x)
+            (cons result (at l x))
+            (set! x (+ x 1))
+        result)))
+
+(defmacro ns
+    (function
+        (str
+            "ns"
+            "(name)"
+            "change to namespace")
+        (ns-name)
+        `(in-ns ~ns-name)))

@@ -230,7 +230,7 @@ public class Environment {
                 // MARK: do
                 case .symbol("do"):
                     if args.count < 1 {
-                        throw LispError.runtime(msg: "'do' requires at least 1 argument")
+                        return .nil
                     }
                     
                     for (index, doForm) in args.enumerated() {
@@ -256,11 +256,17 @@ public class Environment {
                     
                     var fArgs = args
                     
+                    // See if the first argument is a String. If it is, then it is a docstring.
                     if case let .string(ds) = args[0] {
                         docString = ds
                         fArgs = Array(args.dropFirst())
                     } else if case let .symbol(argSymb) = args[0] {
                         if case let .string(ds) = try getValue(argSymb, fromNamespace: currentNamespace) {
+                            docString = ds
+                            fArgs = Array(args.dropFirst())
+                        }
+                    } else if case .list(_) = args[0] {
+                        if case let .string(ds) = try eval(args[0]) {
                             docString = ds
                             fArgs = Array(args.dropFirst())
                         }
