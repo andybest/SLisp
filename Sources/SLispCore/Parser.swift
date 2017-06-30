@@ -65,7 +65,8 @@ public class Environment {
         }
         
         /* Other builtins */
-        let builtins = [MathBuiltins(env: self)]
+        let builtins = [MathBuiltins(env: self),
+                        StringBuiltins(env: self)]
         
         try builtins.forEach {
             let ns = createOrGetNamespace($0.namespaceName())
