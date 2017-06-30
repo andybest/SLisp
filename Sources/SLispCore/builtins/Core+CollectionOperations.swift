@@ -92,9 +92,12 @@ extension Core {
             
             if case let .list(list) = args[0] {
                 return list.first ?? .nil
+            } else if case let .string(str) = args[0] {
+                let f = str.characters.first
+                return f != nil ? .string(String(f!)) : .nil
             }
             
-            throw LispError.general(msg: "'first' expects an argument that is a list")
+            throw LispError.general(msg: "'first' expects an argument that is a list or a string")
         }
         
         
@@ -108,9 +111,11 @@ extension Core {
             
             if case let .list(list) = args[0] {
                 return .list(Array(list.dropFirst(1)))
+            } else if case let .string(str) = args[0] {
+                let r = str.characters.dropFirst()
+                return .string(String(r))
             }
-            
-            throw LispError.general(msg: "'rest' expects an argument that is a list")
+            throw LispError.general(msg: "'rest' expects an argument that is a list or a string")
         }
         
         
@@ -124,9 +129,12 @@ extension Core {
             
             if case let .list(list) = args[0] {
                 return list.last ?? .nil
+            } else if case let .string(str) = args[0] {
+                let l = str.characters.last
+                return l != nil ? .string(String(l!)) : .nil
             }
             
-            throw LispError.general(msg: "'last' expects an argument that is a list")
+            throw LispError.general(msg: "'last' expects an argument that is a list or a string")
         }
         
         
@@ -140,19 +148,26 @@ extension Core {
                 throw LispError.runtime(msg: "'at' requires 2 arguments.")
             }
             
-            guard case let .list(list) = args[0] else {
-                throw LispError.runtime(msg: "'at' requires the first argument to be a list.")
-            }
-            
             guard case let .number(num) = args[1], case let .integer(index) = num else {
                 throw LispError.runtime(msg: "'at' requires the second argument to be an integer.")
             }
             
-            if index >= list.count || index < 0 {
-                throw LispError.runtime(msg: "Index out of range: \(index)")
-            }
+            switch args[0] {
+            case .list(let list):
+                if index >= list.count || index < 0 {
+                    throw LispError.runtime(msg: "Index out of range: \(index)")
+                }
+                return list[index]
+                
+            case .string(let str):
+                if index >= str.characters.count || index < 0 {
+                    throw LispError.runtime(msg: "Index out of range: \(index)")
+                }
+                return .string(String(str.characters[str.index(str.startIndex, offsetBy: index)]))
             
-            return list[index]
+            default:
+                throw LispError.runtime(msg: "'at' requires the first argument to be a list or a string.")
+            }
         }
         
         

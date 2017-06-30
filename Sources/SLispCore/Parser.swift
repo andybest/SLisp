@@ -306,8 +306,8 @@ public class Environment {
                     
                 // MARK: if
                 case .symbol("if"):
-                    if args.count != 3 {
-                        throw LispError.runtime(msg: "'if' expects 3 arguments.")
+                    if args.count < 2 {
+                        throw LispError.runtime(msg: "'if' expects 2 or 3 arguments.")
                     }
                     
                     guard case let .boolean(condition) = try eval(args[0]) else {
@@ -316,8 +316,10 @@ public class Environment {
                     
                     if condition {
                         mutableForm = args[1]
-                    } else {
+                    } else if args.count > 2 {
                         mutableForm = args[2]
+                    } else {
+                        return .nil
                     }
                     
                 // MARK: while

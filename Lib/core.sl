@@ -4,14 +4,18 @@
 (defmacro defn
     (function
         (str
-            "defn"
-            "(name [docstring] args body)"
+            "defn\n"
+            "(name [docstring] args body)\n"
             "Defines a function with the given name. Accepts an optional docstring.")
         (fName & body)
             `(def ~fName ~(concat '(function) body))))
 
                 
-(defn map "Test" (f coll)
+(defn map 
+    (str "map\n"
+        "(f coll)\n"
+        "Returns a collection made up of applying function f to collection coll")
+    (f coll)
     (let (mapInt #((f1 processed remaining)
                         (if (|| (empty? remaining) (nil? remaining))
                             processed
@@ -22,6 +26,19 @@
     (if (|| (nil? l) (nil? (first l)))
         val
         (reduce f (f val (first l)) (rest l))))
+
+(defn filter
+    (str "filter"
+        "(f coll)"
+        "Filters collection with function f")
+    (f coll)
+    (let (processed '() collidx 0)
+        (while (< collidx (count coll))
+            (let (item (at coll collidx))
+                (if (f item)
+                    (set! processed (concat processed item))))
+            (set! collidx (+ collidx 1)))
+        processed))
 
 (defmacro defstruct
   (function "defstruct"
