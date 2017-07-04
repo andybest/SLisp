@@ -30,11 +30,11 @@ import LineNoise
 
 public class Repl {
 
-    var environment: Environment
+    var parser: Parser
     let ln: LineNoise
 
     public init?() throws {
-        environment = try Environment()!
+        parser = try Parser()!
         ln = LineNoise()
     }
 
@@ -47,7 +47,7 @@ public class Repl {
     }
 
     func getInput() throws -> String? {
-        var prompt = "\(environment.currentNamespaceName)> "
+        var prompt = "\(parser.currentNamespaceName)> "
 
         var input: String = ""
 
@@ -65,7 +65,7 @@ public class Repl {
                     }
                     
                     let form = try Reader.read(input)
-                    rv = try environment.eval(form)
+                    rv = try parser.eval(form, environment: Environment(ns: parser.currentNamespace))
 
                 } catch let LispError.runtime(msg:message) {
                     return "Runtime Error: \(message)"

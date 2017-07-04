@@ -119,14 +119,17 @@ extension Parser {
         throw LispError.general(msg: "Value \(name) not found.")
     }
     
-    func setValue(name: String, value: LispType, inNamespace namespace: Namespace) throws -> LispType {
+    func setValue(name: String, value: LispType, withEnvironment environment: Environment) throws -> LispType {
         // Search binding from the top for target value
         
-        for i in (0..<namespace.bindingStack.count).reversed() {
-            if namespace.bindingStack[i][name] != nil {
-                namespace.bindingStack[i][name] = value
+        var currentEnv: Environment? = environment
+        while currentEnv != nil {
+            if currentEnv!.localBindings[name] != nil {
+                currentEnv!.localBindings[name] = value
                 return .string(name)
             }
+            
+            currentEnv = currentEnv?.parent
         }
         
         throw LispError.runtime(msg: "Unable to set value \(name) as it can't be found")

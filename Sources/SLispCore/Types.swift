@@ -26,7 +26,7 @@
 
 import Foundation
 
-public typealias BuiltinBody = ([LispType], Environment) throws -> LispType
+public typealias BuiltinBody = ([LispType], Parser) throws -> LispType
 
 public indirect enum FunctionBody {
     case native(body: BuiltinBody)
