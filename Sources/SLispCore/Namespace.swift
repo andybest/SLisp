@@ -46,17 +46,7 @@ public class Namespace: Hashable {
 
 
 // Namespaces
-extension Environment {
-
-    func createDefaultNamespace() {
-        let ns = Namespace(name: "user")
-        addNamespace(ns)
-        do {
-            try changeNamespace(ns.name)
-        } catch {
-            print("Error when creating default namespace")
-        }
-    }
+extension Parser {
 
     func addNamespace(_ ns: Namespace) {
         namespaces[ns.name] = ns
@@ -70,7 +60,7 @@ extension Environment {
         }
     }
 
-    func getValue(_ name: String, fromNamespace namespace: Namespace) throws -> LispType {
+    func getValue(_ name: String, withEnvironment env: Environment) throws -> LispType {
         var targetNamespace: String?
         var binding:   String
 
@@ -94,7 +84,7 @@ extension Environment {
 
         if targetNamespace != nil {
             // Search for a namespace ref, or namespace with the given name
-            if let ns = namespace.namespaceRefs[targetNamespace!] {
+            if let ns = env.namespaceRefs[targetNamespace!] {
                 if let val = ns.rootBindings[binding] {
                     return val
                 }
@@ -104,18 +94,22 @@ extension Environment {
                 }
             }
         } else {
-            // Search binding stack
-            for index in stride(from: namespace.bindingStack.count - 1, through: 0, by: -1) {
-                if let val = namespace.bindingStack[index][name] {
+            // Search environment
+            
+            var currentEnv: Environment? = env
+            while currentEnv != nil {
+                if let val = currentEnv!.localBindings[name] {
                     return val
                 }
+                
+                currentEnv = currentEnv?.parent
             }
 
-            if let val = namespace.rootBindings[name] {
+            if let val = env.namespace.rootBindings[name] {
                 return val
             }
 
-            for ns in namespace.namespaceImports {
+            for ns in env.namespaceImports {
                 if let val = ns.rootBindings[name] {
                     return val
                 }
@@ -136,28 +130,6 @@ extension Environment {
         }
         
         throw LispError.runtime(msg: "Unable to set value \(name) as it can't be found")
-    }
-
-    func pushLocal(toNamespace namespace: Namespace) {
-        namespace.bindingStack.append([:])
-    }
-
-    func popLocal(fromNamespace namespace: Namespace) -> [String: LispType] {
-        return namespace.bindingStack.popLast() ?? [:]
-    }
-
-    func bindLocal(name: LispType, value: LispType, toNamespace namespace: Namespace) throws -> LispType {
-        guard case let .symbol(bindingName) = name else {
-            throw LispError.runtime(msg: "Values can only be bound to symbols. Got \(String(describing: name))")
-        }
-
-        if namespace.bindingStack.count > 0 {
-            namespace.bindingStack[namespace.bindingStack.count - 1][bindingName] = value
-        } else {
-            namespace.rootBindings[bindingName] = value
-        }
-
-        return .symbol("\(namespace.name)/\(bindingName)")
     }
 
     func bindGlobal(name: LispType, value: LispType, toNamespace namespace: Namespace) throws -> LispType {

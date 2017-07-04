@@ -27,6 +27,37 @@
 import Foundation
 
 public class Environment {
+    var namespace: Namespace
+    var localBindings: [String: LispType]
+    var namespaceRefs: [String: Namespace]
+    var namespaceImports: [Namespace]
+    weak var parent: Environment?
+    
+    init(ns: Namespace) {
+        namespace = ns
+        localBindings = [String: LispType]()
+        namespaceRefs = [String: Namespace]()
+        namespaceImports = [Namespace]()
+    }
+    
+    func bindLocal(name: LispType, value: LispType) throws -> LispType {
+        guard case let .symbol(bindingName) = name else {
+            throw LispError.runtime(msg: "Values can only be bound to symbols. Got \(String(describing: name))")
+        }
+        
+        localBindings[bindingName] = value
+        
+        return .symbol("bindingName")
+    }
+    
+    func createChild() -> Environment {
+        let env = Environment(ns: namespace)
+        env.parent = self
+        return env
+    }
+}
+
+public class Parser {
     public var currentNamespaceName: String   = ""
     var namespaces                     = [String: Namespace]()
     let coreImports:          [String] = ["core"]
@@ -36,7 +67,11 @@ public class Environment {
     }
     
     public init?() throws {
-        createDefaultNamespace()
+        // Create default user ns
+        let userNs = Namespace(name: "user")
+        addNamespace(userNs)
+        
+        rootEnvironment = Environment(ns: userNs)
         
         let core = Core(env: self)
         /* Core builtins */
@@ -86,7 +121,7 @@ public class Environment {
         }
     }
     
-    func eval_form(_ form: LispType) throws -> LispType {
+    func eval_form(_ form: LispType, environment: Environment) throws -> LispType {
         if try is_macro(form) { return form }
         switch form {
         case .symbol(let symbol):
@@ -98,28 +133,22 @@ public class Environment {
             case "nil":
                 return .nil
             default:
-                return try getValue(symbol, fromNamespace: currentNamespace)
+                return try getValue(symbol, withEnvironment: environment)
             }
         case .list(let list):
             return .list(try list.map {
-                try self.eval($0)
+                try self.eval($0, environment: environment)
                 })
         default:
             return form
         }
     }
     
-    public func eval(_ form: LispType) throws -> LispType {
+    public func eval(_ form: LispType, environment e: Environment) throws -> LispType {
+        var envs = [e]
         var tco: Bool   = false
         var mutableForm = form
-        var env_push    = 0
-        
-        defer {
-            while env_push > 0 {
-                _ = popLocal(fromNamespace: currentNamespace)
-                env_push -= 1
-            }
-        }
+        var env_push = 0
         
         while true {
             switch mutableForm {
@@ -128,7 +157,7 @@ public class Environment {
                     return form
                 }
             default:
-                return try eval_form(mutableForm)
+                return try eval_form(mutableForm, environment: environment)
             }
             
             mutableForm = try macroExpand(mutableForm)
@@ -141,45 +170,12 @@ public class Environment {
                 switch list[0] {
                 // MARK: def
                 case .symbol("def"):
-                    if args.count != 2 {
-                        throw LispError.runtime(msg: "'def' requires 2 arguments")
-                    }
-                    return try bindGlobal(name: list[1], value: try eval(list[2]), toNamespace: currentNamespace)
+                    return try parseDef(args: args, environment: envs.last!)
                     
                 // MARK: let
                 case .symbol("let"):
-                    if args.count < 2 {
-                        throw LispError.runtime(msg: "'let' requires at least 2 arguments")
-                    }
                     
-                    guard case let .list(bindings) = args[0] else {
-                        throw LispError.general(msg: "'let' requires the first argument to be a list of bindings")
-                    }
-                    
-                    if bindings.count % 2 != 0 {
-                        throw LispError.general(msg: "'let' requires an even number of items in the binding list")
-                    }
-                    
-                    pushLocal(toNamespace: currentNamespace)
-                    env_push += 1
-                    
-                    try stride(from: 0, to: bindings.count, by: 2).forEach {
-                        _ = try bindLocal(name: bindings[$0], value: self.eval(bindings[$0 + 1]), toNamespace: currentNamespace)
-                    }
-                    
-                    let body: [LispType] = Array(args.dropFirst())
-                    
-                    for (index, form) in body.enumerated() {
-                        if index == body.count - 1 {
-                            mutableForm = form
-                            break
-                        }
-                        
-                        _ = try eval(form)
-                    }
-                    
-                    // TCO
-                    mutableForm = body[body.count - 1]
+                    mutableForm = try parseLet(args: args, environment: envs.last!)
                     
                 // MARK: set!
                 case .symbol("set!"):
@@ -191,7 +187,7 @@ public class Environment {
                         throw LispError.runtime(msg: "'set!' requires the variable name to be a symbol")
                     }
                     
-                    _ = try setValue(name: name, value: self.eval(args[1]), inNamespace: currentNamespace)
+                    _ = try setValue(name: name, value: self.eval(args[1]), inEnvironment: environment)
                     return .nil
                     
                 // MARK: apply
@@ -200,11 +196,11 @@ public class Environment {
                         throw LispError.runtime(msg: "'apply' requires 2 arguments")
                     }
                     
-                    guard case .function(_) = try eval(args[0]) else {
+                    guard case .function(_) = try eval(args[0], environment: environment) else {
                         throw LispError.runtime(msg: "'apply' requires the first argument to be a function")
                     }
                     
-                    guard case let .list(applyArgs) = try eval(args[1]) else {
+                    guard case let .list(applyArgs) = try eval(args[1], environment: environment) else {
                         throw LispError.runtime(msg: "'apply' requires the second argument to be a list")
                     }
                     
@@ -237,7 +233,7 @@ public class Environment {
                             break
                         }
                         
-                        _ = try eval(doForm)
+                        _ = try eval(doForm, environment: environment)
                     }
                     
                     // TCO
@@ -245,65 +241,7 @@ public class Environment {
                     
                 // MARK: function
                 case .symbol("function"):
-                    if args.count < 2 {
-                        throw LispError.general(msg: "'function' expects a body")
-                    }
-                    
-                    let argList: [LispType]
-                    var docString: String?
-                    
-                    var fArgs = args
-                    
-                    // See if the first argument is a String. If it is, then it is a docstring.
-                    if case let .string(ds) = args[0] {
-                        docString = ds
-                        fArgs = Array(args.dropFirst())
-                    } else if case let .symbol(argSymb) = args[0] {
-                        if case let .string(ds) = try getValue(argSymb, fromNamespace: currentNamespace) {
-                            docString = ds
-                            fArgs = Array(args.dropFirst())
-                        }
-                    } else if case .list(_) = args[0] {
-                        do {
-                            if case let .string(ds) = try eval(args[0]) {
-                                docString = ds
-                                fArgs = Array(args.dropFirst())
-                            }
-                        } catch {
-                            // Don't do anything, since this doesn't return a string.
-                        }
-                    }
-                    
-                    if case let .symbol(argSymb) = fArgs[0] {
-                        guard case let .list(argListFromSym) = try getValue(argSymb, fromNamespace: currentNamespace) else {
-                            throw LispError.general(msg: "function arguments must be a list")
-                        }
-                        argList = argListFromSym
-                    } else {
-                        guard case let .list(argListFromList) = fArgs[0] else {
-                            throw LispError.general(msg: "function arguments must be a list")
-                        }
-                        argList = argListFromList
-                    }
-                    
-                    let argNames: [String] = try argList.map {
-                        guard case let .symbol(argName) = $0 else {
-                            throw LispError.general(msg: "function arguments must be symbols")
-                        }
-                        return argName
-                    }
-                    
-                    if (argNames.filter { $0 == "&" }).count > 1 {
-                        throw LispError.runtime(msg: "Function arguments must only include one '&'")
-                    }
-                    
-                    let andIdx = argNames.index(of: "&")
-                    if andIdx != nil && andIdx != argNames.endIndex.advanced(by: -2) {
-                        throw LispError.runtime(msg: "Functions require the '&' to be the second to last argument")
-                    }
-                    
-                    let body = FunctionBody.lisp(argnames: argNames, body: Array(fArgs.dropFirst(1)))
-                    return LispType.function(body, docstring: docString, isMacro: false)
+                    return try parseFunction(args: args, environment: environment)
                     
                 // MARK: if
                 case .symbol("if"):
@@ -311,7 +249,7 @@ public class Environment {
                         throw LispError.runtime(msg: "'if' expects 2 or 3 arguments.")
                     }
                     
-                    guard case let .boolean(condition) = try eval(args[0]) else {
+                    guard case let .boolean(condition) = try eval(args[0], environment: environment) else {
                         throw LispError.general(msg: "'if' expects the first argument to be a boolean condition")
                     }
                     
@@ -330,7 +268,7 @@ public class Environment {
                     }
                     
                     func getCondition() throws -> Bool {
-                        if case let .boolean(b) = try eval(args[0]) {
+                        if case let .boolean(b) = try eval(args[0], environment: environment) {
                             return b
                         }
                         throw LispError.runtime(msg: "'while' expects the first argument to be a boolean.")
@@ -342,7 +280,7 @@ public class Environment {
                         let body = Array(args.dropFirst())
                         
                         for form in body {
-                            rv = try eval(form)
+                            rv = try eval(form, environment: environment)
                         }
                         
                         condition = try getCondition()
@@ -357,7 +295,7 @@ public class Environment {
                         throw LispError.runtime(msg: "'defmacro' requires 2 arguments")
                     }
                     
-                    guard case let .function(body, docstring: docstring, _) = try eval(list[2]) else {
+                    guard case let .function(body, docstring: docstring, _) = try eval(list[2], environment: environment) else {
                         throw LispError.runtime(msg: "'defmacro' requires the 2nd argument to be a function")
                     }
                     
@@ -370,9 +308,11 @@ public class Environment {
                     }
                     return try macroExpand(args[0])
                 default:
-                    switch try eval_form(macroExpand(mutableForm)) {
+                    switch try eval_form(macroExpand(mutableForm), environment: environment) {
                     case .list(let lst):
                         switch lst[0] {
+                            
+                        // MARK: Eval Function
                         case .function(let body, _, isMacro: _):
                             switch body {
                             case .native(body:let nativeBody):
@@ -422,6 +362,107 @@ public class Environment {
                 throw LispError.runtime(msg: "Cannot evaluate form.")
             }
         } // while
+    }
+    
+    func parseDef(args: [LispType], environment: Environment) throws -> LispType {
+        if args.count != 2 {
+            throw LispError.runtime(msg: "'def' requires 2 arguments")
+        }
+        
+        return try bindGlobal(name: args[0], value: try eval(args[1], environment: environment), toNamespace: currentNamespace)
+    }
+    
+    func parseLet(args: [LispType], environment: Environment) throws -> LispType {
+        if args.count < 2 {
+            throw LispError.runtime(msg: "'let' requires at least 2 arguments")
+        }
+        
+        guard case let .list(bindings) = args[0] else {
+            throw LispError.general(msg: "'let' requires the first argument to be a list of bindings")
+        }
+        
+        if bindings.count % 2 != 0 {
+            throw LispError.general(msg: "'let' requires an even number of items in the binding list")
+        }
+        
+        try stride(from: 0, to: bindings.count, by: 2).forEach {
+            _ = try environment.bindLocal(name: bindings[$0], value: self.eval(bindings[$0 + 1], environment: environment))
+        }
+        
+        let body: [LispType] = Array(args.dropFirst())
+        
+        for (index, form) in body.enumerated() {
+            if index == body.count - 1 {
+                break
+            }
+            
+            _ = try eval(form, environment: environment)
+        }
+        
+        // TCO
+        return body[body.count - 1]
+    }
+    
+    func parseFunction(args: [LispType], environment: Environment) throws -> LispType {
+        if args.count < 2 {
+            throw LispError.general(msg: "'function' expects a body")
+        }
+        
+        let argList: [LispType]
+        var docString: String?
+        
+        var fArgs = args
+        
+        // See if the first argument is a String. If it is, then it is a docstring.
+        if case let .string(ds) = args[0] {
+            docString = ds
+            fArgs = Array(args.dropFirst())
+        } else if case let .symbol(argSymb) = args[0] {
+            if case let .string(ds) = try getValue(argSymb, withEnvironment: environment) {
+                docString = ds
+                fArgs = Array(args.dropFirst())
+            }
+        } else if case .list(_) = args[0] {
+            do {
+                if case let .string(ds) = try eval(args[0], environment: environment) {
+                    docString = ds
+                    fArgs = Array(args.dropFirst())
+                }
+            } catch {
+                // Don't do anything, since this doesn't return a string.
+            }
+        }
+        
+        if case let .symbol(argSymb) = fArgs[0] {
+            guard case let .list(argListFromSym) = try getValue(argSymb, withEnvironment: environment) else {
+                throw LispError.general(msg: "function arguments must be a list")
+            }
+            argList = argListFromSym
+        } else {
+            guard case let .list(argListFromList) = fArgs[0] else {
+                throw LispError.general(msg: "function arguments must be a list")
+            }
+            argList = argListFromList
+        }
+        
+        let argNames: [String] = try argList.map {
+            guard case let .symbol(argName) = $0 else {
+                throw LispError.general(msg: "function arguments must be symbols")
+            }
+            return argName
+        }
+        
+        if (argNames.filter { $0 == "&" }).count > 1 {
+            throw LispError.runtime(msg: "Function arguments must only include one '&'")
+        }
+        
+        let andIdx = argNames.index(of: "&")
+        if andIdx != nil && andIdx != argNames.endIndex.advanced(by: -2) {
+            throw LispError.runtime(msg: "Functions require the '&' to be the second to last argument")
+        }
+        
+        let body = FunctionBody.lisp(argnames: argNames, body: Array(fArgs.dropFirst(1)))
+        return LispType.function(body, docstring: docString, isMacro: false)
     }
     
     func quasiquote(_ form: LispType) throws -> LispType {

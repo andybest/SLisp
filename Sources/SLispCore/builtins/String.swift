@@ -28,7 +28,7 @@ import Foundation
 
 class StringBuiltins : Builtins {
     
-    override init(env:Environment) {
+    override init(env:Parser) {
         super.init(env: env)
     }
     

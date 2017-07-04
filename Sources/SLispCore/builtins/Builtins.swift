@@ -41,10 +41,10 @@ struct BuiltinDef {
 }
 
 class Builtins {
-    let env: Environment
+    let env: Parser
     var builtins = [String : BuiltinDef]()
     
-    init(env:Environment) {
+    init(env: Parser) {
         self.env = env
     }
 
