@@ -26,6 +26,13 @@
 
 import Foundation
 
+typealias ArithmeticOperationBody = (LispNumber, LispNumber) -> LispNumber
+typealias SingleValueArithmeticOperationBody = (LispNumber) -> LispNumber
+typealias ArithmeticBooleanOperationBody = (LispNumber, LispNumber) -> Bool
+typealias SingleArithmeticBooleanOperationBody = (LispNumber) -> Bool
+typealias BooleanOperationBody = (Bool, Bool) -> Bool
+typealias SingleBooleanOperationBody = (Bool) -> Bool
+
 extension Dictionary {
     mutating func merge(_ dict: Dictionary<Key,Value>) {
         for (key, value) in dict {
@@ -41,22 +48,15 @@ struct BuiltinDef {
 }
 
 class Builtins {
-    let env: Parser
+    let parser: Parser
     var builtins = [String : BuiltinDef]()
     
-    init(env: Parser) {
-        self.env = env
+    init(parser: Parser) {
+        self.parser = parser
     }
 
     func namespaceName() -> String {
         return "user"
-    }
-
-    func loadImplementation() {
-    }
-
-    func bindToNamespace() {
-        
     }
     
     func addBuiltin(_ name: String, docstring: String?, _ body: @escaping BuiltinBody) {
@@ -77,12 +77,12 @@ class Builtins {
         }
     }
 
-    func initBuiltins() -> [String: BuiltinDef] {
+    func initBuiltins(environment: Environment) -> [String: BuiltinDef] {
         return [:]
     }
 
     // A generic function for arithmetic operations
-    func doArithmeticOperation(_ args: [LispType], body:ArithmeticOperationBody) throws -> LispType {
+    func doArithmeticOperation(_ args: [LispType], environment: Environment, body:ArithmeticOperationBody) throws -> LispType {
         if args.count < 2 {
             throw LispError.runtime(msg: "Operation expects at least 2 arguments")
         }
@@ -104,12 +104,12 @@ class Builtins {
         return .number(val)
     }
     
-    func doSingleArgArithmeticOperation(_ args: [LispType], name: String, body:SingleValueArithmeticOperationBody) throws -> LispType {
+    func doSingleArgArithmeticOperation(_ args: [LispType], name: String, environment: Environment, body:SingleValueArithmeticOperationBody) throws -> LispType {
         if args.count != 1 {
             throw LispError.general(msg: "'\(name)' requires one argument")
         }
         
-        let evaluated = try args.map { try env.eval($0) }
+        let evaluated = try args.map { try parser.eval($0, environment: environment) }
         
         guard case let .number(num) = evaluated[0] else {
             throw LispError.general(msg: "'\(name)' requires a number argument.")
@@ -118,12 +118,12 @@ class Builtins {
         return .number(body(num))
     }
     
-    func doSingleArgBooleanArithmeticOperation(_ args: [LispType], name: String, body:SingleArithmeticBooleanOperationBody) throws -> LispType {
+    func doSingleArgBooleanArithmeticOperation(_ args: [LispType], name: String, environment: Environment, body:SingleArithmeticBooleanOperationBody) throws -> LispType {
         if args.count != 1 {
             throw LispError.general(msg: "'\(name)' requires one argument")
         }
         
-        let evaluated = try args.map { try env.eval($0) }
+        let evaluated = try args.map { try parser.eval($0, environment: environment) }
         
         guard case let .number(num) = evaluated[0] else {
             throw LispError.general(msg: "'\(name)' requires a number argument.")
@@ -132,7 +132,7 @@ class Builtins {
         return .boolean(body(num))
     }
 
-    func doBooleanArithmeticOperation(_ args: [LispType], body: ArithmeticBooleanOperationBody) throws -> LispType {
+    func doBooleanArithmeticOperation(_ args: [LispType], environment: Environment, body: ArithmeticBooleanOperationBody) throws -> LispType {
         if args.count < 2 {
             throw LispError.runtime(msg: "Operation expects at least 2 arguments")
         }
@@ -157,11 +157,11 @@ class Builtins {
         return .boolean(true)
     }
 
-    func doBooleanOperation(_ args: [LispType], body:BooleanOperationBody) throws -> LispType {
+    func doBooleanOperation(_ args: [LispType], environment: Environment, body:BooleanOperationBody) throws -> LispType {
         var result: Bool = false
         var lastValue: Bool = false
         var firstArg = true
-        let evaluated = try args.map { try env.eval($0) }
+        let evaluated = try args.map { try parser.eval($0, environment: environment) }
 
         for arg in evaluated {
             guard case let .boolean(b) = arg else {
@@ -179,8 +179,8 @@ class Builtins {
         return .boolean(result)
     }
 
-    func doSingleBooleanOperation(_ args: [LispType], body:SingleBooleanOperationBody) throws -> LispType {
-        let evaluated = try args.map { try env.eval($0) }
+    func doSingleBooleanOperation(_ args: [LispType], environment: Environment, body:SingleBooleanOperationBody) throws -> LispType {
+        let evaluated = try args.map { try parser.eval($0, environment: environment) }
 
         guard case let .boolean(b) = evaluated[0] else {
             throw LispError.general(msg: "Invalid argument type: \(String(describing: evaluated[0]))")

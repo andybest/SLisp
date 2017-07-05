@@ -29,7 +29,6 @@ import Foundation
 public class Namespace: Hashable {
     let name: String
     var rootBindings     = [String: LispType]()
-    var bindingStack     = [[String: LispType]]()
     var namespaceRefs    = [String: Namespace]()
     var namespaceImports = Set<Namespace>()
 
@@ -84,7 +83,7 @@ extension Parser {
 
         if targetNamespace != nil {
             // Search for a namespace ref, or namespace with the given name
-            if let ns = env.namespaceRefs[targetNamespace!] {
+            if let ns = env.namespace.namespaceRefs[targetNamespace!] {
                 if let val = ns.rootBindings[binding] {
                     return val
                 }
@@ -109,7 +108,7 @@ extension Parser {
                 return val
             }
 
-            for ns in env.namespaceImports {
+            for ns in env.namespace.namespaceImports {
                 if let val = ns.rootBindings[name] {
                     return val
                 }
@@ -162,12 +161,21 @@ extension Parser {
 
         let ns = Namespace(name: name)
         namespaces[name] = ns
-
-        defer {
-            for nsImport in coreImports {
-                importNamespace(createOrGetNamespace(nsImport), toNamespace: ns)
+        
+        coreImports.forEach {
+            if $0 != ns.name {
+                importNamespace(createOrGetNamespace($0), toNamespace: ns)
             }
         }
+        
+        /*pushCWD(workingDir: "stdlib")
+        _ = evalFile(path: "autoinclude.sl", environment: Environment(ns: ns))
+        do {
+            try popCWD()
+        } catch {
+            print("Unable to pop CWD!")
+        }*/
+        
         return ns
     }
 }

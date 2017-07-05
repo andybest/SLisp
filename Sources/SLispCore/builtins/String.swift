@@ -28,23 +28,15 @@ import Foundation
 
 class StringBuiltins : Builtins {
     
-    override init(env:Parser) {
-        super.init(env: env)
+    override init(parser: Parser) {
+        super.init(parser: parser)
     }
     
     override func namespaceName() -> String {
         return "string"
     }
     
-    override func loadImplementation() {
-        // Load core library implemented in SLisp
-        let path = "./Lib/string.sl"
-        if env.evalFile(path: path) == nil {
-            print("String library implementation could not be loaded!")
-        }
-    }
-    
-    override func initBuiltins() -> [String: BuiltinDef] {
+    override func initBuiltins(environment: Environment) -> [String: BuiltinDef] {
         addBuiltin("capitalize", docstring: """
         capitalize
         (str)

@@ -29,15 +29,11 @@ import Foundation
 public class Environment {
     var namespace: Namespace
     var localBindings: [String: LispType]
-    var namespaceRefs: [String: Namespace]
-    var namespaceImports: [Namespace]
     weak var parent: Environment?
     
     public init(ns: Namespace) {
         namespace = ns
         localBindings = [String: LispType]()
-        namespaceRefs = [String: Namespace]()
-        namespaceImports = [Namespace]()
     }
     
     func bindLocal(name: LispType, value: LispType) throws -> LispType {
@@ -62,23 +58,24 @@ public class Parser {
     var namespaces                     = [String: Namespace]()
     let coreImports:          [String] = ["core"]
     
+    var cwdStack: [String]  // Holds the current working directory
+    
     public var currentNamespace: Namespace {
         return namespaces[currentNamespaceName]!
     }
     
     public init?() throws {
-        // Create default user ns
-        let userNs = Namespace(name: "user")
-        addNamespace(userNs)
-        currentNamespaceName = "user"
+        cwdStack = [String]()
         
-        /*let core = Core(env: self)
+        let core = Core(parser: self)
         /* Core builtins */
         let coreBuiltins = [core]
         
         try coreBuiltins.forEach {
             let ns = createOrGetNamespace($0.namespaceName())
-            try $0.initBuiltins().forEach { (arg) in
+            currentNamespaceName = ns.name
+            let env = Environment(ns: ns)
+            try $0.initBuiltins(environment: env).forEach { (arg) in
                 
                 let (name, builtinDef) = arg
                 _ = try bindGlobal(name: .symbol(name),
@@ -87,24 +84,16 @@ public class Parser {
                                                     isMacro: false),
                                    toNamespace: ns)
             }
-            
-            // Import this namespace to the default namespace
-            importNamespace(ns, toNamespace: currentNamespace)
-        }
-        
-        core.loadAutoincludeImplementation(toNamespace: core.namespaceName())
-        
-        coreBuiltins.forEach {
-            $0.loadImplementation()
         }
         
         /* Other builtins */
-        let builtins = [MathBuiltins(env: self),
-                        StringBuiltins(env: self)]
+        let builtins = [MathBuiltins(parser: self),
+                        StringBuiltins(parser: self)]
         
         try builtins.forEach {
             let ns = createOrGetNamespace($0.namespaceName())
-            try $0.initBuiltins().forEach { (arg) in
+            currentNamespaceName = ns.name
+            try $0.initBuiltins(environment: Environment(ns: ns)).forEach { (arg) in
                 
                 let (name, builtinDef) = arg
                 _ = try bindGlobal(name: .symbol(name),
@@ -115,9 +104,14 @@ public class Parser {
             }
         }
         
-        builtins.forEach {
-            $0.loadImplementation()
-        }*/
+        // Load SLisp standard library
+        pushCWD(workingDir: "./stdlib")
+        _ = evalFile(path: "stdlib.sl", environment: Environment(ns: createOrGetNamespace("core")))
+        try popCWD()
+        
+        // Create default user ns
+        let userNs = createOrGetNamespace("user")
+        currentNamespaceName = userNs.name
     }
     
     func eval_form(_ form: LispType, environment: Environment) throws -> LispType {
@@ -159,7 +153,7 @@ public class Parser {
                 return try eval_form(mutableForm, environment: envs.last!)
             }
             
-            //mutableForm = try macroExpand(mutableForm)
+            mutableForm = try macroExpand(mutableForm, environment: envs.last!)
             
             switch mutableForm {
             case .list(let list):
@@ -301,11 +295,11 @@ public class Parser {
                     return try bindGlobal(name: list[1], value: .function(body, docstring: docstring, isMacro: true), toNamespace: currentNamespace)
                     
                 // MARK: macroexpand
-                /*case .symbol("macroexpand"):
+                case .symbol("macroexpand"):
                     if args.count != 1 {
                         throw LispError.runtime(msg: "'macroexpand' expects one argument")
                     }
-                    return try macroExpand(args[0])*/
+                    return try macroExpand(args[0], environment: envs.last!)
                 default:
                     //switch try eval_form(macroExpand(mutableForm), environment: envs.last!) {
                     switch try eval_form(mutableForm, environment: envs.last!) {
@@ -324,7 +318,7 @@ public class Parser {
                                     throw LispError.general(msg: "Invalid number of args: \(funcArgs.count). Expected \(argnames.count).")
                                 }
                                 
-                                envs.append(Environment(ns: currentNamespace))
+                                envs.append(envs.last!.createChild())
                                 env_push += 1
                                 
                                 var bindList = false
@@ -515,19 +509,13 @@ public class Parser {
         }
     }
     
-    /*func macroExpand(_ form: LispType) throws -> LispType {
+    func macroExpand(_ form: LispType, environment e: Environment) throws -> LispType {
         var mutableForm = form
-        var local_push = 0
-        defer {
-            while local_push > 0 {
-                _ = popLocal(fromNamespace: currentNamespace)
-                local_push -= 1
-            }
-        }
+        var envs = [e]
         
-        while try is_macro(mutableForm) {
+        while try is_macro(mutableForm, environment: envs.last!) {
             if case let .list(list) = mutableForm, list.count > 0, case let .symbol(sym) = list.first! {
-                let f = try getValue(sym, fromNamespace: currentNamespace)
+                let f = try getValue(sym, withEnvironment: envs.last!)
                 if case let .function(body, docstring: _, isMacro: _) = f {
                     if case let .lisp(argList, lispBody) = body {
                         let funcArgs = Array(list.dropFirst())
@@ -535,8 +523,7 @@ public class Parser {
                             throw LispError.general(msg: "Invalid number of args: \(funcArgs.count). Expected \(argList.count).")
                         }
                         
-                        pushLocal(toNamespace: currentNamespace)
-                        local_push += 1
+                        envs.append(envs.last!.createChild())
                         
                         var bindList = false
                         for i in 0..<argList.count {
@@ -548,15 +535,15 @@ public class Parser {
                             } else {
                                 if bindList {
                                     // Bind the rest of the arguments as a list
-                                    _ = try bindLocal(name: .symbol(argList[i]), value: .list(Array(funcArgs[(i - 1)...])), toNamespace: currentNamespace)
+                                    _ = try envs.last!.bindLocal(name: .symbol(argList[i]), value: .list(Array(funcArgs[(i - 1)...])))
                                 } else {
-                                    _ = try bindLocal(name: .symbol(argList[i]), value: funcArgs[i], toNamespace: currentNamespace)
+                                    _ = try envs.last!.bindLocal(name: .symbol(argList[i]), value: funcArgs[i])
                                 }
                             }
                         }
                         
                         for val in lispBody {
-                            mutableForm = try eval(val)
+                            mutableForm = try eval(val, environment: envs.last!)
                         }
                     } else {
                         throw LispError.runtime(msg: "Builtin cannot be a macro!")
@@ -568,7 +555,19 @@ public class Parser {
         }
         
         return mutableForm
-    }*/
+    }
+    
+    func pushCWD(workingDir: String) {
+        cwdStack.append(FileManager.default.currentDirectoryPath)
+        FileManager.default.changeCurrentDirectoryPath(workingDir)
+    }
+    
+    func popCWD() throws {
+        guard let cwd = cwdStack.popLast() else {
+            throw LispError.general(msg: "Unable to pop cwd- stack is empty!")
+        }
+        FileManager.default.changeCurrentDirectoryPath(cwd)
+    }
     
     func evalFile(path: String, toNamespace namespace: Namespace, environment: Environment) -> LispType? {
         do {
@@ -579,6 +578,16 @@ public class Parser {
                     try changeNamespace(oldNS.name)
                 } catch {
                     print(error)
+                }
+            }
+            
+            let cwd = URL(fileURLWithPath: path).deletingLastPathComponent().absoluteString
+            pushCWD(workingDir: cwd)
+            defer {
+                do {
+                    try popCWD()
+                } catch {
+                    print("Unable to change back cwd!")
                 }
             }
             
@@ -604,7 +613,7 @@ public class Parser {
     
     func evalFile(path: String, environment: Environment) -> LispType? {
         do {
-            let oldNS = currentNamespace
+            let oldNS = environment.namespace
             defer {
                 do {
                     try changeNamespace(oldNS.name)

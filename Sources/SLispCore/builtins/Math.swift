@@ -26,32 +26,17 @@
 
 import Foundation
 
-typealias ArithmeticOperationBody = (LispNumber, LispNumber) -> LispNumber
-typealias SingleValueArithmeticOperationBody = (LispNumber) -> LispNumber
-typealias ArithmeticBooleanOperationBody = (LispNumber, LispNumber) -> Bool
-typealias SingleArithmeticBooleanOperationBody = (LispNumber) -> Bool
-typealias BooleanOperationBody = (Bool, Bool) -> Bool
-typealias SingleBooleanOperationBody = (Bool) -> Bool
-
 class MathBuiltins : Builtins {
     
-    override init(env:Environment) {
-        super.init(env: env)
+    override init(parser: Parser) {
+        super.init(parser: parser)
     }
 
     override func namespaceName() -> String {
         return "math"
     }
-
-    override func loadImplementation() {
-        // Load core library implemented in SLisp
-        let path = "./Lib/math.sl"
-        if env.evalFile(path: path) == nil {
-            print("Math library implementation could not be loaded!")
-        }
-    }
     
-    override func initBuiltins() -> [String: BuiltinDef] {
+    override func initBuiltins(environment: Environment) -> [String: BuiltinDef] {
         addBuiltin("range", docstring: """
         range
         (min max)

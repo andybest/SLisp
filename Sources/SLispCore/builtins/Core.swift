@@ -28,37 +28,21 @@ import Foundation
 
 class Core: Builtins {
 
-    override init(env: Parser) {
-        super.init(env: env)
+    override init(parser: Parser) {
+        super.init(parser: parser)
     }
 
     override func namespaceName() -> String {
         return "core"
     }
 
-    override func loadImplementation() {
-        // Load core library implemented in SLisp
-        let path = "./Lib/core.sl"
-        if env.evalFile(path: path) == nil {
-            print("Core library implementation could not be loaded!")
-        }
-    }
-    
-    func loadAutoincludeImplementation(toNamespace ns: String) {
-        // Load core library implemented in SLisp
-        let path = "./Lib/core-autoinclude.sl"
-        if env.evalFile(path: path, toNamespace: env.createOrGetNamespace(ns)) == nil {
-            print("Core library autoinclude implementation could not be loaded!")
-        }
-    }
-
-    override func initBuiltins() -> [String: BuiltinDef] {
+    override func initBuiltins(environment: Environment) -> [String: BuiltinDef] {
         // MARK: print
         addBuiltin("print", docstring: """
         print
         (x y ...)
             Prints the arguments to the console
-        """) { args, env throws in
+        """) { args, parser throws in
             let strings = args.map { arg -> String in
                 switch arg {
                     case .string(let s):
@@ -77,7 +61,7 @@ class Core: Builtins {
         input
         (prompt)
             Gets a line of input from the user, printing the optional prompt
-        """) { args, env throws in
+        """) { args, parser throws in
             if args.count > 1 {
                 throw LispError.general(msg: "'input' expects 0 or 1 argument")
             }
@@ -103,7 +87,7 @@ class Core: Builtins {
         read-string
         (x)
             Converts the string x to a SLisp form
-        """) { args, env throws in
+        """) { args, parser throws in
             if args.count != 1 {
                 throw LispError.general(msg: "'read-string' requires 1 string argument")
             }
@@ -121,7 +105,7 @@ class Core: Builtins {
         slurp
         (fileName)
             Reads the file at 'fileName' and returns it as a string
-        """) { args, env throws in
+        """) { args, parser throws in
             if args.count != 1 {
                 throw LispError.general(msg: "'slurp' requires 1 string argument")
             }
@@ -145,12 +129,12 @@ class Core: Builtins {
         eval
         (x)
             Evaluates x
-        """) { args, env throws in
+        """) { args, parser throws in
             if args.count != 1 {
                 throw LispError.general(msg: "'eval' requires 1 argument")
             }
 
-            return try env.eval(args[0])
+            return try self.parser.eval(args[0], environment: environment)
         }
         
         
@@ -159,7 +143,7 @@ class Core: Builtins {
         str
         (x y ...)
             Converts all of the arguments to strings and concatenates them
-        """) { args, env throws in
+        """) { args, parser throws in
             if args.count == 0 {
                 throw LispError.general(msg: "'str' requires at least one argument")
             }
@@ -181,7 +165,7 @@ class Core: Builtins {
         string=
         (x y ...)
             Returns true if all of the string arguments are equal
-        """) { args, env throws in
+        """) { args, parser throws in
             if args.count < 2 {
                 throw LispError.general(msg: "'string=' requires at least 2 arguments.")
             }
@@ -209,7 +193,7 @@ class Core: Builtins {
         symbol
         (x)
             Converts the string argument to a symbol
-        """) { args, env throws in
+        """) { args, parser throws in
             if args.count != 1 {
                 throw LispError.general(msg: "'symbol' requires one argument")
             }
@@ -227,7 +211,7 @@ class Core: Builtins {
         keyword
         (x)
             Converts the string, symbol or keyword argument to a keyword
-        """) { args, env throws in
+        """) { args, parser throws in
             if args.count != 1 {
                 throw LispError.general(msg: "'keyword' requires one argument")
             }
@@ -253,7 +237,7 @@ class Core: Builtins {
         doc
         (f)
             Returns the docstring for the function
-        """) { args, env throws in
+        """) { args, parser throws in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'doc' requires 1 argument")
             }
@@ -269,7 +253,7 @@ class Core: Builtins {
         
         initCoreTypeBuiltins()
         initCoreCollectionBuiltins()
-        initCoreMathBuiltins()
+        initCoreMathBuiltins(environment: environment)
         initCoreNamespaceBuiltins()
 
         return builtins
@@ -281,7 +265,7 @@ class Core: Builtins {
         in-ns
         (x)
             Move to the namespace indicated by the symbol x
-        """) { args, env throws in
+        """) { args, parser throws in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'in-ns' expects one argument.")
             }
@@ -290,7 +274,7 @@ class Core: Builtins {
                 throw LispError.runtime(msg: "'in-ns' expects a symbol as an argument")
             }
             
-            try env.changeNamespace(env.createOrGetNamespace(ns).name)
+            try parser.changeNamespace(parser.createOrGetNamespace(ns).name)
             return .nil
         }
         
@@ -300,7 +284,7 @@ class Core: Builtins {
         refer
         (namespace)
         Imports all symbols in namespace into the current namespace
-        """) { args, env throws in
+        """) { args, parser throws in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'refer' expects one argument.")
             }
@@ -309,11 +293,11 @@ class Core: Builtins {
                 throw LispError.runtime(msg: "'refer' expects a symbol as an argument")
             }
             
-            guard let namespace = env.namespaces[ns] else {
+            guard let namespace = parser.namespaces[ns] else {
                 throw LispError.runtime(msg: "Unable to find namespace '\(ns)'")
             }
             
-            env.importNamespace(namespace, toNamespace: env.currentNamespace)
+            parser.importNamespace(namespace, toNamespace: parser.currentNamespace)
             return .nil
         }
     }
@@ -324,7 +308,7 @@ class Core: Builtins {
         list?
         (x)
             Returns true if x is a list
-        """) { args, env throws in
+        """) { args, parser throws in
             try self.checkArgCount(funcName: "list", args: args, expectedNumArgs: 1)
             
             for arg in args {
@@ -342,7 +326,7 @@ class Core: Builtins {
         symbol?
         (x)
             Returns true is x is a symbol
-        """) { args, env throws in
+        """) { args, parser throws in
             try self.checkArgCount(funcName: "symbol?", args: args, expectedNumArgs: 1)
             
             for arg in args {
@@ -360,7 +344,7 @@ class Core: Builtins {
         string?
         (x)
             Returns true if x is a string
-        """) { args, env throws in
+        """) { args, parser throws in
             try self.checkArgCount(funcName: "string?", args: args, expectedNumArgs: 1)
             
             for arg in args {
@@ -378,7 +362,7 @@ class Core: Builtins {
         number?
         (x)
             Returns true if x is a number
-        """) { args, env throws in
+        """) { args, parser throws in
             try self.checkArgCount(funcName: "number?", args: args, expectedNumArgs: 1)
             
             for arg in args {
@@ -396,7 +380,7 @@ class Core: Builtins {
         float?
         (x)
             Returns true if x is a float
-        """) { args, env throws in
+        """) { args, parser throws in
             try self.checkArgCount(funcName: "float?", args: args, expectedNumArgs: 1)
             
             for arg in args {
@@ -418,7 +402,7 @@ class Core: Builtins {
         integer?
         (x)
             Returns true if x is an integer
-        """) { args, env throws in
+        """) { args, parser throws in
             try self.checkArgCount(funcName: "integer?", args: args, expectedNumArgs: 1)
             
             for arg in args {
@@ -440,7 +424,7 @@ class Core: Builtins {
         function?
         (x)
             Returns true if x is a function
-        """) { args, env throws in
+        """) { args, parser throws in
             try self.checkArgCount(funcName: "function?", args: args, expectedNumArgs: 1)
             
             for arg in args {
@@ -458,7 +442,7 @@ class Core: Builtins {
         nil?
         (x)
             Returns true if x is nil
-        """) { args, env throws in
+        """) { args, parser throws in
             try self.checkArgCount(funcName: "nil?", args: args, expectedNumArgs: 1)
             
             for arg in args {
@@ -471,15 +455,15 @@ class Core: Builtins {
         }
     }
     
-    func initCoreMathBuiltins() {
+    func initCoreMathBuiltins(environment: Environment) {
         
         // MARK: +
         addBuiltin("+", docstring: """
         +
         (x y ...)
             Adds the arguments together
-        """) { args, env throws in
-            return try self.doArithmeticOperation(args, body: LispNumber.add)
+        """) { args, parser throws in
+            return try self.doArithmeticOperation(args, environment: environment, body: LispNumber.add)
         }
         
         
@@ -488,11 +472,11 @@ class Core: Builtins {
         -
         (x y ...)
             Subtracts the arguments from each other
-        """) { args, env throws in
+        """) { args, parser throws in
             if args.count == 1 {
-                return try self.doSingleArgArithmeticOperation(args, name: "-", body: LispNumber.negate)
+                return try self.doSingleArgArithmeticOperation(args, name: "-", environment: environment, body: LispNumber.negate)
             } else {
-                return try self.doArithmeticOperation(args, body: LispNumber.subtract)
+                return try self.doArithmeticOperation(args, environment: environment, body: LispNumber.subtract)
             }
         }
         
@@ -502,8 +486,8 @@ class Core: Builtins {
         *
         (x y ...)
             Multiplies the arguments together
-        """) { args, env throws in
-            return try self.doArithmeticOperation(args, body: LispNumber.multiply)
+        """) { args, parser throws in
+            return try self.doArithmeticOperation(args, environment: environment, body: LispNumber.multiply)
         }
         
         
@@ -512,8 +496,8 @@ class Core: Builtins {
         /
         (x y ...)
             Divides the arguments
-        """) { args, env throws in
-            return try self.doArithmeticOperation(args, body: LispNumber.divide)
+        """) { args, parser throws in
+            return try self.doArithmeticOperation(args, environment: environment, body: LispNumber.divide)
         }
         
         
@@ -522,8 +506,8 @@ class Core: Builtins {
         mod
         (x y ...)
             Perfoms a modulo on the arguments
-        """) { args, env throws in
-            return try self.doArithmeticOperation(args, body: LispNumber.mod)
+        """) { args, parser throws in
+            return try self.doArithmeticOperation(args, environment: environment, body: LispNumber.mod)
         }
         
         
@@ -532,8 +516,8 @@ class Core: Builtins {
         >
         (x y ...)
             Returns true if x is greater than all of the arguments
-        """) { args, env throws in
-            return try self.doBooleanArithmeticOperation(args, body: LispNumber.greaterThan)
+        """) { args, parser throws in
+            return try self.doBooleanArithmeticOperation(args, environment: environment, body: LispNumber.greaterThan)
         }
         
         
@@ -542,8 +526,8 @@ class Core: Builtins {
         <
         (x y ...)
             Returns true if x is less than all of the arguments
-        """) { args, env throws in
-            return try self.doBooleanArithmeticOperation(args, body: LispNumber.lessThan)
+        """) { args, parser throws in
+            return try self.doBooleanArithmeticOperation(args, environment: environment, body: LispNumber.lessThan)
         }
         
         
@@ -552,7 +536,7 @@ class Core: Builtins {
         ==
         (x y ...)
             Returns true if all of the arguments are equal
-        """) { args, env throws in
+        """) { args, parser throws in
             if args.count < 2 {
                 throw LispError.runtime(msg: "'==' requires at least 2 arguments")
             }
@@ -573,8 +557,8 @@ class Core: Builtins {
         &&
         (x y ...)
             Performs a logical AND on all of the arguments
-        """) { args, env throws in
-            return try self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
+        """) { args, parser throws in
+            return try self.doBooleanOperation(args, environment: environment) { (x: Bool, y: Bool) -> Bool in
                 return x && y
             }
         }
@@ -585,8 +569,8 @@ class Core: Builtins {
         ||
         (x y ...)
             Performs a logical OR on all of the arguments
-        """) { args, env throws in
-            return try self.doBooleanOperation(args) { (x: Bool, y: Bool) -> Bool in
+        """) { args, parser throws in
+            return try self.doBooleanOperation(args, environment: environment) { (x: Bool, y: Bool) -> Bool in
                 return x || y
             }
         }
@@ -597,8 +581,8 @@ class Core: Builtins {
         !
         (x)
             Performs a logical NOT on the argument
-        """) { args, env throws in
-            return try self.doSingleBooleanOperation(args) { (x: Bool) -> Bool in
+        """) { args, parser throws in
+            return try self.doSingleBooleanOperation(args, environment: environment) { (x: Bool) -> Bool in
                 return !x
             }
         }

@@ -20,12 +20,7 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ; SOFTWARE.
 
-; This file will be included by default into any generated namespace
+; This file will be evaluated in a new namespace when it is created
 
-(defmacro ns
-    (function "ns\n\t(name)\nchange to namespace"
-        (ns-name)
-            `(in-ns (quote ~ns-name))))
-
-; Import the rest of the core library
+; Import the core library
 (refer 'core)

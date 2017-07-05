@@ -20,7 +20,9 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ; SOFTWARE.
 
-(ns core)
+(in-ns 'core)
+
+(print "Loading core library")
 
 ; Macro for shorthand function declarations
 (defmacro defn
@@ -32,6 +34,8 @@
         (fName & body)
             `(def ~fName ~(concat '(function) body))))
 
+(defn load-file (path)
+    (eval (read-string (str "(do\n" (slurp path) ")"))))
                 
 (defn map 
     (str "map\n"
