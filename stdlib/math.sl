@@ -40,4 +40,4 @@
         true
         args))
 
-(defn odd? (& args) (! (apply math/even? args)))
+(defn odd? (& args) (! (apply even? args)))

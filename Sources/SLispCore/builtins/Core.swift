@@ -242,7 +242,7 @@ class Core: Builtins {
                 throw LispError.runtime(msg: "'doc' requires 1 argument")
             }
             
-            guard case let .function(_, docstring, _) = args[0] else {
+            guard case let .function(_, docstring, _, _) = args[0] else {
                 throw LispError.runtime(msg: "'doc' requires the argument to be a function")
             }
             

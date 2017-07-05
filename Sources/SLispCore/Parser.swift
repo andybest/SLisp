@@ -81,7 +81,8 @@ public class Parser {
                 _ = try bindGlobal(name: .symbol(name),
                                    value: .function(.native(body: builtinDef.body),
                                                     docstring: builtinDef.docstring,
-                                                    isMacro: false),
+                                                    isMacro: false,
+                                                    namespace: ns),
                                    toNamespace: ns)
             }
         }
@@ -99,7 +100,8 @@ public class Parser {
                 _ = try bindGlobal(name: .symbol(name),
                                    value: .function(.native(body: builtinDef.body),
                                                     docstring: builtinDef.docstring,
-                                                    isMacro: false),
+                                                    isMacro: false,
+                                                    namespace: ns),
                                    toNamespace: ns)
             }
         }
@@ -288,11 +290,11 @@ public class Parser {
                         throw LispError.runtime(msg: "'defmacro' requires 2 arguments")
                     }
                     
-                    guard case let .function(body, docstring: docstring, _) = try eval(list[2], environment: envs.last!) else {
+                    guard case let .function(body, docstring: docstring, _, namespace: ns) = try eval(list[2], environment: envs.last!) else {
                         throw LispError.runtime(msg: "'defmacro' requires the 2nd argument to be a function")
                     }
                     
-                    return try bindGlobal(name: list[1], value: .function(body, docstring: docstring, isMacro: true), toNamespace: currentNamespace)
+                    return try bindGlobal(name: list[1], value: .function(body, docstring: docstring, isMacro: true, namespace: ns), toNamespace: currentNamespace)
                     
                 // MARK: macroexpand
                 case .symbol("macroexpand"):
@@ -307,7 +309,7 @@ public class Parser {
                         switch lst[0] {
                             
                         // MARK: Eval Function
-                        case .function(let body, _, isMacro: _):
+                        case .function(let body, _, isMacro: _, namespace: let ns):
                             switch body {
                             case .native(body:let nativeBody):
                                 let rv = try nativeBody(Array(lst.dropFirst()), self)
@@ -318,7 +320,9 @@ public class Parser {
                                     throw LispError.general(msg: "Invalid number of args: \(funcArgs.count). Expected \(argnames.count).")
                                 }
                                 
-                                envs.append(envs.last!.createChild())
+                                let newEnv = envs.last!.createChild()
+                                newEnv.namespace = ns
+                                envs.append(newEnv)
                                 env_push += 1
                                 
                                 var bindList = false
@@ -456,7 +460,7 @@ public class Parser {
         }
         
         let body = FunctionBody.lisp(argnames: argNames, body: Array(fArgs.dropFirst(1)))
-        return LispType.function(body, docstring: docString, isMacro: false)
+        return LispType.function(body, docstring: docString, isMacro: false, namespace: currentNamespace)
     }
     
     func quasiquote(_ form: LispType) throws -> LispType {
@@ -494,7 +498,7 @@ public class Parser {
             case .symbol(let symbol):
                 do {
                     let val = try getValue(symbol, withEnvironment: environment)
-                    if case let .function(_, _, isMacro: isMacro) = val {
+                    if case let .function(_, _, isMacro: isMacro, _) = val {
                         return isMacro
                     }
                     return false
@@ -516,14 +520,16 @@ public class Parser {
         while try is_macro(mutableForm, environment: envs.last!) {
             if case let .list(list) = mutableForm, list.count > 0, case let .symbol(sym) = list.first! {
                 let f = try getValue(sym, withEnvironment: envs.last!)
-                if case let .function(body, docstring: _, isMacro: _) = f {
+                if case let .function(body, docstring: _, isMacro: _, namespace: ns) = f {
                     if case let .lisp(argList, lispBody) = body {
                         let funcArgs = Array(list.dropFirst())
                         if funcArgs.count != argList.count && argList.index(of: "&") == nil {
                             throw LispError.general(msg: "Invalid number of args: \(funcArgs.count). Expected \(argList.count).")
                         }
                         
-                        envs.append(envs.last!.createChild())
+                        let newEnv = envs.last!.createChild()
+                        newEnv.namespace = ns
+                        envs.append(newEnv)
                         
                         var bindList = false
                         for i in 0..<argList.count {

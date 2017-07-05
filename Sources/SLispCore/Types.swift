@@ -40,7 +40,7 @@ public enum LispType: CustomStringConvertible, Equatable {
     case `string`(String)
     case boolean(Bool)
     case `nil`
-    case function(FunctionBody, docstring: String?, isMacro: Bool)
+    case function(FunctionBody, docstring: String?, isMacro: Bool, namespace: Namespace)
     case key(String)
     
     public var description: String {
@@ -60,8 +60,8 @@ public enum LispType: CustomStringConvertible, Equatable {
                 String(describing: $0)
                 }.joined(separator: " ")
             return "(\(elements))"
-        case .function(_, _, isMacro: let isMacro):
-            return isMacro ? "#<macro>" : "#<function>"
+        case .function(_, _, isMacro: let isMacro, let ns):
+            return isMacro ? "#<\(ns.name)/macro>" : "#<\(ns.name)/function>"
         case .key(let key):
             return ":\(key)"
         }
