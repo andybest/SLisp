@@ -29,6 +29,6 @@
             `(in-ns (quote ~ns-name))))
 
 ; Load the standard library
-(eval (read-string (str "(do\n" (slurp "core.sl") ")")))    ; load-file is defined in this file
+(eval (read-string (str "(do\n" (slurp "core/core.sl") ")")))    ; load-file is defined in this file
 (load-file "math.sl")
 (load-file "string.sl")

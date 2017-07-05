@@ -22,8 +22,6 @@
 
 (in-ns 'core)
 
-(print "Loading core library")
-
 ; Macro for shorthand function declarations
 (defmacro defn
     (function
@@ -36,7 +34,9 @@
 
 (defn load-file (path)
     (eval (read-string (str "(do\n" (slurp path) ")"))))
-                
+
+(load-file "core/defstruct.sl")
+
 (defn map 
     (str "map\n"
         "(f coll)\n"
@@ -66,21 +66,7 @@
             (set! collidx (+ collidx 1)))
         processed))
 
-(defmacro defstruct
-  (function "defstruct"
-    (name slots)
-    `(do
-        ; make-[structname]
-        (defn ~(symbol (str "make-" name)) ~slots
-          ~(cons 'list (concat (map #((slot) (list (keyword slot) slot)) slots))))
-        
-        ; [structname]-[slotname]
-        ~(concat 'do (map 
-          (function (slotnum)
-            (let (slotname (at slots slotnum))
-               `((defn ~(symbol (str name "-" slotname)) (struct)
-                   (at struct ~(+ (* slotnum 2) 1))))))
-          (math/range 0 (count slots)))))))
+
 
 
 ;; Collection operations

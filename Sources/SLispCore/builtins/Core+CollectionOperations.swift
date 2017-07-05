@@ -78,8 +78,8 @@ extension Core {
         // MARK: assoc
         addBuiltin("assoc", docstring: """
         assoc
-        (dict key value key2 value2 ...)
-        Associate value(s) with key(s) in dictionary
+        (dict key value key2 value2 ...) or (list index value ...)
+        Associate value(s) with key(s) in dictionary or replace index in list with provided value
         """) { args, env in
             if args.count < 3 {
                 throw LispError.runtime(msg: "'assoc' requires at least 3 arguments")
@@ -89,29 +89,42 @@ extension Core {
                 throw LispError.runtime(msg: "'assoc': key \(String(describing: args.last!)) has no corresponding value")
             }
             
-            guard case let .dictionary(dict) = args[0] else {
-                throw LispError.runtime(msg: "'assoc' requires the first argument to be a dictionary")
-            }
-            
-            var retDict = dict
-            
-            for i in stride(from: 1, to: args.count, by: 2) {
-                let key = args[i]
-                let value = args[i + 1]
+            if case let .dictionary(dict) = args[0] {
+                var retDict = dict
                 
-                if !key.canBeKey {
-                    throw LispError.runtime(msg: "Type \(key.typeName) with value \(String(describing: key)) cannot be a key in a dictionary.")
+                for i in stride(from: 1, to: args.count, by: 2) {
+                    let key = args[i]
+                    let value = args[i + 1]
+                    
+                    if !key.canBeKey {
+                        throw LispError.runtime(msg: "Type \(key.typeName) with value \(String(describing: key)) cannot be a key in a dictionary.")
+                    }
+                    
+                    if value == .nil {
+                        retDict[key] = nil
+                        continue
+                    }
+                    
+                    retDict[key] = value
                 }
                 
-                if value == .nil {
-                    retDict[key] = nil
-                    continue
+                return .dictionary(retDict)
+            } else if case let .list(list) = args[0] {
+                var retList = list
+                
+                for i in stride(from: 1, to: args.count, by: 2) {
+                    guard case let .number(.integer(index)) = args[i] else {
+                        throw LispError.runtime(msg: "'assoc', when used with a list, expects indicies to be integers.")
+                    }
+                    
+                    let value = args[i + 1]
+                    retList[index] = value
                 }
                 
-                retDict[key] = value
+                return .list(retList)
             }
             
-            return .dictionary(retDict)
+            throw LispError.runtime(msg: "'assoc' requires the first argument to be a dictionary")
         }
         
         

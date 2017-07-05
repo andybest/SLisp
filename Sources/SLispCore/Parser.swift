@@ -169,7 +169,8 @@ public class Parser {
                     
                 // MARK: let
                 case .symbol("let"):
-                    
+                    env_push += 1
+                    envs.append(envs.last!.createChild())
                     mutableForm = try parseLet(args: args, environment: envs.last!)
                     
                 // MARK: set!
