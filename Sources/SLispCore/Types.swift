@@ -33,8 +33,10 @@ public indirect enum FunctionBody {
     case lisp(argnames: [String], body: [LispType])
 }
 
-public enum LispType: CustomStringConvertible, Equatable {
+public enum LispType: CustomStringConvertible, Equatable, Hashable {
+    
     case list([LispType])
+    case dictionary([LispType: LispType])
     case symbol(String)
     case number(LispNumber)
     case `string`(String)
@@ -42,6 +44,29 @@ public enum LispType: CustomStringConvertible, Equatable {
     case `nil`
     case function(FunctionBody, docstring: String?, isMacro: Bool, namespace: Namespace)
     case key(String)
+    
+    public var hashValue: Int {
+        switch self {
+        case .symbol(let sym):
+            return "symbol: \(sym)".hashValue
+        case .string(let str):
+            return str.hashValue
+        case .number(let num):
+            return num.hashValue
+        case .dictionary(_):
+            return 0
+        case .boolean(let b):
+            return b.hashValue
+        case .nil:
+            return 0
+        case .function(_, _, _, _):
+            return 0
+        case .key(let k):
+            return ":\(k)".hashValue
+        case .list(_):
+            return 0
+        }
+    }
     
     public var description: String {
         switch self {
@@ -64,6 +89,37 @@ public enum LispType: CustomStringConvertible, Equatable {
             return isMacro ? "#<\(ns.name)/macro>" : "#<\(ns.name)/function>"
         case .key(let key):
             return ":\(key)"
+        case .dictionary(let dict):
+            return "{ " +
+                dict.map { pair in
+                    "\(pair.key) \(pair.value)"
+                }.joined(separator: ", ") +
+            " }"
+        }
+    }
+    
+    public var canBeKey: Bool {
+        switch self {
+        case .string(_): return true
+        case .symbol(_): return true
+        case .boolean(_): return true
+        case .number(_): return true
+        case .key(_): return true
+        default: return false
+        }
+    }
+    
+    public var typeName: String {
+        switch self {
+        case .symbol(_): return "symbol"
+        case .boolean(_): return "boolean"
+        case .number(_): return "number"
+        case .nil: return "nil"
+        case .string(_): return "string"
+        case .list(_): return "list"
+        case .function(_): return "function"
+        case .key(_): return "key"
+        case .dictionary(_): return "dictionary"
         }
     }
 }
@@ -80,9 +136,16 @@ public func ==(a: LispType, b: LispType) -> Bool {
     }
 }
 
-public enum LispNumber: CustomStringConvertible {
+public enum LispNumber: CustomStringConvertible, Hashable {
     case float(Double)
     case integer(Int)
+    
+    public var hashValue: Int {
+        switch self {
+        case .float(let n): return n.hashValue
+        case .integer(let n): return n.hashValue
+        }
+    }
     
     public var description: String {
         switch self {
@@ -143,7 +206,7 @@ extension LispNumber {
         }
     }
     
-    static func ==(_ lhs: LispNumber, _ rhs: LispNumber) -> Bool {
+    public static func ==(_ lhs: LispNumber, _ rhs: LispNumber) -> Bool {
         switch promoteIfNecessary(lhs, rhs) {
         case .float(let l, let r): return l == r
         case .integer(let l, let r): return l == r

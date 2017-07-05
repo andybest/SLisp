@@ -39,6 +39,37 @@ extension Core {
         }
         
         
+        // MARK: hash-map
+        addBuiltin("hash-map", docstring: """
+        hash-map
+        (key value ...)
+            Constructs a new dictionary with the given key/value pairs
+        """) { args, env in
+            if args.count == 0 {
+                return .dictionary([:])
+            }
+            
+            if args.count % 2 != 0 {
+                throw LispError.runtime(msg: "No value supplied for key \(args.last!)")
+            }
+            
+            var dict = Dictionary<LispType, LispType>(minimumCapacity: args.count / 2)
+            
+            for i in stride(from: 0, to: args.count, by: 2) {
+                let key = args[i]
+                let value = args[i + 1]
+                
+                if !key.canBeKey {
+                    throw LispError.runtime(msg: "Type \(key.typeName) with value \(String(describing: key)) cannot be a key in a dictionary.")
+                }
+                
+                dict[key] = value
+            }
+            
+            return .dictionary(dict)
+        }
+        
+        
         // MARK: cons
         addBuiltin("cons", docstring: """
         cons

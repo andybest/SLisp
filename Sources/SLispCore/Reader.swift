@@ -51,6 +51,8 @@ public class Reader {
         switch token {
             case .lParen:
                 return try read_list()
+            case .lBrace:
+                return try read_dict()
             case .symbol(let str):
 
                 // Handle keys
@@ -135,6 +137,31 @@ public class Reader {
         }
 
         return .list(list)
+    }
+    
+    func read_dict() throws -> LispType {
+        var endOfDict = false
+        
+        var dictValues = [LispType]()
+        
+        while let token = nextToken() {
+            switch token {
+            case .rBrace:
+                endOfDict = true
+            default:
+                dictValues.append(try read_token(token))
+            }
+            
+            if endOfDict {
+                break
+            }
+        }
+        
+        if !endOfDict {
+            throw LispError.readerNotEOF
+        }
+        
+        return .list([.symbol("hash-map")] + dictValues)
     }
 
     public static func read(_ input: String) throws -> LispType {

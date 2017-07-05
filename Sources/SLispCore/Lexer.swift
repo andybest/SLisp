@@ -30,6 +30,8 @@ import Foundation
 public enum TokenType: Equatable {
     case lParen
     case rParen
+    case lBrace
+    case rBrace
     case symbol(String)
     case float(Double)
     case integer(Int)
@@ -68,7 +70,6 @@ func isWhitespace(_ c: Character) -> Bool {
 }
 
 class LParenTokenMatcher: TokenMatcher {
-    
     static func isMatch(_ stream: StringStream) -> Bool {
         return stream.currentCharacter == "("
     }
@@ -83,7 +84,6 @@ class LParenTokenMatcher: TokenMatcher {
 }
 
 class RParenTokenMatcher: TokenMatcher {
-    
     static func isMatch(_ stream: StringStream) -> Bool {
         return stream.currentCharacter == ")"
     }
@@ -92,6 +92,34 @@ class RParenTokenMatcher: TokenMatcher {
         if isMatch(stream) {
             stream.advanceCharacter()
             return TokenType.rParen
+        }
+        return nil
+    }
+}
+
+class LBraceTokenMatcher: TokenMatcher {
+    static func isMatch(_ stream: StringStream) -> Bool {
+        return stream.currentCharacter == "{"
+    }
+    
+    static func getToken(_ stream: StringStream) -> TokenType? {
+        if isMatch(stream) {
+            stream.advanceCharacter()
+            return TokenType.lBrace
+        }
+        return nil
+    }
+}
+
+class RBraceTokenMatcher: TokenMatcher {
+    static func isMatch(_ stream: StringStream) -> Bool {
+        return stream.currentCharacter == "}"
+    }
+    
+    static func getToken(_ stream: StringStream) -> TokenType? {
+        if isMatch(stream) {
+            stream.advanceCharacter()
+            return TokenType.rBrace
         }
         return nil
     }
@@ -128,7 +156,7 @@ class SymbolMatcher: TokenMatcher {
             matcherCharacterSet!.formUnion(with: CharacterSet.decimalDigits)
             matcherCharacterSet!.formUnion(with: CharacterSet.punctuationCharacters)
             matcherCharacterSet!.formUnion(with: NSMutableCharacterSet.symbol() as CharacterSet)
-            matcherCharacterSet!.removeCharacters(in: "();")
+            matcherCharacterSet!.removeCharacters(in: "(){};")
         }
         return matcherCharacterSet! as CharacterSet
     }
@@ -138,7 +166,7 @@ class SymbolMatcher: TokenMatcher {
             matcherStartCharacterSet = NSMutableCharacterSet.letter()
             matcherStartCharacterSet!.formUnion(with: CharacterSet.punctuationCharacters)
             matcherStartCharacterSet!.formUnion(with: NSMutableCharacterSet.symbol() as CharacterSet)
-            matcherStartCharacterSet!.removeCharacters(in: "();")
+            matcherStartCharacterSet!.removeCharacters(in: "(){};")
         }
         return matcherStartCharacterSet! as CharacterSet
     }
@@ -281,6 +309,8 @@ class NumberMatcher: TokenMatcher {
 let tokenClasses: [TokenMatcher.Type] = [
         LParenTokenMatcher.self,
         RParenTokenMatcher.self,
+        LBraceTokenMatcher.self,
+        RBraceTokenMatcher.self,
         NumberMatcher.self,
         StringMatcher.self,
         SymbolMatcher.self,

@@ -100,3 +100,11 @@
             (set! result (cons (at l x) result))
             (set! x (+ x 1)))
         result))
+
+(defn <=
+    (x y)
+    (|| (< x y) (== x y)))
+
+(defn >=
+    (x y)
+    (|| (> x y) (== x y)))
