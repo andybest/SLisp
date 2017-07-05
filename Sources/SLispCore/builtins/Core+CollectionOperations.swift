@@ -59,6 +59,11 @@ extension Core {
                 let key = args[i]
                 let value = args[i + 1]
                 
+                if value == .nil {
+                    dict[key] = nil
+                    continue
+                }
+                
                 if !key.canBeKey {
                     throw LispError.runtime(msg: "Type \(key.typeName) with value \(String(describing: key)) cannot be a key in a dictionary.")
                 }
@@ -67,6 +72,46 @@ extension Core {
             }
             
             return .dictionary(dict)
+        }
+        
+        
+        // MARK: assoc
+        addBuiltin("assoc", docstring: """
+        assoc
+        (dict key value key2 value2 ...)
+        Associate value(s) with key(s) in dictionary
+        """) { args, env in
+            if args.count < 3 {
+                throw LispError.runtime(msg: "'assoc' requires at least 3 arguments")
+            }
+            
+            if args.count % 2 != 1 {
+                throw LispError.runtime(msg: "'assoc': key \(String(describing: args.last!)) has no corresponding value")
+            }
+            
+            guard case let .dictionary(dict) = args[0] else {
+                throw LispError.runtime(msg: "'assoc' requires the first argument to be a dictionary")
+            }
+            
+            var retDict = dict
+            
+            for i in stride(from: 1, to: args.count, by: 2) {
+                let key = args[i]
+                let value = args[i + 1]
+                
+                if !key.canBeKey {
+                    throw LispError.runtime(msg: "Type \(key.typeName) with value \(String(describing: key)) cannot be a key in a dictionary.")
+                }
+                
+                if value == .nil {
+                    retDict[key] = nil
+                    continue
+                }
+                
+                retDict[key] = value
+            }
+            
+            return .dictionary(retDict)
         }
         
         
@@ -126,6 +171,13 @@ extension Core {
             } else if case let .string(str) = args[0] {
                 let f = str.characters.first
                 return f != nil ? .string(String(f!)) : .nil
+            } else if case let .dictionary(dict) = args[0] {
+                if dict.count == 0 {
+                    return .nil
+                }
+                
+                let pair = dict[dict.startIndex]
+                return .list([pair.key, pair.value])
             }
             
             throw LispError.general(msg: "'first' expects an argument that is a list or a string")
@@ -145,6 +197,14 @@ extension Core {
             } else if case let .string(str) = args[0] {
                 let r = str.characters.dropFirst()
                 return .string(String(r))
+            } else if case let .dictionary(dict) = args[0] {
+                if dict.count == 0 {
+                    return .nil
+                }
+                
+                return .list(dict.dropFirst().map { pair in
+                    return .list([pair.key, pair.value])
+                })
             }
             throw LispError.general(msg: "'rest' expects an argument that is a list or a string")
         }
@@ -163,6 +223,13 @@ extension Core {
             } else if case let .string(str) = args[0] {
                 let l = str.characters.last
                 return l != nil ? .string(String(l!)) : .nil
+            } else if case let .dictionary(dict) = args[0] {
+                if dict.count == 0 {
+                    return .nil
+                }
+                
+                let pair = dict[dict.index(dict.startIndex, offsetBy: dict.count - 1)]
+                return .list([pair.key, pair.value])
             }
             
             throw LispError.general(msg: "'last' expects an argument that is a list or a string")
@@ -195,6 +262,14 @@ extension Core {
                     throw LispError.runtime(msg: "Index out of range: \(index)")
                 }
                 return .string(String(str.characters[str.index(str.startIndex, offsetBy: index)]))
+                
+            case .dictionary(let dict):
+                if index >= dict.count || index < 0 {
+                    throw LispError.runtime(msg: "Dictionary index out of range: \(index)")
+                }
+                
+                let pair = dict[dict.index(dict.startIndex, offsetBy: index)]
+                return .list([pair.key, pair.value])
             
             default:
                 throw LispError.runtime(msg: "'at' requires the first argument to be a list or a string.")
@@ -217,6 +292,8 @@ extension Core {
                     return .number(.integer(l.count))
                 } else if case .string(let s) = arg {
                     return .number(.integer(s.count))
+                } else if case .dictionary(let d) = arg {
+                    return .number(.integer(d.count))
                 }
             }
             
@@ -237,6 +314,8 @@ extension Core {
                     return .boolean(l.count == 0)
                 } else if case .string(let s) = arg {
                     return .boolean(s.count == 0)
+                } else if case .dictionary(let d) = arg {
+                    return .boolean(d.count == 0)
                 }
             }
             
