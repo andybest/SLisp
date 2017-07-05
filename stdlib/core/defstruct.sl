@@ -47,7 +47,7 @@
         ; [structname]-[slotname]-assoc
         ~(concat 'do (map
             (function (slotnum) (let (slotname (at slots slotnum))
-                `((defn ~(symbol (str name "-" slotname "-assoc")) (struct newVal)
+                `((defn ~(symbol (str name "-assoc-" slotname)) (struct newVal)
                     (assoc struct ~(+ (* slotnum 2) 2) newVal)))))
             (math/range 0 (count slots))))
         )))
