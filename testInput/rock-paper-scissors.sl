@@ -14,10 +14,10 @@
 
 (def rock-paper-scissors (function ()
     (let (choice (input "(R)ock, (P)aper or (S)cissors? ")
-          computer-choice (math/floor (math/random 0 2))
-          player-choice (if (or (string= choice "R") (string= choice "r")) 0
-                            (if (or (string= choice "P") (string= choice "p")) 1
-                                (if (or (string= choice "S") (string= choice "s")) 2
+          computer-choice (math/random 0 2)
+          player-choice (if (|| (string= choice "R") (string= choice "r")) 0
+                            (if (|| (string= choice "P") (string= choice "p")) 1
+                                (if (|| (string= choice "S") (string= choice "s")) 2
                                     3))))
         (if (== 3 player-choice)
             (print "Invalid input: " choice)
@@ -29,3 +29,5 @@
                         (if (outcome player-choice computer-choice)
                             (print "You win")
                             (print "The computer won"))))))))
+
+(rock-paper-scissors)

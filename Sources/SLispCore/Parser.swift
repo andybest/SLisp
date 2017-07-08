@@ -58,6 +58,8 @@ public class Parser {
     var namespaces                     = [String: Namespace]()
     let coreImports:          [String] = ["core"]
     
+    let slisp_home_var = "SLISP_HOME"
+    
     var cwdStack: [String]  // Holds the current working directory
     
     public var currentNamespace: Namespace {
@@ -107,7 +109,14 @@ public class Parser {
         }
         
         // Load SLisp standard library
-        pushCWD(workingDir: "./stdlib")
+        
+        // Look for stdlib under $SLISP_HOME if it exists, else look in CWD
+        if let slisp_home = ProcessInfo.processInfo.environment[slisp_home_var] {
+            pushCWD(workingDir: "\(slisp_home)/stdlib")
+        } else {
+            pushCWD(workingDir: "./stdlib")
+        }
+        
         _ = evalFile(path: "stdlib.sl", environment: Environment(ns: createOrGetNamespace("core")))
         try popCWD()
         
@@ -618,7 +627,7 @@ public class Parser {
         return nil
     }
     
-    func evalFile(path: String, environment: Environment) -> LispType? {
+    public func evalFile(path: String, environment: Environment) -> LispType? {
         do {
             let oldNS = environment.namespace
             defer {

@@ -55,6 +55,25 @@ class MathBuiltins : Builtins {
             return .list(rv)
         }
         
+        
+        addBuiltin("random", docstring: """
+        random
+        (min max)
+        Returns a random integer between min and max
+        """) { args, env throws in
+            if args.count != 2 {
+                throw LispError.runtime(msg: "'random' requires 2 arguments")
+            }
+            
+            guard case let .number(minN) = args[0], case let .integer(min) = minN,
+                case let .number(maxN) = args[1], case let .integer(max) = maxN else {
+                    throw LispError.runtime(msg: "'random' requires 2 integer arguments")
+            }
+            
+            let n = Int(arc4random() % UInt32(abs(max - min))) + min
+            return .number(.integer(n))
+        }
+        
         return builtins
     }
 }

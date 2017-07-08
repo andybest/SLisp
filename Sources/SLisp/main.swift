@@ -24,10 +24,35 @@
  
  */
 
-let repl = try Repl()
+import Foundation
+import SLispCore
 
-do {
-    try repl?.mainLoop()
-} catch {
-    print(error)
+func checkArgs() {
+    if CommandLine.arguments.count < 2 {
+        runRepl()
+    } else {
+        let path = CommandLine.arguments[1]
+        if FileManager.default.fileExists(atPath: path) {
+            do {
+                let parser = try Parser()
+                _ = parser?.evalFile(path: path, environment: Environment(ns: parser!.currentNamespace))
+            } catch {
+                print("Uncaught exception:\n\(error)")
+            }
+            
+        } else {
+            print("Cannot find SLisp source file at path \(path)")
+        }
+    }
 }
+
+func runRepl() {
+    do {
+        let repl = try Repl()
+        try repl?.mainLoop()
+    } catch {
+        print(error)
+    }
+}
+
+checkArgs()
