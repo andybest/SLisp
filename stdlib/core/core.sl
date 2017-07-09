@@ -22,6 +22,11 @@
 
 (in-ns 'core)
 
+(defmacro ns
+    (function
+        (ns-name)
+        `(in-ns (quote ~ns-name))))
+
 ; Macro for shorthand function declarations
 (defmacro defn
     (function

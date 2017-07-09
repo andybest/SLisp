@@ -34,8 +34,20 @@ func checkArgs() {
         let path = CommandLine.arguments[1]
         if FileManager.default.fileExists(atPath: path) {
             do {
+                let rawSource = try String(contentsOfFile: path)
+                var source = rawSource
+                
+                // Remove shebang if it exists
+                if source.hasPrefix("#!") {
+                    let splitSource = rawSource.components(separatedBy: CharacterSet.newlines)
+                    
+                    source = Array(splitSource.dropFirst()).joined(separator: "\n")
+                }
+                
+                source = "(do \n" + source + ")"
+                
                 let parser = try Parser()
-                _ = parser?.evalFile(path: path, environment: Environment(ns: parser!.currentNamespace))
+                _ = parser?.evalString(source, environment: Environment(ns: parser!.currentNamespace))
             } catch {
                 print("Uncaught exception:\n\(error)")
             }

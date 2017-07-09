@@ -657,4 +657,33 @@ public class Parser {
         print("evalFile: File could not be loaded!")
         return nil
     }
+    
+    public func evalString(_ str: String, environment: Environment) -> LispType? {
+        do {
+            let oldNS = environment.namespace
+            defer {
+                do {
+                    try changeNamespace(oldNS.name)
+                } catch {
+                    print(error)
+                }
+            }
+            
+            let form = try Reader.read(str)
+            return try eval(form, environment: Environment(ns: currentNamespace))
+        } catch let LispError.runtime(msg:message) {
+            print("Runtime Error: \(message)")
+        } catch let LispError.general(msg:message) {
+            print("Error: \(message)")
+        } catch let LispError.lexer(msg:message) {
+            print("Syntax Error: \(message)")
+        } catch LispError.readerNotEOF {
+            print("Syntax Error: expected ')'")
+        }catch {
+            print(String(describing: error))
+        }
+        
+        print("evalFile: File could not be loaded!")
+        return nil
+    }
 }
