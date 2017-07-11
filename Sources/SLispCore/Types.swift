@@ -44,6 +44,7 @@ public enum LispType: CustomStringConvertible, Equatable, Hashable {
     case `nil`
     case function(FunctionBody, docstring: String?, isMacro: Bool, namespace: Namespace)
     case key(String)
+    case file(FILE)
     
     public var hashValue: Int {
         switch self {
@@ -64,6 +65,8 @@ public enum LispType: CustomStringConvertible, Equatable, Hashable {
         case .key(let k):
             return ":\(k)".hashValue
         case .list(_):
+            return 0
+        case .file(_):
             return 0
         }
     }
@@ -95,6 +98,8 @@ public enum LispType: CustomStringConvertible, Equatable, Hashable {
                     "\(pair.key) \(pair.value)"
                 }.joined(separator: ", ") +
             " }"
+        case .file(_):
+            return "#<file>"
         }
     }
     
@@ -120,6 +125,7 @@ public enum LispType: CustomStringConvertible, Equatable, Hashable {
         case .function(_): return "function"
         case .key(_): return "key"
         case .dictionary(_): return "dictionary"
+        case .file(_): return "file"
         }
     }
 }

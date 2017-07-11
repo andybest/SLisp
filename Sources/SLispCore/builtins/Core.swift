@@ -255,6 +255,7 @@ class Core: Builtins {
         initCoreCollectionBuiltins()
         initCoreMathBuiltins(environment: environment)
         initCoreNamespaceBuiltins()
+        initStdioBuiltins()
 
         return builtins
     }
