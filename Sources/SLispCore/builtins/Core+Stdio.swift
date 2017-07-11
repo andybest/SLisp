@@ -83,6 +83,52 @@ extension Core {
             return .boolean(rv == 0)
         }
         
+        addBuiltin("fputs", docstring: "") { args, env in
+            if args.count != 2 {
+                throw LispError.runtime(msg: "'fputs' requires 2 arguments")
+            }
+            
+            guard case let .string(str) = args[0] else {
+                throw LispError.runtime(msg: "'fputs' expects the first argument to be a string")
+            }
+            
+            guard case var .file(f) = args[1] else {
+                throw LispError.runtime(msg: "'fputs' expects the second argument to be a FILE")
+            }
+            
+            let rv = fputs(str.cString(using: .ascii), &f)
+            fflush(&f)
+            
+            return .boolean(rv >= 0)
+        }
+        
+        addBuiltin("fgets", docstring: "") { args, env in
+            if args.count != 2 {
+                throw LispError.runtime(msg: "'fgets' requires 2 arguments")
+            }
+            
+            guard case let .number(.integer(len)) = args[0] else {
+                throw LispError.runtime(msg: "'fgets' expects the first argument to be an integer")
+            }
+            
+            guard case var .file(f) = args[1] else {
+                throw LispError.runtime(msg: "'fgets' expects the second argument to be a FILE")
+            }
+            
+            var buf = [Int8](repeating: 0, count: len)
+            guard let cstr = fgets(&buf, Int32(len), &f) else {
+                return .nil
+            }
+            
+            let str = cstr.withMemoryRebound(to: CChar.self, capacity: MemoryLayout<CChar>.size * len) {
+                return String(cString: $0)
+            }
+            
+            return .string(str)
+        }
+        
+        
+        
     }
     
 }
