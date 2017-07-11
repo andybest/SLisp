@@ -320,7 +320,7 @@ class Core: Builtins {
             var nsmap: [LispType: LispType] = [:]
             
             for (key, value) in namespace.rootBindings {
-                nsmap[.string(key)] = value
+                nsmap[.symbol(key)] = value
             }
             
             return .dictionary(nsmap)

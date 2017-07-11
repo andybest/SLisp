@@ -334,5 +334,33 @@ extension Core {
             
             return .boolean(false)
         }
+        
+        
+        // MARK: keys
+        addBuiltin("keys", docstring: "") { args, parser in
+            if args.count != 1 {
+                throw LispError.runtime(msg: "'keys' expects 1 argument")
+            }
+            
+            guard case let .dictionary(dict) = args[0] else {
+                throw LispError.runtime(msg: "'keys' expects the argument to be a dictionary")
+            }
+            
+            return .list(Array(dict.keys))
+        }
+        
+        
+        // MARK: values
+        addBuiltin("values", docstring: "") { args, parser in
+            if args.count != 1 {
+                throw LispError.runtime(msg: "'values' expects 1 argument")
+            }
+            
+            guard case let .dictionary(dict) = args[0] else {
+                throw LispError.runtime(msg: "'values' expects the argument to be a dictionary")
+            }
+            
+            return .list(Array(dict.values))
+        }
     }
 }
