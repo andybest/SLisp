@@ -301,6 +301,30 @@ class Core: Builtins {
             parser.importNamespace(namespace, toNamespace: parser.currentNamespace)
             return .nil
         }
+        
+        
+        // MARK: list-ns
+        addBuiltin("list-ns", docstring: "") { args, parser in
+            if args.count != 1 {
+                throw LispError.runtime(msg: "'in-ns' expects one argument.")
+            }
+            
+            guard case let .symbol(ns) = args[0] else {
+                throw LispError.runtime(msg: "'in-ns' expects a symbol as an argument")
+            }
+            
+            guard let namespace = parser.namespaces[ns] else {
+                throw LispError.runtime(msg: "Unable to find namespace '\(ns)'")
+            }
+            
+            var nsmap: [LispType: LispType] = [:]
+            
+            for (key, value) in namespace.rootBindings {
+                nsmap[.string(key)] = value
+            }
+            
+            return .dictionary(nsmap)
+        }
     }
     
     func initCoreTypeBuiltins() {

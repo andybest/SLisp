@@ -127,7 +127,37 @@ extension Core {
             return .string(str)
         }
         
+        addBuiltin("rewind", docstring: "") { args, env in
+            if args.count != 1 {
+                throw LispError.runtime(msg: "'rewind' requires 1 argument")
+            }
+            
+            guard case var .file(f) = args[0] else {
+                throw LispError.runtime(msg: "'rewind' expects the argument to be a FILE")
+            }
+            
+            rewind(&f)
+            
+            return .nil
+        }
         
+        addBuiltin("fseek", docstring: "") { args, env in
+            if args.count != 2 {
+                throw LispError.runtime(msg: "'fseek' requires 2 arguments")
+            }
+            
+            guard case let .number(.integer(pos)) = args[0] else {
+                throw LispError.runtime(msg: "'fseek' expects the first argument to be an integer")
+            }
+            
+            guard case var .file(f) = args[1] else {
+                throw LispError.runtime(msg: "'fseek' expects the second argument to be a FILE")
+            }
+            
+            let rv = fseek(&f, pos, SEEK_SET)
+            
+            return .boolean(rv == 0)
+        }
         
     }
     
