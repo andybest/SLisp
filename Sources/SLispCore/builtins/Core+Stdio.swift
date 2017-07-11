@@ -39,32 +39,48 @@ extension Core {
                 throw LispError.runtime(msg: "'fopen' requires the first argument to be a string")
             }
             
-            guard case let .list(modeList) = args[1] else {
-                throw LispError.runtime(msg: "'fopen' requires the second argument to be a list of modes")
-            }
-            
             let possibleModes: [String: String] = [
                 "read": "r",
                 "write": "w",
                 "append": "a",
                 "read-update": "r+",
                 "write-update": "w+",
-                "append-update": "a+"
+                "append-update": "a+",
+                "read-binary": "rb",
+                "write-binary": "wb",
+                "append-binary": "ab",
+                "read-update-binary": "rb+",
+                "write-update-binary": "wb+",
+                "append-update-binary": "ab+"
             ]
             
-            let modeString: [String] = try modeList.map {
-                guard case let .key(mode) = $0, let modeString = possibleModes[mode] else {
-                    throw LispError.runtime(msg: "'fopen': Invalid mode: \(String(describing: $0))")
-                }
-                
-                return modeString
+            guard case let .key(mode) = args[1] else {
+                throw LispError.runtime(msg: "'fopen' requires the second argument to be a file mode")
             }
             
-            guard let file = fopen(path, modeString.joined()) else {
+            guard let modeString = possibleModes[mode] else {
+                throw LispError.runtime(msg: "'fopen': Invalid mode: \(String(describing: args[1]))")
+            }
+            
+            guard let file = fopen(path, modeString) else {
                 throw LispError.runtime(msg: "Unable to open file")
             }
             
             return .file(file.pointee)
+        }
+        
+        addBuiltin("fclose", docstring: "") { args, env in
+            if args.count != 1 {
+                throw LispError.runtime(msg: "'fclose' expects one argument")
+            }
+            
+            guard case var .file(f) = args[0] else {
+                throw LispError.runtime(msg: "'fclose' expects the argument to be a FILE")
+            }
+            
+            let rv = fclose(&f)
+            
+            return .boolean(rv == 0)
         }
         
     }
