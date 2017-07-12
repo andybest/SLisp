@@ -20,16 +20,25 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ; SOFTWARE.
 
-; The base file for the standard library.
-; This file loads the rest of the files that make up the standard library
+(ns core.test)
 
-(defmacro ns
-    (function "ns\n\t(name)\nchange to namespace"
-        (ns-name)
-            `(in-ns (quote ~ns-name))))
+;; Errors
 
-; Load the standard library
-(eval (read-string (str "(do\n" (slurp "core/core.sl") ")")))    ; load-file is defined in this file
-(load-file "math.sl")
-(load-file "string.sl")
-(load-file "test.sl")
+(def *testAssertionError* :testAssertionError)
+
+;; Assertions
+
+(defn assert
+    (x & description)
+    (if (! x)
+        (if (|| (empty? description) (nil? description))
+            (throw :testAssertionError)
+            (throw :testAssertionError (first description)))))
+
+(defn assertEqual
+    (x y & description)
+    (apply assert (concat (== x y) description)))
+
+(defn assertNotEqual
+    (x y & description)
+    (apply assert (concat (! (== x y)) description)))
