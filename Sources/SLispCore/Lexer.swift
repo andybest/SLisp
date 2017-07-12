@@ -203,6 +203,23 @@ class StringMatcher: TokenMatcher {
                         escapeResult = "\n"
                     case "t":
                         escapeResult = "\t"
+                    case "x":
+                        stream.advanceCharacter()
+                        guard let h1 = stream.currentCharacter else {
+                            throw LispError.lexer(msg: "Error in string: unexpected EOF")
+                        }
+                        
+                        stream.advanceCharacter()
+                        guard let h2 = stream.currentCharacter else {
+                            throw LispError.lexer(msg: "Error in string: unexpected EOF")
+                        }
+                        
+                        guard let hexValue = UInt8(String([h1, h2]), radix: 16) else {
+                            throw LispError.lexer(msg: "Error in string: invalid hex escape sequence: \(String([h1, h2]))")
+                        }
+                        escapeResult = String(Character(UnicodeScalar(hexValue)))
+                        
+                        
                     default:
                         throw LispError.lexer(msg: "Unknown escape character in string: \\\(escapeChar)")
                     }

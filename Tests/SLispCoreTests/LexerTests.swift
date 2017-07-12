@@ -197,6 +197,36 @@ class LexerTests: XCTestCase {
         }
     }
     
+    func testStringMatcherSupportsHexLiterals() {
+        let stringSource = "\"\\x40\""
+        let stringStream = StringStream(source: stringSource)
+        
+        XCTAssertTrue(StringMatcher.isMatch(stringStream))
+        
+        do {
+            let result = try StringMatcher.getToken(stringStream)
+            XCTAssertEqual(result, TokenType.string("@"))
+        } catch {
+            XCTFail("Should not throw an error")
+        }
+    }
+    
+    func testStringMatcherShouldThrowErrorForInvalidHexLiterals() {
+        let stringSource = "\"\\x4Q\""
+        let stringStream = StringStream(source: stringSource)
+        
+        XCTAssertTrue(StringMatcher.isMatch(stringStream))
+        
+        do {
+            let result = try StringMatcher.getToken(stringStream)
+            XCTAssertEqual(result, TokenType.string("@"))
+        } catch {
+            return
+        }
+        
+        XCTFail("Should throw an error")
+    }
+    
     func testNumberMatcher() {
         // Integer
         let intSource = "12345"
