@@ -1,3 +1,5 @@
+(ns rps)
+
 (def rps-name (function (index)
     (if (== index 0) "Rock"
         (if (== index 1) "Paper"

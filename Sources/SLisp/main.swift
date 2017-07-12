@@ -47,7 +47,7 @@ func checkArgs() {
                 source = "(do \n" + source + ")"
                 
                 let parser = try Parser()
-                _ = parser?.evalString(source, environment: Environment(ns: parser!.currentNamespace))
+                _ = parser?.evalString(source, environment: Environment(ns: parser!.createOrGetNamespace("user")))
             } catch {
                 print("Uncaught exception:\n\(error)")
             }

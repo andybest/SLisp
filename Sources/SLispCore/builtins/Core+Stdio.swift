@@ -30,7 +30,7 @@ extension Core {
     
     func initStdioBuiltins() {
         
-        addBuiltin("fopen", docstring: "") { args, env in
+        addBuiltin("fopen", docstring: "") { args, parser, env in
             if args.count != 2 {
                 throw LispError.runtime(msg: "'fopen' requires 2 arguments.")
             }
@@ -69,7 +69,7 @@ extension Core {
             return .file(file.pointee)
         }
         
-        addBuiltin("fclose", docstring: "") { args, env in
+        addBuiltin("fclose", docstring: "") { args, parser, env in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'fclose' expects one argument")
             }
@@ -83,7 +83,7 @@ extension Core {
             return .boolean(rv == 0)
         }
         
-        addBuiltin("fputs", docstring: "") { args, env in
+        addBuiltin("fputs", docstring: "") { args, parser, env in
             if args.count != 2 {
                 throw LispError.runtime(msg: "'fputs' requires 2 arguments")
             }
@@ -102,7 +102,7 @@ extension Core {
             return .boolean(rv >= 0)
         }
         
-        addBuiltin("fgets", docstring: "") { args, env in
+        addBuiltin("fgets", docstring: "") { args, parser, env in
             if args.count != 2 {
                 throw LispError.runtime(msg: "'fgets' requires 2 arguments")
             }
@@ -127,7 +127,7 @@ extension Core {
             return .string(str)
         }
         
-        addBuiltin("rewind", docstring: "") { args, env in
+        addBuiltin("rewind", docstring: "") { args, parser, env in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'rewind' requires 1 argument")
             }
@@ -141,7 +141,7 @@ extension Core {
             return .nil
         }
         
-        addBuiltin("fseek", docstring: "") { args, env in
+        addBuiltin("fseek", docstring: "") { args, parser, env in
             if args.count != 2 {
                 throw LispError.runtime(msg: "'fseek' requires 2 arguments")
             }

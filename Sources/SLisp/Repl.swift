@@ -32,22 +32,25 @@ public class Repl {
 
     var parser: Parser
     let ln: LineNoise
+    var environment: Environment
 
     public init?() throws {
         parser = try Parser()!
         ln = LineNoise()
+        environment = Environment(ns: parser.createOrGetNamespace("user"))
     }
 
     public func mainLoop() throws {
         while true {
             if let output = try getInput() {
+                print("\n")
                 print(output)
             }
         }
     }
 
     func getInput() throws -> String? {
-        var prompt = "\(parser.currentNamespaceName)> "
+        var prompt = "\(environment.namespace.name)> "
 
         var input: String = ""
 
@@ -61,8 +64,9 @@ public class Repl {
                 var rv: LispType? = nil
                 do {
                     let form = try Reader.read(input)
-                    rv = try parser.eval(form, environment: Environment(ns: parser.currentNamespace))
-
+                    let (lt, e) = try parser.eval(form, environment: environment)
+                    environment = e
+                    rv = lt
                 } catch let LispError.runtime(msg:message) {
                     return "Runtime Error: \(message)"
                 } catch let LispError.general(msg:message) {

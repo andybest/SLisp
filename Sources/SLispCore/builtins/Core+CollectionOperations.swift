@@ -34,7 +34,7 @@ extension Core {
         list
         (items)
             Constructs a new list containing the items
-        """) { args, env throws in
+        """) { args, parser, env throws in
             return .list(args)
         }
         
@@ -44,7 +44,7 @@ extension Core {
         hash-map
         (key value ...)
             Constructs a new dictionary with the given key/value pairs
-        """) { args, env in
+        """) { args, parser, env in
             if args.count == 0 {
                 return .dictionary([:])
             }
@@ -80,7 +80,7 @@ extension Core {
         assoc
         (dict key value key2 value2 ...) or (list index value ...)
         Associate value(s) with key(s) in dictionary or replace index in list with provided value
-        """) { args, env in
+        """) { args, parser, env in
             if args.count < 3 {
                 throw LispError.runtime(msg: "'assoc' requires at least 3 arguments")
             }
@@ -133,7 +133,7 @@ extension Core {
         cons
         (i l)
             Constructs a new list where i is the first element, and l is the rest
-        """) { args, env throws in
+        """) { args, parser, env throws in
             try self.checkArgCount(funcName: "cons", args: args, expectedNumArgs: 2)
             
             var secondValue: [LispType] = []
@@ -159,7 +159,7 @@ extension Core {
         concat
         (x y)
             Concatenates 2 lists
-        """) { args, env throws in
+        """) { args, parser, env throws in
             let transformed: [LispType] = args.flatMap { input -> [LispType] in
                 if case let .list(list) = input {
                     return list
@@ -176,7 +176,7 @@ extension Core {
         first
         (x)
             Returns the first item in the collection x
-        """) { args, env throws in
+        """) { args, parser, env throws in
             try self.checkArgCount(funcName: "first", args: args, expectedNumArgs: 1)
             
             if case let .list(list) = args[0] {
@@ -202,7 +202,7 @@ extension Core {
         rest
         (x)
             Returns all but the first item in the collection x
-        """) { args, env throws in
+        """) { args, parser, env throws in
             try self.checkArgCount(funcName: "rest", args: args, expectedNumArgs: 1)
             
             if case let .list(list) = args[0] {
@@ -228,7 +228,7 @@ extension Core {
         last
         (x)
             Returns the last item in the collection x
-        """) { args, env throws in
+        """) { args, parser, env throws in
             try self.checkArgCount(funcName: "last", args: args, expectedNumArgs: 1)
             
             if case let .list(list) = args[0] {
@@ -254,7 +254,7 @@ extension Core {
         at
         (x i)
             Returns the item at index i from collection x
-        """) { args, env in
+        """) { args, parser, env in
             if args.count != 2 {
                 throw LispError.runtime(msg: "'at' requires 2 arguments.")
             }
@@ -295,7 +295,7 @@ extension Core {
         count
         (x)
             Returns the count/length of the collection or string x
-        """) { args, env throws in
+        """) { args, parser, env throws in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'count' expects 1 argument")
             }
@@ -319,7 +319,7 @@ extension Core {
         empty?
         (x)
             Returns a boolean indicating whether the string/collection is empty
-        """) { args, env throws in
+        """) { args, parser, env throws in
             try self.checkArgCount(funcName: "empty?", args: args, expectedNumArgs: 1)
             
             for arg in args {
@@ -337,7 +337,7 @@ extension Core {
         
         
         // MARK: keys
-        addBuiltin("keys", docstring: "") { args, parser in
+        addBuiltin("keys", docstring: "") { args, parser, env in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'keys' expects 1 argument")
             }
@@ -351,7 +351,7 @@ extension Core {
         
         
         // MARK: values
-        addBuiltin("values", docstring: "") { args, parser in
+        addBuiltin("values", docstring: "") { args, parser, env in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'values' expects 1 argument")
             }

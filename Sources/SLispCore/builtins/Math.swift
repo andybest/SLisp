@@ -41,7 +41,7 @@ class MathBuiltins : Builtins {
         range
         (min max)
         Creates a list of numbers min < n < max
-        """) { args, env throws in
+        """) { args, parser, env throws in
             if args.count != 2 {
                 throw LispError.runtime(msg: "'range' requires 2 arguments")
             }
@@ -60,7 +60,7 @@ class MathBuiltins : Builtins {
         random
         (min max)
         Returns a random integer between min and max
-        """) { args, env throws in
+        """) { args, parser, env throws in
             if args.count != 2 {
                 throw LispError.runtime(msg: "'random' requires 2 arguments")
             }

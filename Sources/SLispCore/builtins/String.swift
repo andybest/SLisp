@@ -41,7 +41,7 @@ class StringBuiltins : Builtins {
         capitalize
         (str)
         Capitalizes the string
-        """) { args, env throws in
+        """) { args, parser, env throws in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'capitalize' requires one argument")
             }
@@ -57,7 +57,7 @@ class StringBuiltins : Builtins {
         upper-case
         (str)
         Converts the string to upper case
-        """) { args, env throws in
+        """) { args, parser, env throws in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'upper-case' requires one argument")
             }
@@ -73,7 +73,7 @@ class StringBuiltins : Builtins {
         lower-case
         (str)
         Converts the string to lower case
-        """) { args, env throws in
+        """) { args, parser, env throws in
             if args.count != 1 {
                 throw LispError.runtime(msg: "'lower-case' requires one argument")
             }

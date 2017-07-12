@@ -27,7 +27,7 @@
 import Foundation
 
 public class Environment {
-    var namespace: Namespace
+    public var namespace: Namespace
     var localBindings: [String: LispType]
     weak var parent: Environment?
     
@@ -54,17 +54,12 @@ public class Environment {
 }
 
 public class Parser {
-    public var currentNamespaceName: String   = ""
     var namespaces                     = [String: Namespace]()
     let coreImports:          [String] = ["core"]
     
     let slisp_home_var = "SLISP_HOME"
     
     var cwdStack: [String]  // Holds the current working directory
-    
-    public var currentNamespace: Namespace {
-        return namespaces[currentNamespaceName]!
-    }
     
     public init?() throws {
         cwdStack = [String]()
@@ -75,7 +70,6 @@ public class Parser {
         
         try coreBuiltins.forEach {
             let ns = createOrGetNamespace($0.namespaceName())
-            currentNamespaceName = ns.name
             let env = Environment(ns: ns)
             try $0.initBuiltins(environment: env).forEach { (arg) in
                 
@@ -95,7 +89,6 @@ public class Parser {
         
         try builtins.forEach {
             let ns = createOrGetNamespace($0.namespaceName())
-            currentNamespaceName = ns.name
             try $0.initBuiltins(environment: Environment(ns: ns)).forEach { (arg) in
                 
                 let (name, builtinDef) = arg
@@ -119,10 +112,6 @@ public class Parser {
         
         _ = evalFile(path: "stdlib.sl", environment: Environment(ns: createOrGetNamespace("core")))
         try popCWD()
-        
-        // Create default user ns
-        let userNs = createOrGetNamespace("user")
-        currentNamespaceName = userNs.name
     }
     
     func eval_form(_ form: LispType, environment: Environment) throws -> LispType {
@@ -141,14 +130,15 @@ public class Parser {
             }
         case .list(let list):
             return .list(try list.map {
-                try self.eval($0, environment: environment)
+                let (lt, _) = try self.eval($0, environment: environment)
+                return lt
                 })
         default:
             return form
         }
     }
     
-    public func eval(_ form: LispType, environment e: Environment) throws -> LispType {
+    public func eval(_ form: LispType, environment e: Environment) throws -> (LispType, Environment) {
         var envs = [e]
         var tco: Bool   = false
         var mutableForm = form
@@ -158,15 +148,15 @@ public class Parser {
             switch mutableForm {
             case .list(let list):
                 if list.count == 0 {
-                    return form
-                }
+                    return (form, envs.last!)
+             }
             default:
-                return try eval_form(mutableForm, environment: envs.last!)
+                return try (eval_form(mutableForm, environment: envs.last!), envs.last!)
             }
             
             do {
             mutableForm = try macroExpand(mutableForm, environment: envs.last!)
-            
+                
             switch mutableForm {
             case .list(let list):
                 let args = Array(list.dropFirst())
@@ -175,7 +165,7 @@ public class Parser {
                 switch list[0] {
                 // MARK: def
                 case .symbol("def"):
-                    return try parseDef(args: args, environment: envs.last!)
+                    return try (parseDef(args: args, environment: envs.last!), envs.last!)
                     
                 // MARK: let
                 case .symbol("let"):
@@ -193,8 +183,8 @@ public class Parser {
                         throw LispError.runtime(msg: "'set!' requires the variable name to be a symbol")
                     }
                     
-                    _ = try setValue(name: name, value: self.eval(args[1], environment: envs.last!), withEnvironment: envs.last!)
-                    return .nil
+                    _ = try setValue(name: name, value: self.eval(args[1], environment: envs.last!).0, withEnvironment: envs.last!)
+                    return (.nil, envs.last!)
                     
                 // MARK: apply
                 case .symbol("apply"):
@@ -202,11 +192,11 @@ public class Parser {
                         throw LispError.runtime(msg: "'apply' requires 2 arguments")
                     }
                     
-                    guard case .function(_) = try eval(args[0], environment: envs.last!) else {
+                    guard case .function(_) = try eval(args[0], environment: envs.last!).0 else {
                         throw LispError.runtime(msg: "'apply' requires the first argument to be a function")
                     }
                     
-                    guard case let .list(applyArgs) = try eval(args[1], environment: envs.last!) else {
+                    guard case let .list(applyArgs) = try eval(args[1], environment: envs.last!).0 else {
                         throw LispError.runtime(msg: "'apply' requires the second argument to be a list")
                     }
                     
@@ -218,7 +208,7 @@ public class Parser {
                         throw LispError.general(msg: "'quote' expects 1 argument, got \(args.count).")
                     }
                     
-                    return args[0]
+                    return (args[0], envs.last!)
                     
                 // MARK: quasiquote
                 case .symbol("quasiquote"):
@@ -230,7 +220,7 @@ public class Parser {
                 // MARK: do
                 case .symbol("do"):
                     if args.count < 1 {
-                        return .nil
+                        return (.nil, envs.last!)
                     }
                     
                     for (index, doForm) in args.enumerated() {
@@ -239,7 +229,8 @@ public class Parser {
                             break
                         }
                         
-                        _ = try eval(doForm, environment: envs.last!)
+                        let (_, e) = try eval(doForm, environment: envs.last!)
+                        envs.append(e)
                     }
                     
                     // TCO
@@ -247,7 +238,7 @@ public class Parser {
                     
                 // MARK: function
                 case .symbol("function"):
-                    return try parseFunction(args: args, environment: envs.last!)
+                    return try (parseFunction(args: args, environment: envs.last!), envs.last!)
                     
                 // MARK: if
                 case .symbol("if"):
@@ -255,7 +246,7 @@ public class Parser {
                         throw LispError.runtime(msg: "'if' expects 2 or 3 arguments.")
                     }
                     
-                    guard case let .boolean(condition) = try eval(args[0], environment: envs.last!) else {
+                    guard case let .boolean(condition) = try eval(args[0], environment: envs.last!).0 else {
                         throw LispError.general(msg: "'if' expects the first argument to be a boolean condition")
                     }
                     
@@ -264,7 +255,7 @@ public class Parser {
                     } else if args.count > 2 {
                         mutableForm = args[2]
                     } else {
-                        return .nil
+                        return (.nil, envs.last!)
                     }
                     
                 // MARK: while
@@ -274,7 +265,7 @@ public class Parser {
                     }
                     
                     func getCondition() throws -> Bool {
-                        if case let .boolean(b) = try eval(args[0], environment: envs.last!) {
+                        if case let .boolean(b) = try eval(args[0], environment: envs.last!).0 {
                             return b
                         }
                         throw LispError.runtime(msg: "'while' expects the first argument to be a boolean.")
@@ -286,7 +277,7 @@ public class Parser {
                         let body = Array(args.dropFirst())
                         
                         for form in body {
-                            rv = try eval(form, environment: envs.last!)
+                            rv = try eval(form, environment: envs.last!).0
                         }
                         
                         condition = try getCondition()
@@ -301,20 +292,20 @@ public class Parser {
                         throw LispError.runtime(msg: "'defmacro' requires 2 arguments")
                     }
                     
-                    guard case let .function(body, docstring: docstring, _, namespace: ns) = try eval(list[2], environment: envs.last!) else {
+                    guard case let .function(body, docstring: docstring, _, namespace: ns) = try eval(list[2], environment: envs.last!).0 else {
                         throw LispError.runtime(msg: "'defmacro' requires the 2nd argument to be a function")
                     }
                     
-                    return try bindGlobal(name: list[1], value: .function(body, docstring: docstring, isMacro: true, namespace: ns), toNamespace: currentNamespace)
+                    return try (bindGlobal(name: list[1], value: .function(body, docstring: docstring, isMacro: true, namespace: ns), toNamespace: envs.last!.namespace), envs.last!)
                     
                 // MARK: macroexpand
                 case .symbol("macroexpand"):
                     if args.count != 1 {
                         throw LispError.runtime(msg: "'macroexpand' expects one argument")
                     }
-                    return try macroExpand(args[0], environment: envs.last!)
+                    return try (macroExpand(args[0], environment: envs.last!), envs.last!)
+                    
                 default:
-                    //switch try eval_form(macroExpand(mutableForm), environment: envs.last!) {
                     switch try eval_form(mutableForm, environment: envs.last!) {
                     case .list(let lst):
                         switch lst[0] {
@@ -323,8 +314,8 @@ public class Parser {
                         case .function(let body, _, isMacro: _, namespace: let ns):
                             switch body {
                             case .native(body:let nativeBody):
-                                let rv = try nativeBody(Array(lst.dropFirst()), self)
-                                return rv
+                                let rv = try nativeBody(Array(lst.dropFirst()), self, envs.last!)
+                                return (rv, envs.last!)
                             case .lisp(argnames:let argnames, body:let lispBody):
                                 let funcArgs = Array(lst.dropFirst())
                                 if funcArgs.count != argnames.count && argnames.index(of: "&") == nil {
@@ -386,7 +377,7 @@ public class Parser {
             throw LispError.runtime(msg: "'def' requires 2 arguments")
         }
         
-        return try bindGlobal(name: args[0], value: try eval(args[1], environment: environment), toNamespace: currentNamespace)
+        return try bindGlobal(name: args[0], value: try eval(args[1], environment: environment).0, toNamespace: environment.namespace)
     }
     
     func parseLet(args: [LispType], environment: Environment) throws -> LispType {
@@ -403,7 +394,7 @@ public class Parser {
         }
         
         try stride(from: 0, to: bindings.count, by: 2).forEach {
-            _ = try environment.bindLocal(name: bindings[$0], value: self.eval(bindings[$0 + 1], environment: environment))
+            _ = try environment.bindLocal(name: bindings[$0], value: self.eval(bindings[$0 + 1], environment: environment).0)
         }
         
         let body: [LispType] = Array(args.dropFirst())
@@ -441,7 +432,7 @@ public class Parser {
             }
         } else if case .list(_) = args[0] {
             do {
-                if case let .string(ds) = try eval(args[0], environment: environment) {
+                if case let .string(ds) = try eval(args[0], environment: environment).0 {
                     docString = ds
                     fArgs = Array(args.dropFirst())
                 }
@@ -479,7 +470,7 @@ public class Parser {
         }
         
         let body = FunctionBody.lisp(argnames: argNames, body: Array(fArgs.dropFirst(1)))
-        return LispType.function(body, docstring: docString, isMacro: false, namespace: currentNamespace)
+        return LispType.function(body, docstring: docString, isMacro: false, namespace: environment.namespace)
     }
     
     func quasiquote(_ form: LispType) throws -> LispType {
@@ -568,7 +559,9 @@ public class Parser {
                         }
                         
                         for val in lispBody {
-                            mutableForm = try eval(val, environment: envs.last!)
+                            let (lt, e) = try eval(val, environment: envs.last!)
+                            envs.append(e)
+                            mutableForm = lt
                         }
                     } else {
                         throw LispError.runtime(msg: "Builtin cannot be a macro!")
@@ -592,128 +585,5 @@ public class Parser {
             throw LispError.general(msg: "Unable to pop cwd- stack is empty!")
         }
         FileManager.default.changeCurrentDirectoryPath(cwd)
-    }
-    
-    func evalFile(path: String, toNamespace namespace: Namespace, environment: Environment) -> LispType? {
-        do {
-            let oldNS = currentNamespace
-            try changeNamespace(namespace.name)
-            defer {
-                do {
-                    try changeNamespace(oldNS.name)
-                } catch {
-                    print(error)
-                }
-            }
-            
-            let cwd = URL(fileURLWithPath: path).deletingLastPathComponent().absoluteString
-            pushCWD(workingDir: cwd)
-            defer {
-                do {
-                    try popCWD()
-                } catch {
-                    print("Unable to change back cwd!")
-                }
-            }
-            
-            let readForm = "(read-string (str \"(do \" (slurp \"\(path)\") \")\"))"
-            let form     = try Reader.read(readForm)
-            let rv       = try eval(form, environment: environment)
-            return try eval(rv, environment: environment)
-        } catch let LispError.runtime(msg:message) {
-            print("Runtime Error: \(message)")
-        } catch let LispError.general(msg:message) {
-            print("Error: \(message)")
-        } catch let LispError.lexer(msg:message) {
-            print("Syntax Error: \(message)")
-        } catch LispError.readerNotEOF {
-            print("Syntax Error: expected ')'")
-        } catch let LispError.runtimeForm(msg: message, form: form) {
-            var retMsg = "Error: \(message)"
-            if form != nil {
-                retMsg += "\n"
-                retMsg += String(describing: form!)
-            }
-            print(retMsg)
-        } catch {
-            print(String(describing: error))
-        }
-        
-        print("evalFile: File could not be loaded!")
-        return nil
-    }
-    
-    public func evalFile(path: String, environment: Environment) -> LispType? {
-        do {
-            let oldNS = environment.namespace
-            defer {
-                do {
-                    try changeNamespace(oldNS.name)
-                } catch {
-                    print(error)
-                }
-            }
-            
-            let readForm = "(read-string (str \"(do \" (slurp \"\(path)\") \")\"))"
-            let form     = try Reader.read(readForm)
-            let rv       = try eval(form, environment: environment)
-            return try eval(rv, environment: environment)
-        } catch let LispError.runtime(msg:message) {
-            print("Runtime Error: \(message)")
-        } catch let LispError.general(msg:message) {
-            print("Error: \(message)")
-        } catch let LispError.lexer(msg:message) {
-            print("Syntax Error: \(message)")
-        } catch LispError.readerNotEOF {
-            print("Syntax Error: expected ')'")
-        } catch let LispError.runtimeForm(msg: message, form: form) {
-            var retMsg = "Error: \(message)"
-            if form != nil {
-                retMsg += "\n"
-                retMsg += String(describing: form!)
-            }
-            print(retMsg)
-        } catch {
-            print(String(describing: error))
-        }
-        
-        print("evalFile: File could not be loaded!")
-        return nil
-    }
-    
-    public func evalString(_ str: String, environment: Environment) -> LispType? {
-        do {
-            let oldNS = environment.namespace
-            defer {
-                do {
-                    try changeNamespace(oldNS.name)
-                } catch {
-                    print(error)
-                }
-            }
-            
-            let form = try Reader.read(str)
-            return try eval(form, environment: Environment(ns: currentNamespace))
-        } catch let LispError.runtime(msg:message) {
-            print("Runtime Error: \(message)")
-        } catch let LispError.general(msg:message) {
-            print("Error: \(message)")
-        } catch let LispError.lexer(msg:message) {
-            print("Syntax Error: \(message)")
-        } catch LispError.readerNotEOF {
-            print("Syntax Error: expected ')'")
-        } catch let LispError.runtimeForm(msg: message, form: form) {
-            var retMsg = "Error: \(message)"
-            if form != nil {
-                retMsg += "\n"
-                retMsg += String(describing: form!)
-            }
-            print(retMsg)
-        } catch {
-            print(String(describing: error))
-        }
-        
-        print("evalFile: File could not be loaded!")
-        return nil
     }
 }

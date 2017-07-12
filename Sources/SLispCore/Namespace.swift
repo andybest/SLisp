@@ -27,7 +27,7 @@
 import Foundation
 
 public class Namespace: Hashable {
-    let name: String
+    public let name: String
     var rootBindings     = [String: LispType]()
     var namespaceRefs    = [String: Namespace]()
     var namespaceImports = Set<Namespace>()
@@ -49,14 +49,6 @@ extension Parser {
 
     func addNamespace(_ ns: Namespace) {
         namespaces[ns.name] = ns
-    }
-
-    func changeNamespace(_ name: String) throws {
-        if namespaces[name] != nil {
-            currentNamespaceName = name
-        } else {
-            throw LispError.general(msg: "Invalid namespace: '\(name)'")
-        }
     }
 
     func getValue(_ name: String, withEnvironment env: Environment) throws -> LispType {
@@ -154,7 +146,7 @@ extension Parser {
         namespace.namespaceRefs[importName] = ns
     }
 
-    func createOrGetNamespace(_ name: String) -> Namespace {
+    public func createOrGetNamespace(_ name: String) -> Namespace {
         if let ns = namespaces[name] {
             return ns
         }
@@ -167,14 +159,6 @@ extension Parser {
                 importNamespace(createOrGetNamespace($0), toNamespace: ns)
             }
         }
-        
-        /*pushCWD(workingDir: "stdlib")
-        _ = evalFile(path: "autoinclude.sl", environment: Environment(ns: ns))
-        do {
-            try popCWD()
-        } catch {
-            print("Unable to pop CWD!")
-        }*/
         
         return ns
     }
