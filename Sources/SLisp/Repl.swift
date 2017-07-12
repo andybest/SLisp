@@ -43,7 +43,6 @@ public class Repl {
     public func mainLoop() throws {
         while true {
             if let output = try getInput() {
-                print("\n")
                 print(output)
             }
         }
@@ -56,6 +55,7 @@ public class Repl {
 
         while true {
             let newInput = try ln.getLine(prompt: prompt)
+            print("")
 
             input += newInput
 

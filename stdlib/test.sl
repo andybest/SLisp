@@ -22,6 +22,28 @@
 
 (ns core.test)
 
+;; ANSI Colors
+
+(def *ansi-color-red*       "\x1b[31m")
+(def *ansi-color-green*     "\x1b[32m")
+(def *ansi-color-yellow*    "\x1b[33m")
+(def *ansi-color-blue*      "\x1b[34m")
+(def *ansi-color-magenta*   "\x1b[35m")
+(def *ansi-color-cyan*      "\x1b[36m")
+(def *ansi-color-reset*     "\x1b[0m")
+
+(defn color-text
+    (color text)
+    (let (ansiColor (case color
+                        :red *ansi-color-red*
+                        :green *ansi-color-green*
+                        :yellow *ansi-color-yellow*
+                        :blue *ansi-color-blue*
+                        :magenta *ansi-color-magenta*
+                        :cyan *ansi-color-cyan*
+                        :else ""))
+        (str ansiColor text *ansi-color-reset*)))
+
 ;; Errors
 
 (def *testAssertionError* :testAssertionError)
@@ -42,3 +64,13 @@
 (defn assertNotEqual
     (x y & description)
     (apply assert (concat (! (== x y)) description)))
+
+
+(defn testAnsi
+    ()
+    (print (color-text :red "Red text"))
+    (print (color-text :green "Green text"))
+    (print (color-text :yellow "Yello text"))
+    (print (color-text :blue "Blue text"))
+    (print (color-text :magenta "Magenta text"))
+    (print (color-text :cyan "Cyan text")))
