@@ -22,10 +22,6 @@
 
 (in-ns 'core)
 
-(defmacro ns
-    (function
-        (ns-name)
-        `(in-ns (quote ~ns-name))))
 
 ; Macro for shorthand function declarations
 (defmacro defn
@@ -127,6 +123,23 @@
                         (concat '(case) pred remaining))))))))
 
 
+(defmacro ns
+    (function
+        (ns-name & options)
+        (let (ns-form `(in-ns (quote ~ns-name))
+              option-func #((opt)
+                    (let (opt-key (first opt)
+                          opt-val (rest opt)
+                          opt-func (case opt-key
+                                        :refer 'refer
+                                        :else (do 
+                                                (print (str "Invalid ns option: " opt-key)) 
+                                                nil)))
+                          (when opt-func (map #((val) 
+                                    (list `(~opt-func (quote ~val)))) opt-val))))
+             option-funcs (map option-func options))
+
+             (concat '(do) (list ns-form) option-funcs))))
 
 ; Load additional core ns files
 (load-file "core/defstruct.sl")

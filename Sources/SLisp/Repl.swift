@@ -73,6 +73,13 @@ public class Repl {
                     return "Error: \(message)"
                 } catch let LispError.lexer(msg:message) {
                     return "Syntax Error: \(message)"
+                } catch let LispError.runtimeForm(msg: message, form: form) {
+                    var retMsg = "Error: \(message)"
+                    if form != nil {
+                        retMsg += "\n"
+                        retMsg += String(describing: form!)
+                    }
+                    return retMsg
                 } catch LispError.readerNotEOF {
                     // Input hasn't been completed
                     prompt = "...\t"

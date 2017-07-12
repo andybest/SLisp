@@ -164,6 +164,7 @@ public class Parser {
                 return try eval_form(mutableForm, environment: envs.last!)
             }
             
+            do {
             mutableForm = try macroExpand(mutableForm, environment: envs.last!)
             
             switch mutableForm {
@@ -368,6 +369,14 @@ public class Parser {
                 
             default:
                 throw LispError.runtime(msg: "Cannot evaluate form.")
+            }
+                
+            } catch let LispError.runtime(msg:message) {
+                throw LispError.runtimeForm(msg: message, form: mutableForm)
+            } catch let LispError.general(msg:message) {
+                throw LispError.runtimeForm(msg: message, form: mutableForm)
+            } catch {
+                throw error
             }
         } // while
     }
@@ -619,7 +628,14 @@ public class Parser {
             print("Syntax Error: \(message)")
         } catch LispError.readerNotEOF {
             print("Syntax Error: expected ')'")
-        }catch {
+        } catch let LispError.runtimeForm(msg: message, form: form) {
+            var retMsg = "Error: \(message)"
+            if form != nil {
+                retMsg += "\n"
+                retMsg += String(describing: form!)
+            }
+            print(retMsg)
+        } catch {
             print(String(describing: error))
         }
         
@@ -650,7 +666,14 @@ public class Parser {
             print("Syntax Error: \(message)")
         } catch LispError.readerNotEOF {
             print("Syntax Error: expected ')'")
-        }catch {
+        } catch let LispError.runtimeForm(msg: message, form: form) {
+            var retMsg = "Error: \(message)"
+            if form != nil {
+                retMsg += "\n"
+                retMsg += String(describing: form!)
+            }
+            print(retMsg)
+        } catch {
             print(String(describing: error))
         }
         
@@ -679,7 +702,14 @@ public class Parser {
             print("Syntax Error: \(message)")
         } catch LispError.readerNotEOF {
             print("Syntax Error: expected ')'")
-        }catch {
+        } catch let LispError.runtimeForm(msg: message, form: form) {
+            var retMsg = "Error: \(message)"
+            if form != nil {
+                retMsg += "\n"
+                retMsg += String(describing: form!)
+            }
+            print(retMsg)
+        } catch {
             print(String(describing: error))
         }
         

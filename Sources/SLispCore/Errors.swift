@@ -29,6 +29,7 @@ import Foundation
 public enum LispError: Error {
     case general(msg: String)
     case runtime(msg: String)
+    case runtimeForm(msg: String, form: LispType?)
     case lexer(msg: String)
     case readerNotEOF
 }
