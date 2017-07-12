@@ -40,8 +40,6 @@
 (defn load-file (path)
     (eval (read-string (str "(do\n" (slurp path) ")"))))
 
-(load-file "core/defstruct.sl")
-
 (defn map 
     (str "map\n"
         "(f coll)\n"
@@ -99,3 +97,37 @@
 (defn >=
     (x y)
     (|| (> x y) (== x y)))
+
+(defmacro when
+    #((pred & body)
+    `(if (! (|| (nil? ~pred) (empty? ~pred)))
+        ~(concat 'do body))))
+
+(defmacro cond
+    #((& clauses)
+    (when clauses
+        `(if (== :else ~(first clauses))
+            ~(list 'do (at clauses 1))
+            (if (|| (== :else ~(first clauses)) ~(first clauses))
+                ~(list 'do (at clauses 1))
+                ~(let (remaining (rest (rest clauses)))
+                    (when remaining
+                        (concat '(cond) (rest (rest clauses))))))))))
+
+
+(defmacro case
+    #((pred & clauses)
+    (when clauses
+        `(if (== :else ~(first clauses))
+            ~(list 'do (at clauses 1))
+            (if (== ~pred ~(first clauses))
+                ~(list 'do (at clauses 1))
+                ~(let (remaining (rest (rest clauses)))
+                    (when remaining
+                        (concat '(case) pred remaining))))))))
+
+
+
+; Load additional core ns files
+(load-file "core/defstruct.sl")
+(load-file "core/file.sl")
