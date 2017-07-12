@@ -272,6 +272,27 @@ class Core: Builtins {
             exit(0)
         }
         
+        
+        // MARK: throw
+        addBuiltin("throw", docstring: "") { args, parser, env throws in
+            if args.count == 0 || args.count > 2 {
+                throw LispError.runtime(msg: "'throw' expects 1 or 2 arguments")
+            }
+            
+            guard case let .key(errorKey) = args[0] else {
+                throw LispError.runtime(msg: "'throw' expects the first argument to be a keyword")
+            }
+            
+            var userInfo: LispType? = nil
+            if args.count == 2 {
+                userInfo = args[1]
+            }
+            
+            throw LispError.lispError(errorKey: errorKey, userInfo: userInfo)
+            
+        }
+        
+        
         initCoreTypeBuiltins()
         initCoreCollectionBuiltins()
         initCoreMathBuiltins(environment: environment)

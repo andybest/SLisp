@@ -305,6 +305,10 @@ public class Parser {
                     }
                     return try (macroExpand(args[0], environment: envs.last!), envs.last!)
                     
+                // MARK: try
+                case .symbol("try"):
+                    return try parseTry(args: args, env: envs.last!)
+                    
                 default:
                     switch try eval_form(mutableForm, environment: envs.last!) {
                     case .list(let lst):
@@ -473,6 +477,102 @@ public class Parser {
         return LispType.function(body, docstring: docString, isMacro: false, namespace: environment.namespace)
     }
     
+    func parseTry(args: [LispType], env: Environment) throws -> (LispType, Environment) {
+        if args.count < 2 {
+            throw LispError.runtime(msg: "'try' needs at least 2 arguments")
+        }
+        
+        var tryBody: [LispType]?
+        var catchBinding: String?
+        var catchBody: [LispType]?
+        
+        var finallyBody: [LispType]? = nil
+        
+        if args.count == 2 {
+            if let catchResult = try getCatch(catchForm: args.last!) {
+                catchBinding = catchResult.0
+                catchBody = catchResult.1
+            }
+            
+            tryBody = Array(args.dropLast())
+        } else {
+            // Try to get the symbols for the last 2 forms
+            
+            let last2Args = args.dropFirst(args.count - 2)
+            let symbols: [String?] =  last2Args.map {
+                guard case let .list(lst) = $0, lst.count > 0, case let .symbol(sym) = lst.first! else {
+                    return nil
+                }
+                
+                return sym
+            }
+            
+            if symbols[1] == "catch" {
+                if let catchResult = try getCatch(catchForm: args.last!) {
+                    catchBinding = catchResult.0
+                    catchBody = catchResult.1
+                }
+                
+                tryBody = Array(args.dropLast())
+            } else if symbols[0] == "catch" && symbols[1] == "finally" {
+                if let catchResult = try getCatch(catchForm: args.dropLast().last!) {
+                    catchBinding = catchResult.0
+                    catchBody = catchResult.1
+                }
+                
+                // Try to get the 'finally' form
+                guard case let .list(finallyList) = args.last! else {
+                    throw LispError.runtime(msg: "'try': invalid 'finally' clause")
+                }
+                
+                finallyBody = Array(finallyList.dropFirst())
+                if finallyBody!.count < 1 {
+                    throw LispError.runtime(msg: "'finally': must have body")
+                }
+                
+                tryBody = Array(args.dropLast(2))
+            } else {
+                throw LispError.runtime(msg: "'try' expects catch and/or finally")
+            }
+        }
+        
+        var returnForm: (LispType, Environment)?
+        
+        do {
+            for (index, doForm) in tryBody!.enumerated() {
+                let (form, _) = try eval(doForm, environment: env)
+                
+                if index == 1 {
+                    returnForm = (form, env)
+                }
+            }
+        } catch LispError.lispError(errorKey: let errorKey, userInfo: let userInfo){
+            if catchBinding != nil {
+                _ = try env.bindLocal(name: .symbol(catchBinding!),
+                                     value: .error(errorKey: errorKey,
+                                                   userInfo: userInfo == nil ? nil : [userInfo!]))
+            }
+            
+            // Eval catch body
+            if catchBody != nil {
+                for catchForm in catchBody! {
+                    let (_, _) = try eval(catchForm, environment: env)
+                }
+            }
+        } catch {
+            // If it's not a native error, rethrow it.
+            throw error
+        }
+        
+        if finallyBody != nil {
+            for finallyForm in finallyBody! {
+                let _ = try eval(finallyForm, environment: env)
+            }
+        }
+        
+        return returnForm ?? (.nil, env)
+    }
+    
     func quasiquote(_ form: LispType) throws -> LispType {
         // If the argument isn't a list, just return the argument with a regular quote
         guard case let .list(args) = form, args.count > 0 else {
@@ -573,6 +673,32 @@ public class Parser {
         }
         
         return mutableForm
+    }
+    
+    func getCatch(catchForm: LispType) throws -> (String, [LispType])? {
+        guard case let .list(catchList) = catchForm, catchList.count >= 1 else {
+            throw LispError.runtime(msg: "'try': missing catch")
+        }
+        
+        guard case let .symbol(catchForm) = catchList[0], catchForm == "catch" else {
+            throw LispError.runtime(msg: "'try' expected catch")
+        }
+        
+        if catchList.count > 1 {
+            guard let pSym = catchList.dropFirst().first, case let .symbol(binding) = pSym else {
+                throw LispError.runtime(msg: "'catch' expects the first argument to be a symbol")
+            }
+            
+            let catchBody = catchList.dropFirst(2)
+            
+            if catchBody.count < 1 {
+                throw LispError.runtime(msg: "'catch' expects a body")
+            }
+            
+            return (binding, Array(catchBody))
+        }
+        
+        return nil
     }
     
     func pushCWD(workingDir: String) {

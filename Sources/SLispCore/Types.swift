@@ -45,6 +45,7 @@ public enum LispType: CustomStringConvertible, Equatable, Hashable {
     case function(FunctionBody, docstring: String?, isMacro: Bool, namespace: Namespace)
     case key(String)
     case file(FILE)
+    case error(errorKey: String, userInfo: [LispType]?)
     
     public var hashValue: Int {
         switch self {
@@ -67,6 +68,8 @@ public enum LispType: CustomStringConvertible, Equatable, Hashable {
         case .list(_):
             return 0
         case .file(_):
+            return 0
+        case .error(_, _):
             return 0
         }
     }
@@ -100,6 +103,8 @@ public enum LispType: CustomStringConvertible, Equatable, Hashable {
             " }"
         case .file(_):
             return "#<file>"
+        case .error(errorKey: let key, userInfo: let userInfo):
+            return "#<error: \(String(describing: key)), userInfo: \(String(describing: userInfo))>"
         }
     }
     
@@ -126,6 +131,7 @@ public enum LispType: CustomStringConvertible, Equatable, Hashable {
         case .key(_): return "key"
         case .dictionary(_): return "dictionary"
         case .file(_): return "file"
+        case .error(_): return "error"
         }
     }
 }

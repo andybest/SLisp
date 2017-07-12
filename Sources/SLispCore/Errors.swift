@@ -32,4 +32,9 @@ public enum LispError: Error {
     case runtimeForm(msg: String, form: LispType?)
     case lexer(msg: String)
     case readerNotEOF
+    case lispError(errorKey: String, userInfo: LispType?)
+}
+
+public enum StandardErrors: String {
+    case invalidArgumentException
 }
