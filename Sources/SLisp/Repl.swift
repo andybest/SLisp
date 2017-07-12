@@ -60,10 +60,6 @@ public class Repl {
 
                 var rv: LispType? = nil
                 do {
-                    if input == "(exit)" {
-                        exit(0)
-                    }
-                    
                     let form = try Reader.read(input)
                     rv = try parser.eval(form, environment: Environment(ns: parser.currentNamespace))
 

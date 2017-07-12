@@ -251,6 +251,27 @@ class Core: Builtins {
             return .nil
         }
         
+        
+        // MARK: exit
+        addBuiltin("exit", docstring: """
+        exit
+        (val)
+            Exits the process, returning an optional integer
+        """) { args, parser throws in
+            if args.count > 1 {
+                throw LispError.runtime(msg: "'exit' accepts a maximum of 1 argument")
+            }
+            
+            if args.count > 0 {
+                guard case let .number(.integer(exitVal)) = args[0] else {
+                    throw LispError.runtime(msg: "'exit' expects an integer argument")
+                }
+                exit(Int32(exitVal))
+            }
+            
+            exit(0)
+        }
+        
         initCoreTypeBuiltins()
         initCoreCollectionBuiltins()
         initCoreMathBuiltins(environment: environment)
