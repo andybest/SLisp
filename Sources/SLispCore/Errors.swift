@@ -36,5 +36,6 @@ public enum LispError: Error {
 }
 
 public enum StandardErrors: String {
-    case invalidArgumentException
+    case invalidArgumentError
+    case runtimeError
 }

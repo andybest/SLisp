@@ -249,6 +249,50 @@ extension Core {
         }
         
         
+        // MARK: take
+        addBuiltin("take", docstring: """
+        take
+        (coll n)
+            Returns the first n items of the collection
+        """) { args, parser, env throws in
+            try self.checkArgCount(funcName: "take", args: args, expectedNumArgs: 2)
+            
+            guard case let .number(.integer(num)) = args[1] else {
+                throw LispError.runtime(msg: "'take' expects the second argument to be an integer")
+            }
+            
+            if case let .list(list) = args[0] {
+                return .list(Array(list.prefix(num)))
+            } else if case let .string(str) = args[0] {
+                return .string(String(str.prefix(num)))
+            }
+            
+            throw LispError.general(msg: "'take' expects an argument that is a list or a string")
+        }
+        
+        
+        // MARK: drop
+        addBuiltin("drop", docstring: """
+        drop
+        (coll n)
+            Drops the first n items of the collection
+        """) { args, parser, env throws in
+            try self.checkArgCount(funcName: "drop", args: args, expectedNumArgs: 2)
+            
+            guard case let .number(.integer(num)) = args[1] else {
+                throw LispError.runtime(msg: "'drop' expects the second argument to be an integer")
+            }
+            
+            if case let .list(list) = args[0] {
+                return .list(Array(list.dropFirst(num)))
+            } else if case let .string(str) = args[0] {
+                return .string(String(str.dropFirst(num)))
+            }
+            
+            throw LispError.general(msg: "'drop' expects an argument that is a list or a string")
+        }
+        
+        
         // MARK: at
         addBuiltin("at", docstring: """
         at

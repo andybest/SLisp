@@ -1,5 +1,5 @@
 #!/bin/sh
 
-pushd ./.build/debug
+pushd ./.build/debug > /dev/null
 ./SLisp
-popd
+popd > /dev/null

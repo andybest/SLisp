@@ -61,7 +61,7 @@
         (while (< collidx (count coll))
             (let (item (at coll collidx))
                 (if (f item)
-                    (set! processed (concat processed item))))
+                    (set! processed (concat processed (list item)))))
             (set! collidx (+ collidx 1)))
         processed))
 

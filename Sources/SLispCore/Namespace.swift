@@ -54,7 +54,12 @@ extension Parser {
     func getValue(_ name: String, withEnvironment env: Environment) throws -> LispType {
         var targetNamespace: String?
         var binding:   String
-
+        
+        // Special symbol that returns the current namespace
+        if name == "*ns*" {
+            return .symbol(env.namespace.name)
+        }
+        
         // Split the input on the first forward slash to separate by
         let bindingComponents = name.characters.split(maxSplits: 1, omittingEmptySubsequences: false) {
             $0 == "/"

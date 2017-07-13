@@ -65,7 +65,6 @@ public class Repl {
                 do {
                     let form = try Reader.read(input)
                     let (lt, e) = try parser.eval(form, environment: environment)
-                    environment = e
                     rv = lt
                 } catch let LispError.runtime(msg:message) {
                     return "Runtime Error: \(message)"

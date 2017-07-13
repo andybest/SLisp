@@ -230,7 +230,7 @@ public class Parser {
                         }
                         
                         let (_, e) = try eval(doForm, environment: envs.last!)
-                        envs.append(e)
+                        //envs.append(e)
                     }
                     
                     // TCO
@@ -542,7 +542,7 @@ public class Parser {
             for (index, doForm) in tryBody!.enumerated() {
                 let (form, _) = try eval(doForm, environment: env)
                 
-                if index == 1 {
+                if index == tryBody!.count - 1 {
                     returnForm = (form, env)
                 }
             }
@@ -555,8 +555,12 @@ public class Parser {
             
             // Eval catch body
             if catchBody != nil {
-                for catchForm in catchBody! {
-                    let (_, _) = try eval(catchForm, environment: env)
+                for (index, catchForm) in catchBody!.enumerated() {
+                    let (form, _) = try eval(catchForm, environment: env)
+                    
+                    if index == catchBody!.count - 1 {
+                        returnForm = (form, env)
+                    }
                 }
             }
         } catch {
@@ -660,7 +664,7 @@ public class Parser {
                         
                         for val in lispBody {
                             let (lt, e) = try eval(val, environment: envs.last!)
-                            envs.append(e)
+                            //envs.append(e)
                             mutableForm = lt
                         }
                     } else {
