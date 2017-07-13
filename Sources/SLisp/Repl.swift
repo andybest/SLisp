@@ -67,12 +67,16 @@ public class Repl {
                     let (lt, e) = try parser.eval(form, environment: environment)
                     rv = lt
                 } catch let LispError.runtime(msg:message) {
+                    ln.addHistory(input)
                     return "Runtime Error: \(message)"
                 } catch let LispError.general(msg:message) {
+                    ln.addHistory(input)
                     return "Error: \(message)"
                 } catch let LispError.lexer(msg:message) {
+                    ln.addHistory(input)
                     return "Syntax Error: \(message)"
                 } catch let LispError.runtimeForm(msg: message, form: form) {
+                    ln.addHistory(input)
                     var retMsg = "Error: \(message)"
                     if form != nil {
                         retMsg += "\n"
