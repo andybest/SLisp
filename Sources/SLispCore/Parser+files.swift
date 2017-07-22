@@ -41,8 +41,8 @@ extension Parser {
             
             let readForm = "(read-string (str \"(do \" (slurp \"\(path)\") \")\"))"
             let form     = try Reader.read(readForm)
-            let rv       = try eval(form, environment: environment).0
-            return try eval(rv, environment: environment).0
+            let rv       = try eval(form, environment: environment)
+            return try eval(rv, environment: environment)
         } catch let LispError.runtime(msg:message) {
             print("Runtime Error: \(message)")
         } catch let LispError.general(msg:message) {
@@ -71,7 +71,7 @@ extension Parser {
             let readForm = "(read-string (str \"(do \" (slurp \"\(path)\") \")\"))"
             let form     = try Reader.read(readForm)
             let rv       = try eval(form, environment: environment)
-            return try eval(rv.0, environment: environment).0
+            return try eval(rv, environment: environment)
         } catch let LispError.runtime(msg:message) {
             print("Runtime Error: \(message)")
         } catch let LispError.general(msg:message) {
@@ -98,7 +98,7 @@ extension Parser {
     public func evalString(_ str: String, environment: Environment) -> LispType? {
         do {
             let form = try Reader.read(str)
-            return try eval(form, environment: environment).0
+            return try eval(form, environment: environment)
         } catch let LispError.runtime(msg:message) {
             print("Runtime Error: \(message)")
         } catch let LispError.general(msg:message) {

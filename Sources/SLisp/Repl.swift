@@ -64,8 +64,7 @@ public class Repl {
                 var rv: LispType? = nil
                 do {
                     let form = try Reader.read(input)
-                    let (lt, e) = try parser.eval(form, environment: environment)
-                    rv = lt
+                    rv = try parser.eval(form, environment: environment)
                 } catch let LispError.runtime(msg:message) {
                     ln.addHistory(input)
                     return "Runtime Error: \(message)"

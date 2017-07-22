@@ -109,7 +109,7 @@ class Builtins {
             throw LispError.general(msg: "'\(name)' requires one argument")
         }
         
-        let evaluated = try args.map { try parser.eval($0, environment: environment).0 }
+        let evaluated = try args.map { try parser.eval($0, environment: environment) }
         
         guard case let .number(num) = evaluated[0] else {
             throw LispError.general(msg: "'\(name)' requires a number argument.")
@@ -123,7 +123,7 @@ class Builtins {
             throw LispError.general(msg: "'\(name)' requires one argument")
         }
         
-        let evaluated = try args.map { try parser.eval($0, environment: environment).0 }
+        let evaluated = try args.map { try parser.eval($0, environment: environment) }
         
         guard case let .number(num) = evaluated[0] else {
             throw LispError.general(msg: "'\(name)' requires a number argument.")
@@ -161,7 +161,7 @@ class Builtins {
         var result: Bool = false
         var lastValue: Bool = false
         var firstArg = true
-        let evaluated = try args.map { try parser.eval($0, environment: environment).0 }
+        let evaluated = try args.map { try parser.eval($0, environment: environment) }
 
         for arg in evaluated {
             guard case let .boolean(b) = arg else {
@@ -180,7 +180,7 @@ class Builtins {
     }
 
     func doSingleBooleanOperation(_ args: [LispType], environment: Environment, body:SingleBooleanOperationBody) throws -> LispType {
-        let evaluated = try args.map { try parser.eval($0, environment: environment).0 }
+        let evaluated = try args.map { try parser.eval($0, environment: environment) }
 
         guard case let .boolean(b) = evaluated[0] else {
             throw LispError.general(msg: "Invalid argument type: \(String(describing: evaluated[0]))")

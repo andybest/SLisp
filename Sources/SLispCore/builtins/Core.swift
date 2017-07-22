@@ -134,7 +134,7 @@ class Core: Builtins {
                 throw LispError.general(msg: "'eval' requires 1 argument")
             }
 
-            return try self.parser.eval(args[0], environment: environment).0
+            return try self.parser.eval(args[0], environment: environment)
         }
         
         
