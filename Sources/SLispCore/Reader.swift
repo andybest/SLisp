@@ -53,7 +53,7 @@ public class Reader {
                 return try read_list()
             case .lBrace:
                 return try read_dict()
-            case .symbol(let str):
+            case .symbol(_, let str):
 
                 // Handle keys
                 if str.hasPrefix(":") {
@@ -103,15 +103,24 @@ public class Reader {
                 }
 
                 return .symbol(str)
-            case .string(let str):
+            case .string(_, let str):
                 return .string(str)
-            case .float(let num):
+            case .float(_, let num):
                 return .number(.float(num))
-            case .integer(let num):
+            case .integer(_, let num):
                 return .number(.integer(num))
-            default:
-                Swift.print("Error while reading token \(token) at index \(pos)")
-                return .nil
+        case .rParen(let tokenPos):
+            throw LispError.lexer(msg: """
+                \(tokenPos.line):\(tokenPos.column): Unexpected ')'
+                \t\(tokenPos.sourceLine)
+                \t\(tokenPos.tokenMarker)
+                """)
+        case .rBrace(let tokenPos):
+            throw LispError.lexer(msg: """
+                \(tokenPos.line):\(tokenPos.column): Unexpected '}'
+                \t\(tokenPos.sourceLine)
+                \t\(tokenPos.tokenMarker)
+                """)
         }
     }
 

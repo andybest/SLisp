@@ -73,7 +73,7 @@ public class Repl {
                     return "Error: \(message)"
                 } catch let LispError.lexer(msg:message) {
                     ln.addHistory(input)
-                    return "Syntax Error: \(message)"
+                    return message
                 } catch let LispError.runtimeForm(msg: message, form: form) {
                     ln.addHistory(input)
                     var retMsg = "Error: \(message)"

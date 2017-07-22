@@ -26,26 +26,48 @@
 
 import Foundation
 
+public struct TokenPosition {
+    let line: Int
+    let column: Int
+    let source: String
+    
+    var sourceLine: String {
+        return String(source.split(separator: "\n")[line])
+    }
+    
+    var tokenMarker: String {
+        // Creates a "^" marker underneath the source line pointing to the token
+        var output = ""
+        
+        // Add marker at appropriate column
+        for _ in 0..<(column - 1) {
+            output += " "
+        }
+        
+        output += "^"
+        return output
+    }
+}
 
-public enum TokenType: Equatable {
-    case lParen
-    case rParen
-    case lBrace
-    case rBrace
-    case symbol(String)
-    case float(Double)
-    case integer(Int)
-    case string(String)
+public enum TokenType {
+    case lParen(TokenPosition)
+    case rParen(TokenPosition)
+    case lBrace(TokenPosition)
+    case rBrace(TokenPosition)
+    case symbol(TokenPosition, String)
+    case float(TokenPosition, Double)
+    case integer(TokenPosition, Int)
+    case string(TokenPosition, String)
 }
 
 public func ==(a: TokenType, b: TokenType) -> Bool {
     switch (a, b) {
     case (.lParen, .lParen): return true
     case (.rParen, .rParen): return true
-    case (.symbol(let a), .symbol(let b)) where a == b: return true
-    case (.float(let a), .float(let b)) where a == b: return true
-    case (.integer(let a), .integer(let b)) where a == b: return true
-    case (.string(let a), .string(let b)) where a == b: return true
+    case (.symbol(_, let a), .symbol(_, let b)) where a == b: return true
+    case (.float(_, let a), .float(_, let b)) where a == b: return true
+    case (.integer(_, let a), .integer(_, let b)) where a == b: return true
+    case (.string(_, let a), .string(_, let b)) where a == b: return true
     default: return false
     }
 }
@@ -77,7 +99,7 @@ class LParenTokenMatcher: TokenMatcher {
     static func getToken(_ stream: StringStream) -> TokenType? {
         if isMatch(stream) {
             stream.advanceCharacter()
-            return TokenType.lParen
+            return TokenType.lParen(TokenPosition(line: stream.currentLine, column: stream.currentColumn, source: stream.str))
         }
         return nil
     }
@@ -91,7 +113,7 @@ class RParenTokenMatcher: TokenMatcher {
     static func getToken(_ stream: StringStream) -> TokenType? {
         if isMatch(stream) {
             stream.advanceCharacter()
-            return TokenType.rParen
+            return TokenType.rParen(TokenPosition(line: stream.currentLine, column: stream.currentColumn, source: stream.str))
         }
         return nil
     }
@@ -105,7 +127,7 @@ class LBraceTokenMatcher: TokenMatcher {
     static func getToken(_ stream: StringStream) -> TokenType? {
         if isMatch(stream) {
             stream.advanceCharacter()
-            return TokenType.lBrace
+            return TokenType.lBrace(TokenPosition(line: stream.currentLine, column: stream.currentColumn, source: stream.str))
         }
         return nil
     }
@@ -119,7 +141,7 @@ class RBraceTokenMatcher: TokenMatcher {
     static func getToken(_ stream: StringStream) -> TokenType? {
         if isMatch(stream) {
             stream.advanceCharacter()
-            return TokenType.rBrace
+            return TokenType.rBrace(TokenPosition(line: stream.currentLine, column: stream.currentColumn, source: stream.str))
         }
         return nil
     }
@@ -145,7 +167,7 @@ class SymbolMatcher: TokenMatcher {
                 }
             }
             
-            return TokenType.symbol(tok)
+            return TokenType.symbol(TokenPosition(line: stream.currentLine, column: stream.currentColumn, source: stream.str), tok)
         }
         return nil
     }
@@ -193,7 +215,13 @@ class StringMatcher: TokenMatcher {
                     stream.advanceCharacter()
                     
                     guard let escapeChar = stream.currentCharacter else {
-                        throw LispError.lexer(msg: "Error in string: expected escape character")
+                        let pos = TokenPosition(line: stream.currentLine, column: stream.currentColumn + 1, source: stream.str)
+                        let msg = """
+                        \(pos.line):\(pos.column): Expected escape character:
+                            \(pos.sourceLine)
+                            \(pos.tokenMarker)
+                        """
+                        throw LispError.lexer(msg: msg)
                     }
                     
                     let escapeResult: String
@@ -218,10 +246,17 @@ class StringMatcher: TokenMatcher {
                             throw LispError.lexer(msg: "Error in string: invalid hex escape sequence: \(String([h1, h2]))")
                         }
                         escapeResult = String(Character(UnicodeScalar(hexValue)))
-                        
+                    case "\"":
+                        escapeResult = "\""
                         
                     default:
-                        throw LispError.lexer(msg: "Unknown escape character in string: \\\(escapeChar)")
+                        let pos = TokenPosition(line: stream.currentLine, column: stream.currentColumn + 1, source: stream.str)
+                        let msg = """
+                        \(pos.line):\(pos.column): Unknown escape character in string: \\\(escapeChar)
+                            \(pos.sourceLine)
+                            \(pos.tokenMarker)
+                        """
+                        throw LispError.lexer(msg: msg)
                     }
                     
                     tok += escapeResult
@@ -239,7 +274,7 @@ class StringMatcher: TokenMatcher {
             
             stream.advanceCharacter()
             
-            return TokenType.string(tok)
+            return TokenType.string(TokenPosition(line: stream.currentLine, column: stream.currentColumn, source: stream.str), tok)
         }
         
         return nil
@@ -294,12 +329,12 @@ class NumberMatcher: TokenMatcher {
                 guard let num = Double(tok) else {
                     throw LispError.lexer(msg: "\(tok) is not a valid floating point number.")
                 }
-                return TokenType.float(num)
+                return TokenType.float(TokenPosition(line: stream.currentLine, column: stream.currentColumn, source: stream.str), num)
             } else {
                 guard let num = Int(tok) else {
                     throw LispError.lexer(msg: "\(tok) is not a valid number.")
                 }
-                return TokenType.integer(num)
+                return TokenType.integer(TokenPosition(line: stream.currentLine, column: stream.currentColumn, source: stream.str), num)
             }
             
         }
@@ -341,6 +376,9 @@ class StringStream {
     var currentCharacterIdx: String.Index
     var nextCharacterIdx: String.Index?
     var characterCount: Int
+    
+    var currentLine: Int
+    var currentColumn: Int
 
     init(source: String) {
         str = source
@@ -350,12 +388,22 @@ class StringStream {
         nextCharacterIdx = str.index(after: currentCharacterIdx)
         currentCharacter = str.characters[currentCharacterIdx]
         
+        currentLine = 0
+        currentColumn = 0
+        
         if str.count > 1 {
             nextCharacter = str[nextCharacterIdx!]
         }
     }
 
     func advanceCharacter() {
+        if currentCharacter != nil && currentCharacter! == "\n" {
+            currentLine += 1
+            currentColumn = 0
+        } else {
+            currentColumn += 1
+        }
+        
         position += 1
         
         if position >= characterCount
@@ -453,11 +501,16 @@ class Tokenizer {
             }
         } else {
             if count == 0 {
-                throw LispError.lexer(msg: "Unrecognized character '\(stream.currentCharacter ?? " ".first!)'")
+                let pos = TokenPosition(line: stream.currentLine, column: stream.currentColumn + 1, source: stream.str)
+                let msg = """
+                    \(pos.line):\(pos.column): Unrecognized character '\(stream.currentCharacter ?? " ".first!)':
+                    \t\(pos.sourceLine)
+                    \t\(pos.tokenMarker)
+                    """
+                throw LispError.lexer(msg: msg)
             }
         }
         
         return try getNextToken()
     }
-
 }
