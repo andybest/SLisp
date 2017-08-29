@@ -74,6 +74,19 @@ class MathBuiltins : Builtins {
             return .number(.integer(n))
         }
         
+        
+        addBuiltin("sqrt", docstring: "") { args, parser, env throws in
+            if args.count != 1 {
+                throw LispError.runtime(msg: "'sqrt' requires 1 argument")
+            }
+            
+            guard case let .number(n) = args[0] else {
+                throw LispError.runtime(msg: "'sqrt' requires a number argument")
+            }
+            
+            return .number(.float(sqrt(n.floatValue())))
+        }
+        
         return builtins
     }
 }

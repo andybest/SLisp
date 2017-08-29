@@ -55,11 +55,16 @@
     (if (! x)
         (if (|| (empty? description) (nil? description))
             (throw :testAssertionError)
-            (throw :testAssertionError (first description)))))
+            (do
+                (print (first description))
+                (throw :testAssertionError (first description))))))
 
 (defn assertEqual
     (x y & description)
-    (apply assert (concat (== x y) description)))
+    (let (desc (if (|| (nil? description) (empty? description))
+                    (str "Assertion failure: " x " is not equal to " y)
+                    description))
+        (apply assert (concat (== x y) desc))))
 
 (defn assertNotEqual
     (x y & description)

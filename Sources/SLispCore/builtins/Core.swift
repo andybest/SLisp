@@ -246,7 +246,9 @@ class Core: Builtins {
                 throw LispError.runtime(msg: "'doc' requires the argument to be a function")
             }
             
-            print(docstring ?? "")
+            if docstring != nil {
+                return .string(docstring!)
+            }
             
             return .nil
         }
@@ -651,6 +653,27 @@ class Core: Builtins {
         """) { args, parser, env throws in
             return try self.doSingleBooleanOperation(args, environment: environment) { (x: Bool) -> Bool in
                 return !x
+            }
+        }
+        
+        // MARK: integer
+        addBuiltin("integer", docstring: "") { args, parser, env throws in
+            if args.count != 1 {
+                throw LispError.runtime(msg: "'integer' expects 1 argument.")
+            }
+            
+            switch args[0] {
+            case .number(let num):
+                return .number(.integer(num.intValue()))
+            case .string(let str):
+                let v = Int(str)
+                if v != nil {
+                    return .number(.integer(v!))
+                } else {
+                    return .nil
+                }
+            default:
+                throw LispError.runtime(msg: "'integer' expects a number or string argument.")
             }
         }
     }
